@@ -6,7 +6,11 @@ use serde::Deserialize;
 #[derive(Parser)]
 pub enum AddressSubcommands {
     #[command(visible_alias = "b")]
-    Balance { address: String },
+    Balance {
+        address: String,
+        #[arg(short, long)]
+        mem_pool: Option<bool>,
+    },
     #[command(visible_alias = "utxo")]
     UTXOS { address: String },
     #[command(visible_alias = "g")]
@@ -16,18 +20,18 @@ pub enum AddressSubcommands {
 #[derive(Clone, Debug, Deserialize)]
 struct Item {
     id: String,
-    amount: String
+    amount: String,
 }
 
 #[derive(Clone, Debug, Deserialize)]
 struct BalanceResponse {
-    balance : String,
-    balanceHint : String,
-    lockedBalance : String,
-    lockedBalanceHint : String,
+    balance: String,
+    balanceHint: String,
+    lockedBalance: String,
+    lockedBalanceHint: String,
     transactions: Option<Vec<Item>>,
     unconfirmedTransactions: Option<Vec<Item>>,
-    utxoNum : u64,
+    utxoNum: u64,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -56,7 +60,7 @@ struct GroupResponse {
     group: u32,
 }
 
-async fn get_balance(address: String) -> Result<()> {
+async fn get_balance(address: String, mem_pool: bool) -> Result<()> {
     let client = Client::new();
     let url = format!(
         "https://node.mainnet.alephium.org/addresses/{}/balance",
@@ -104,9 +108,8 @@ async fn get_group(address: String) -> Result<()> {
 impl AddressSubcommands {
     pub async fn run(self) -> Result<()> {
         match self {
-            /* mempool maybe ? */
-            Self::Balance { address } => {
-                get_balance(address).await?;
+            Self::Balance { address, mem_pool } => {
+                get_balance(address, mem_pool.unwrap_or(false)).await?;
             }
             Self::UTXOS { address } => {
                 get_utxos(address).await?;
