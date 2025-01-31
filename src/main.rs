@@ -1,9 +1,17 @@
+use anyhow::Result;
+use args::{Kermit, KermitSubcommand};
 use clap::Parser;
-use cli::Cli;
 
-mod cli;
+mod args;
 mod wallet;
 
-fn main() {
-    Cli::parse();
+#[tokio::main]
+async fn main() -> Result<()> {
+    let kermit = Kermit::parse();
+
+    match kermit.cmd {
+        KermitSubcommand::Wallet { command } => command.run().await?,
+    }
+
+    Ok(())
 }
