@@ -1,8 +1,13 @@
 > If you see this section, you've just created a repository using [PoC Innovation's Open-Source project template](https://github.com/PoCInnovation/open-source-project-template). Check the [getting started guide](./.github/getting-started.md).
 
+
 # [PROJECT'S NAME]
 
 [Project's description]
+
+## Canva Presentation
+
+[Canva link](https://www.canva.com/design/DAGdwyCR5m8/TQ8Al7K2aelqnAYpcZrqlA/view?utm_content=DAGdwyCR5m8&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h2c34a26ee4)
 
 ## How does it work?
 
