@@ -84,7 +84,7 @@ pub async fn put<T: DeserializeOwned, U: Serialize>(
 }
 
 /// Perform a DELETE request to the given URL
-pub async fn delete<T: DeserializeOwned>(url: &str, endpoint: &str) -> Result<T> {
+pub async fn delete(url: &str, endpoint: &str) -> Result<()> {
     let client = Client::new();
 
     let url = format!("{}{}", url, endpoint);
@@ -100,7 +100,5 @@ pub async fn delete<T: DeserializeOwned>(url: &str, endpoint: &str) -> Result<T>
         bail!(err.detail);
     }
 
-    let data = res.json().await?;
-
-    Ok(data)
+    Ok(())
 }

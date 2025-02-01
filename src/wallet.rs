@@ -18,8 +18,8 @@ pub enum WalletsSubcommands {
     /// Create a new wallet.
     #[command(visible_alias = "cw")]
     Create {
-        password: String,
         wallet_name: String,
+        password: String,
     },
 
     /// Get wallet's status.
@@ -121,8 +121,8 @@ impl WalletsSubcommands {
                 put(url, "/wallets", json!({ "mnemonic": mnemonic })).await?
             },
             Self::Create {
-                password,
                 wallet_name,
+                password,
             } => {
                 post(
                     url,
@@ -144,11 +144,11 @@ impl WalletsSubcommands {
                     &format!("/wallets/{}?password={}", wallet_name, password),
                 )
                 .await?;
-                json!("Remove")
+            json!("Remove")
             },
             Self::Lock { wallet_name } => {
-                post(url, &format!("/wallets/{}/lock", wallet_name), json!({})).await?;
-                json!("Remove")
+                post::<(), Value>(url, &format!("/wallets/{}/lock", wallet_name), Value::Null).await?;
+                json!("Ok")
             },
             Self::Unlock {
                 wallet_name,
@@ -257,6 +257,7 @@ impl WalletsSubcommands {
                 .await?
             },
         };
+
         serde_json::to_writer_pretty(std::io::stdout(), &value)?;
 
         Ok(())
