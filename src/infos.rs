@@ -1,9 +1,7 @@
-use crate::utils::get;
+use crate::utils::{get, post};
 use anyhow::{Ok, Result};
 use clap::Parser;
-use serde_json::Value;
-
-mod types;
+use serde_json::{json, Value};
 
 /// CLI arguments for `kermit infos`.
 #[derive(Parser)]
@@ -38,7 +36,7 @@ pub enum InfosSubcommands {
 
     /// Ban/Unban given peers.
     #[command(visible_alias = "mb")]
-    MisbehaviorsBanUnban,
+    MisbehaviorsBanUnban { r#type: String, peers: Vec<String> },
 
     /// Get the unreachable brokers.
     #[command(visible_alias = "ub")]
@@ -46,7 +44,7 @@ pub enum InfosSubcommands {
 
     /// Set brokers to be unreachable/reachable.
     #[command(visible_alias = "ds")]
-    Discovery,
+    Discovery { r#type: String, peers: Vec<String> },
 
     /// Get history average hashrate on the given time interval.
     #[command(visible_alias = "hhr")]
@@ -71,9 +69,29 @@ impl InfosSubcommands {
             Self::InterCliquePeerInfo => get(url, "/infos/inter-clique-peer-info").await?,
             Self::DiscoveredNeighbors => get(url, "/infos/discovered-neighbors").await?,
             Self::Misbehaviors => get(url, "/infos/misbehaviors").await?,
-            Self::MisbehaviorsBanUnban => post(url, "/infos/misbehaviors").await?,
+            Self::MisbehaviorsBanUnban { r#type, peers } => {
+                post(
+                    url,
+                    "/infos/misbehaviors",
+                    json!({
+                        "type": r#type,
+                        "peers": peers
+                    }),
+                )
+                .await?
+            },
             Self::UnreachableBrokers => get(url, "/infos/unreachable").await?,
-            Self::Discovery => post(url, "/infos/discovery").await?,
+            Self::Discovery { r#type, peers } => {
+                post(
+                    url,
+                    "/infos/misbehaviors",
+                    json!({
+                        "type": r#type,
+                        "peers": peers
+                    }),
+                )
+                .await?
+            },
             Self::HistoryHashrate => get(url, "/infos/history-hashrate").await?,
             Self::CurrentHashrate => get(url, "/infos/current-hashrate").await?,
             Self::CurrentDifficulty => get(url, "/infos/current-difficulty").await?,
@@ -81,7 +99,6 @@ impl InfosSubcommands {
 
         serde_json::to_writer_pretty(std::io::stdout(), &value)?;
 
-        // println!("{}", );
         Ok(())
     }
 }
