@@ -19,7 +19,7 @@ pub struct Kermit {
 pub enum KermitSubcommand {
     /// Wallet management utilities.
     #[command(visible_alias = "w")]
-    Wallet {
+    Wallets {
         #[command(subcommand)]
         command: WalletsSubcommands,
     },

@@ -3,8 +3,6 @@ use anyhow::{Ok, Result};
 use clap::Parser;
 use serde_json::{json, Value};
 
-/// port : 22973
-
 /// CLI arguments for `kermit infos`.
 #[derive(Parser)]
 pub enum InfosSubcommands {
