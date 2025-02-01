@@ -8,8 +8,8 @@ pub enum AddressSubcommands {
     #[command(visible_alias = "b")]
     Balance {
         address: String,
-        #[arg(short, long)]
-        mem_pool: Option<bool>,
+        #[arg(short, long, default_value_t = false)]
+        mem_pool: bool,
     },
     #[command(visible_alias = "utxo")]
     UTXOS { address: String },
@@ -63,8 +63,9 @@ struct GroupResponse {
 async fn get_balance(address: String, mem_pool: bool) -> Result<()> {
     let client = Client::new();
     let url = format!(
-        "https://node.mainnet.alephium.org/addresses/{}/balance",
-        address
+        "https://node.mainnet.alephium.org/addresses/{}/balance?mempool={}",
+        address,
+        mem_pool
     );
 
     let response = client.get(&url).send().await?;
@@ -109,7 +110,7 @@ impl AddressSubcommands {
     pub async fn run(self) -> Result<()> {
         match self {
             Self::Balance { address, mem_pool } => {
-                get_balance(address, mem_pool.unwrap_or(false)).await?;
+                get_balance(address, mem_pool).await?;
             }
             Self::UTXOS { address } => {
                 get_utxos(address).await?;
