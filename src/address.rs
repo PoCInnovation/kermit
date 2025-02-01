@@ -63,27 +63,27 @@ struct GroupResponse {
 
 async fn get_balance(url: String, address: String, mem_pool: bool) -> Result<()> {
     let method = format!("/addresses/{address}/balance?mempool={mem_pool}");
-    let response = get::<BalanceResponse>(&url, &method).await?;
+    let response: BalanceResponse = get(&url, &method).await?;
 
-    println!("Balance: {:?}", response);
+    println!("Balance: {:#?}", response);
 
     Ok(())
 }
 
 async fn get_utxos(url: String, address: String) -> Result<()> {
     let method = format!("/addresses/{address}/utxos");
-    let response = get::<UTXOResponses>(&url, &method).await?;
+    let response: UTXOResponses = get(&url, &method).await?;
 
-    println!("UTXOs: {:?}", response);
+    println!("UTXOs: {:#?}", response);
     Ok(())
 }
 
 async fn get_group(url: String, address: String) -> Result<()> {
     let method = format!("/addresses/{address}/group");
 
-    let group_response = get::<GroupResponse>(&url, &method).await?;
+    let group_response: GroupResponse = get(&url, &method).await?;
 
-    println!("Group: {:?}", group_response);
+    println!("Group: {:#?}", group_response);
     Ok(())
 }
 
