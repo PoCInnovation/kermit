@@ -32,6 +32,8 @@ pub enum ContractsSubcommands {
     },
     #[command(visible_alias = "d")]
     Deploy {
+        #[arg(short, long, default_value_t = ContractType::Project)]
+        contract_type: ContractType,
         public_key: String, // todo: regex if this is a public key
         #[arg(short, long)]
         byte_code: String,
@@ -65,66 +67,75 @@ pub enum ContractsSubcommands {
     },
 }
 
+pub async fn compile_contract(url: String, file_path: String) -> Result<()> {
+    let mut file = File::open(file_path)?;
+    let mut buffer = String::new();
+    file.read_to_string(&mut buffer)?;
+
+    let client = Client::new();
+    let url = "https://node.mainnet.alephium.org/contracts/compile-contract";
+
+    let body = serde_json::json!({
+        "code": buffer,
+        "compilerOptions": { // todo, get some options
+            "ignoreUnusedConstantsWarnings": true
+        }
+    });
+
+    let response = client.post(url).json(&body).send().await?;
+    let json_response = response.json::<Value>().await?;
+
+    println!("Contract: {:?}", json_response);
+    Ok(())
+}
+
+pub async fn deploy_contract(url: String, public_key: String, byte_code: String) -> Result<()> {
+    let public_key_regex = Regex::new(r"^[a-f0-9]{64}$")?;
+    if !public_key_regex.is_match(&public_key) {
+        return Err(anyhow::anyhow!("Invalid public key format"));
+    }
+
+    let client = Client::new();
+    let url = "https://node.mainnet.alephium.org/contracts/unigned-tx/deploy-contract";
+
+    let byte_code = if let Ok(mut file) = File::open(&byte_code) {
+        let mut buffer = String::new();
+        file.read_to_string(&mut buffer)?;
+        buffer
+    } else {
+        byte_code
+    };
+
+    let body = serde_json::json!({
+        "publicKey": public_key,
+        "byteCode": byte_code,
+    });
+
+    let response = client.post(url).json(&body).send().await?;
+    let json_response = response.json::<Value>().await?;
+
+    println!("Deployment response: {:?}", json_response);
+    Ok(())
+}
+
 impl ContractsSubcommands {
-    pub async fn run(self) -> Result<()> {
+    pub async fn run(self, url: String) -> Result<()> {
         match self {
             Self::Compile {
                 contract_type,
                 file_path,
-            } => {
-                println!("Compiling contract of type: {}", contract_type);
-                let mut file = File::open(file_path)?;
-                let mut buffer = String::new();
-                file.read_to_string(&mut buffer)?;
-
-                let client = Client::new();
-                let url = "https://node.mainnet.alephium.org/contracts/compile-contract";
-
-                let body = serde_json::json!({
-                    "code": buffer,
-                    "compilerOptions": { // todo, get some options
-                        "ignoreUnusedConstantsWarnings": true
-                    }
-                });
-
-                let response = client.post(url).json(&body).send().await?;
-                let json_response = response.json::<Value>().await?;
-
-                println!("Contract: {:?}", json_response);
-
-                // display the bytecode
-                // print if the compilation is ok
-            }
+            } => match contract_type {
+                ContractType::Contract => compile_contract(url, file_path).await?,
+                _ => todo!("Contract type not yet implemented"),
+            },
             Self::Deploy {
+                contract_type,
                 public_key,
                 byte_code,
-            } => {
-                let public_key_regex = Regex::new(r"^[a-f0-9]{64}$")?;
-                if !public_key_regex.is_match(&public_key) {
-                    return Err(anyhow::anyhow!("Invalid public key format"));
-                }
-
-                let client = Client::new();
-                let url = "https://node.mainnet.alephium.org/contracts/unigned-tx/deploy-contract";
-
-                let byte_code = if let Ok(mut file) = File::open(&byte_code) {
-                    let mut buffer = String::new();
-                    file.read_to_string(&mut buffer)?;
-                    buffer
-                } else {
-                    byte_code
-                };
-
-                let body = serde_json::json!({
-                    "publicKey": public_key,
-                    "byteCode": byte_code,
-                });
-
-                let response = client.post(url).json(&body).send().await?;
-                let json_response = response.json::<Value>().await?;
-
-                println!("Deployment response: {:?}", json_response);
-            }
+            } => match contract_type {
+                ContractType::Contract => deploy_contract(url, public_key, byte_code).await?,
+                _ => todo!("Contract type not yet deployable"),
+            },
             _ => todo!(),
         }
 

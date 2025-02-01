@@ -1,7 +1,8 @@
 use anyhow::Result;
 use clap::Parser;
-use reqwest::Client;
 use serde::Deserialize;
+
+use crate::utils::reqwest::get;
 
 #[derive(Parser)]
 pub enum AddressSubcommands {
@@ -60,63 +61,44 @@ struct GroupResponse {
     group: u32,
 }
 
-async fn get_balance(address: String, mem_pool: bool) -> Result<()> {
-    let client = Client::new();
-    let url = format!(
-        "https://node.mainnet.alephium.org/addresses/{}/balance?mempool={}",
-        address, mem_pool
-    );
+async fn get_balance(url: String, address: String, mem_pool: bool) -> Result<()> {
+    let method = format!("/addresses/{address}/balance?mempool={mem_pool}");
+    let response = get::<BalanceResponse>(&url, &method).await?;
 
-    let response = client.get(&url).send().await?;
-    let balance_response: BalanceResponse = response.json().await?;
-
-    println!("Balance: {:?}", balance_response);
+    println!("Balance: {:?}", response);
 
     Ok(())
 }
 
-async fn get_utxos(address: String) -> Result<()> {
-    let client = Client::new();
-    let url = format!(
-        "https://node.mainnet.alephium.org/addresses/{}/utxos",
-        address
-    );
+async fn get_utxos(url: String, address: String) -> Result<()> {
+    let method = format!("/addresses/{address}/utxos");
+    let response = get::<UTXOResponses>(&url, &method).await?;
 
-    let response = client.get(&url).send().await?;
-    let utxo_responses: UTXOResponses = response.json().await?;
-
-    println!("UTXOs: {:?}", utxo_responses);
-
+    println!("UTXOs: {:?}", response);
     Ok(())
 }
 
-async fn get_group(address: String) -> Result<()> {
-    let client = Client::new();
-    let url = format!(
-        "https://node.mainnet.alephium.org/addresses/{}/group",
-        address
-    );
+async fn get_group(url: String, address: String) -> Result<()> {
+    let method = format!("/addresses/{address}/group");
 
-    let response: reqwest::Response = client.get(&url).send().await?;
-    let group_response: GroupResponse = response.json().await?;
+    let group_response = get::<GroupResponse>(&url, &method).await?;
 
     println!("Group: {:?}", group_response);
-
     Ok(())
 }
 
 impl AddressSubcommands {
-    pub async fn run(self) -> Result<()> {
+    pub async fn run(self, url: String) -> Result<()> {
         match self {
             Self::Balance { address, mem_pool } => {
-                get_balance(address, mem_pool).await?;
-            }
+                get_balance(url, address, mem_pool).await?;
+            },
             Self::UTXOS { address } => {
-                get_utxos(address).await?;
-            }
+                get_utxos(url, address).await?;
+            },
             Self::Group { address } => {
-                get_group(address).await?;
-            }
+                get_group(url, address).await?;
+            },
         }
 
         Ok(())

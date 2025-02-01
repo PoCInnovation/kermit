@@ -2,6 +2,7 @@ mod address;
 mod args;
 mod contracts;
 mod wallet;
+mod utils;
 
 use anyhow::Result;
 use args::{Kermit, KermitSubcommand};
@@ -20,8 +21,8 @@ async fn run() -> Result<()> {
 
     match kermit.cmd {
         KermitSubcommand::Wallet { command } => command.run().await?,
-        KermitSubcommand::Address { command } => command.run().await?,
-        KermitSubcommand::Contracts { command } => command.run().await?,
+        KermitSubcommand::Address { command } => command.run(kermit.url).await?,
+        KermitSubcommand::Contracts { command } => command.run(kermit.url).await?,
     }
 
     Ok(())

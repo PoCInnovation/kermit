@@ -13,6 +13,8 @@ pub async fn get<T: DeserializeOwned>(url: &str, method: &str) -> Result<T> {
 
     let url = format!("{}{}", url, method);
 
+    println!("{}", url);
+
     let res = client
         .get(&url)
         .header("Content-Type", "application/json")
