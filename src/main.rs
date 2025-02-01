@@ -1,10 +1,10 @@
-use anyhow::Result;
-use args::{Kermit, KermitSubcommand};
-use clap::Parser;
-
 mod args;
 mod utils;
 mod wallet;
+
+use anyhow::Result;
+use args::{Kermit, KermitSubcommand};
+use clap::Parser;
 
 #[tokio::main]
 async fn main() {
