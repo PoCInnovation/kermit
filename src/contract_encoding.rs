@@ -1,4 +1,7 @@
 use anyhow;
+use serde_json::Value;
+
+use crate::contracts::NetworkType;
 
 fn _build_debug_bytecode(bytecode: &str, bytecode_patch: &str) -> Result<String, anyhow::Error> {
     if bytecode_patch.is_empty() {
@@ -33,8 +36,13 @@ fn _build_debug_bytecode(bytecode: &str, bytecode_patch: &str) -> Result<String,
     Ok(result)
 }
 
-pub fn _encode_contract_fields() -> Result<String, anyhow::Error> {
+pub fn _encode_contract_fields(byte_code: &str, byte_code_debug: &str, network: &NetworkType, _fields: &Value) -> Result<String, anyhow::Error> {
     /* If devnet, use build_debug_bytecode to patch the compiled bytecode with bytecodeDebugPatch */
     /* Encode the values of the fields and concat it */
+    let _byte_code = match network {
+        NetworkType::Dev => { _build_debug_bytecode(byte_code, byte_code_debug)? },
+        _ => byte_code.to_string()
+    };
+
     todo!()
 }

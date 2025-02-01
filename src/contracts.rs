@@ -9,11 +9,20 @@ use strum::Display;
 use std::fs::File;
 use std::io::Read;
 
+use crate::contract_encoding::_encode_contract_fields;
+
 #[derive(Clone, Debug, Display, ValueEnum)]
 pub enum ContractType {
     Contract,
     Script,
     Project,
+}
+
+#[derive(Clone, Debug, Display, ValueEnum)]
+pub enum NetworkType {
+    Main,
+    Test,
+    Dev,
 }
 
 #[derive(Parser)]
@@ -29,6 +38,8 @@ pub enum ContractsSubcommands {
     #[command(visible_alias = "d")]
     Deploy {
         public_key: String,
+        #[arg(long, default_value_t = NetworkType::Main)]
+        network: NetworkType,
         compile_output_path: String,
         #[arg(long, default_value_t = ContractType::Project)]
         contract_type: ContractType,
@@ -161,6 +172,7 @@ pub async fn compile_project(
 pub async fn deploy_contract(
     url: String,
     public_key: String,
+    network: NetworkType,
     compile_output_path: String,
 ) -> Result<()> {
     let client = Client::new();
@@ -183,14 +195,16 @@ pub async fn deploy_contract(
         let byte_code = contract["bytecode"]
             .as_str()
             .ok_or_else(|| anyhow!("Bytecode not found"))?;
+        let byte_code_debug = contract["bytecodeDebugPatch"]
+            .as_str()
+            .ok_or_else(|| anyhow!("Bytecode not found"))?;
 
-        let _fields = contract["fields"]
-            .as_object()
-            .ok_or_else(|| anyhow!("Fields not found"))?;
+        let fields = &contract["fields"];
+        let final_byte_code = _encode_contract_fields(byte_code, byte_code_debug, &network, fields)?;
 
         let body = json!({
             "fromPublicKey": public_key,
-            "bytecode": byte_code,
+            "bytecode": final_byte_code,
         });
 
         let response = client.post(&url).json(&body).send().await?;
@@ -235,11 +249,12 @@ impl ContractsSubcommands {
             Self::Deploy {
                 contract_type,
                 public_key,
+                network,
                 compile_output_path,
             } => match contract_type {
                 /* Problems with devnet bytecode, doesn't deploy */
                 ContractType::Contract => {
-                    deploy_contract(url, public_key, compile_output_path).await?
+                    deploy_contract(url, public_key, network, compile_output_path).await?
                 },
                 _ => todo!("Contract type not yet deployable"),
             },
