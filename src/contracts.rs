@@ -62,17 +62,21 @@ pub enum ContractsSubcommands {
     },
 }
 
-pub async fn compile_contract(
-    url: String,
-    compiler_options_path: Option<String>,
-    file_path: String,
-) -> Result<()> {
+fn get_file_buffer(file_path: &str) -> Result<String> {
     let mut file = File::open(file_path)?;
     let mut buffer = String::new();
     file.read_to_string(&mut buffer)?;
+    Ok(buffer)
+}
 
+pub async fn compile_file(
+    url: &str,
+    compiler_options_path: Option<String>,
+    file_buffer: &str,
+    end_point: &str,
+) -> Result<()> {
     let client = Client::new();
-    let url = format!("{url}/contracts/compile-contract");
+    let url = format!("{url}/contracts{end_point}");
 
     let compiler_options = match compiler_options_path {
         Some(path) => {
@@ -89,7 +93,7 @@ pub async fn compile_contract(
     };
 
     let body = json!({
-        "code": buffer,
+        "code": file_buffer,
         "compilerOptions": compiler_options
     });
 
@@ -98,6 +102,61 @@ pub async fn compile_contract(
 
     println!("Contract: {:#?}", json_response);
     Ok(())
+}
+
+pub async fn compile_project(
+    url: &str,
+    compiler_options_path: Option<String>,
+    file_path: &str,
+) -> Result<()> {
+    let re = Regex::new(r#"^import "[^"./]+/[^"]*[a-z][a-z_0-9]*(\.ral)?"#)?;
+
+    let file_path: &std::path::Path = std::path::Path::new(file_path);
+    let project_cwd = file_path
+        .parent()
+        .ok_or_else(|| anyhow!("Invalid file path"))?
+        .canonicalize()?;
+
+    let mut buffer = String::new();
+    File::open(file_path)?.read_to_string(&mut buffer)?;
+
+    let full_buffer = buffer
+        .lines()
+        .into_iter()
+        .map(|line| {
+            if !re.is_match(line) {
+                return Ok(line.to_string());
+            }
+            let trimmed = line.trim();
+            let line = trimmed.split_whitespace().collect::<Vec<&str>>();
+
+            let import_file = if let Some(second) = line.get(1) {
+                second.to_string().trim_matches('"').to_string()
+            } else {
+                String::new()
+            };
+
+            // handle with missing .ral, concat it
+
+            let path_buf = if import_file.starts_with("std") {
+                std::env::current_dir()?.join("contracts").join(import_file)
+            } else {
+                project_cwd.join(import_file).into()
+            };
+
+            let path = path_buf.to_str().ok_or_else(|| anyhow!("Invalid path"))?;
+
+            Ok(get_file_buffer(path)?)
+        })
+        .collect::<Result<Vec<String>, anyhow::Error>>()?;
+
+    compile_file(
+        url,
+        compiler_options_path,
+        &full_buffer.join("\n"),
+        "/compile-project",
+    )
+    .await
 }
 
 pub async fn deploy_contract(url: String, public_key: String, byte_code: String) -> Result<()> {
@@ -138,9 +197,26 @@ impl ContractsSubcommands {
                 file_path,
             } => match contract_type {
                 ContractType::Contract => {
-                    compile_contract(url, compiler_options_path, file_path).await?
+                    compile_file(
+                        &url,
+                        compiler_options_path,
+                        &get_file_buffer(&file_path)?,
+                        "/compile-contract",
+                    )
+                    .await?
                 },
-                _ => todo!("Contract type not yet implemented"),
+                ContractType::Project => {
+                    compile_project(&url, compiler_options_path, &file_path).await?
+                },
+                ContractType::Script => {
+                    compile_file(
+                        &url,
+                        compiler_options_path,
+                        &get_file_buffer(&file_path)?,
+                        "/compile-script",
+                    )
+                    .await?
+                },
             },
             Self::Deploy {
                 contract_type,

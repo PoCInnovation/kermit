@@ -1,4 +1,4 @@
-Contract Sub(mut result : U256) {
+Contract SubO(mut result : U256) {
     event Sub(x: U256, y: U256)
 
     @using(checkExternalCaller = false, updateFields = true)
