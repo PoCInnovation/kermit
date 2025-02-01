@@ -1,7 +1,8 @@
 use clap::{Parser, Subcommand, ValueHint};
 
-use crate::wallet::WalletSubcommands;
+use crate::wallet::WalletsSubcommands;
 use crate::infos::InfosSubcommands;
+use crate::events::EventsSubcommands;
 
 #[derive(Parser)]
 #[command(version)]
@@ -18,13 +19,20 @@ pub struct Kermit {
 pub enum KermitSubcommand {
     /// Wallet management utilities.
     #[command(visible_alias = "w")]
-    Wallet {
+    Wallets {
         #[command(subcommand)]
-        command: WalletSubcommands,
+        command: WalletsSubcommands,
     },
+    /// Infos about node and hashrate.
     #[command(visible_alias = "i")]
     Infos {
         #[command(subcommand)]
         command: InfosSubcommands,
+    },
+    /// Event for contract, block and hash.
+    #[command(visible_alias = "e")]
+    Events {
+        #[command(subcommand)]
+        command: EventsSubcommands,
     }
 }
