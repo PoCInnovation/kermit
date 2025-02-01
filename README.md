@@ -42,7 +42,6 @@ Kermit is a command-line tool that allows users to interact with a blockchain no
 Basic Structure:
 The Kermit CLI is built using the Clap library, which organizes commands into a hierarchy of options and subcommands. The basic syntax for using Kermit is:
 
-
 `kermit [COMMAND] [SUBCOMMAND] [OPTIONS]`
 
 `COMMAND`: Represents the main category of operations (e.g., wallet, infos).
@@ -71,8 +70,6 @@ To set up the CLI, follow this 2 steps:
     cargo install --path .
     ```
 
-
-
 #### !! If you want to run wallet command !!
 
 #### Setup the Alephium Stack Development Environment
@@ -100,9 +97,42 @@ To set up the development environment, follow these steps:
 
 ### Usage
 
-You just need to run the command, all will be explain to you
+You just need to run the command with the parameters of your choice
 
-    Kermit
+    ```bash
+    kermit [COMMAND] [SUBCOMMAND] [OPTIONS]
+    ```
+
+### Examples
+
+Here are some examples of how to use the Kermit CLI:
+> Before using kermit, I recommand you to set the URL of Alephium API with the command `export URL=<URL>`
+
+1. Create a new wallet:
+
+    ```bash
+    kermit wallet create <WALLET_NAME> <PASSWORD>
+    ```
+
+2. Transfer funds between wallets:
+
+    ```bash
+    kermit tx create <SENDER_PUBLIC_KEY> <RECIPIENT_ADDRESS> <AMOUNT> --private-key <SENDER_PRIVATE_KEY>
+    ```
+
+3. Check balance of a wallet:
+
+    ```bash
+    kermit address balance <ADDRESS>
+    ```
+
+4. Compile a contract:
+
+    ```bash
+    kermit contracts compile tests/sub_contract.ral --contract-type project
+    ```
+
+You can do again more with kermit. I let you check the `kermit --help`, to take a look on all possibilities
 
 ## Get involved
 
