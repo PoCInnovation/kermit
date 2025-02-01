@@ -48,11 +48,16 @@ pub enum InfosSubcommands {
 
     /// Get history average hashrate on the given time interval.
     #[command(visible_alias = "hhr")]
-    HistoryHashrate,
+    HistoryHashrate {
+        from_ts: i64,
+        to_ts: Option<i64>,
+    },
 
     /// Get average hashrate from now - timespan(millis) to now.
     #[command(visible_alias = "chr")]
-    CurrentHashrate,
+    CurrentHashrate {
+        timespan: Option<i64>,
+    },
 
     /// Get the average difficulty of the latest blocks from all shards.
     #[command(visible_alias = "cd")]
@@ -92,8 +97,20 @@ impl InfosSubcommands {
                 )
                 .await?
             },
-            Self::HistoryHashrate => get(url, "/infos/history-hashrate").await?,
-            Self::CurrentHashrate => get(url, "/infos/current-hashrate").await?,
+            Self::HistoryHashrate { from_ts, to_ts } => {
+                let mut endpoint = format!("/infos/history-hashrate?fromTs={}", from_ts);
+                if let Some(to_ts) = to_ts {
+                    endpoint.push_str(&format!("&toTs={}", to_ts));
+                }
+                get(url, &endpoint).await?
+            },
+            Self::CurrentHashrate { timespan } => {
+                let mut endpoint = "/infos/current-hashrate".to_string();
+                if let Some(timespan) = timespan {
+                    endpoint.push_str(&format!("?timespan={}", timespan));
+                }
+                get(url, &endpoint).await?
+            },
             Self::CurrentDifficulty => get(url, "/infos/current-difficulty").await?,
         };
 
