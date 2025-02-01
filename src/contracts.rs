@@ -28,11 +28,10 @@ pub enum ContractsSubcommands {
     },
     #[command(visible_alias = "d")]
     Deploy {
-        #[arg(short, long, default_value_t = ContractType::Project)]
+        public_key: String,
+        compile_output_path: String,
+        #[arg(long, default_value_t = ContractType::Project)]
         contract_type: ContractType,
-        public_key: String, // todo: regex if this is a public key
-        #[arg(short, long)]
-        byte_code: String,
     },
     #[command(visible_alias = "s")]
     State {
@@ -98,9 +97,9 @@ pub async fn compile_file(
     });
 
     let response = client.post(url).json(&body).send().await?;
-    let json_response = response.json::<Value>().await?;
+    let value = response.json::<Value>().await?;
 
-    println!("Contract: {:#?}", json_response);
+    serde_json::to_writer_pretty(std::io::stdout(), &value)?;
     Ok(())
 }
 
@@ -159,32 +158,47 @@ pub async fn compile_project(
     .await
 }
 
-pub async fn deploy_contract(url: String, public_key: String, byte_code: String) -> Result<()> {
-    let public_key_regex = Regex::new(r"^[a-f0-9]{64}$")?;
-    if !public_key_regex.is_match(&public_key) {
-        return Err(anyhow::anyhow!("Invalid public key format"));
-    }
-
+pub async fn deploy_contract(
+    url: String,
+    public_key: String,
+    compile_output_path: String,
+) -> Result<()> {
     let client = Client::new();
-    let url = format!("{url}/contracts/unigned-tx/deploy-contract");
+    let url = format!("{url}/contracts/unsigned-tx/deploy-contract");
 
-    let byte_code = if let Ok(mut file) = File::open(&byte_code) {
+    let compile_output: Value = {
+        let mut file = File::open(&compile_output_path)?;
         let mut buffer = String::new();
         file.read_to_string(&mut buffer)?;
-        buffer
-    } else {
-        byte_code
+        serde_json::from_str(&buffer)?
     };
 
-    let body = json!({
-        "publicKey": public_key,
-        "byteCode": byte_code,
-    });
+    let contracts = compile_output["contracts"]
+        .as_array()
+        .ok_or_else(|| anyhow!("contracts Not an array"))?
+        .get(0)
+        .ok_or_else(|| anyhow!("no contracts in array"));
 
-    let response = client.post(url).json(&body).send().await?;
-    let json_response = response.json::<Value>().await?;
+    for contract in contracts.iter() {
+        let byte_code = contract["bytecode"]
+            .as_str()
+            .ok_or_else(|| anyhow!("Bytecode not found"))?;
 
-    println!("Deployment response: {:#?}", json_response);
+        let _fields = contract["fields"]
+            .as_object()
+            .ok_or_else(|| anyhow!("Fields not found"))?;
+
+        let body = json!({
+            "fromPublicKey": public_key,
+            "bytecode": byte_code,
+        });
+
+        let response = client.post(&url).json(&body).send().await?;
+        let json_response = response.json::<Value>().await?;
+
+        println!("Deployment response: {:#?}", json_response);
+    }
+
     Ok(())
 }
 
@@ -221,9 +235,12 @@ impl ContractsSubcommands {
             Self::Deploy {
                 contract_type,
                 public_key,
-                byte_code,
+                compile_output_path,
             } => match contract_type {
-                ContractType::Contract => deploy_contract(url, public_key, byte_code).await?,
+                /* Problems with devnet bytecode, doesn't deploy */
+                ContractType::Contract => {
+                    deploy_contract(url, public_key, compile_output_path).await?
+                },
                 _ => todo!("Contract type not yet deployable"),
             },
             _ => todo!(),
