@@ -23,7 +23,7 @@ pub enum InfosSubcommands {
     SelfClique,
 
     /// Get infos about the inter cliques.
-    #[command(visible_alias = "icp")]
+    #[command(visible_alias = "icpi")]
     InterCliquePeerInfo,
 
     /// Get discovered neighbors.
@@ -35,7 +35,7 @@ pub enum InfosSubcommands {
     Misbehaviors,
 
     /// Ban/Unban given peers.
-    #[command(visible_alias = "mb")]
+    #[command(visible_alias = "mbu")]
     MisbehaviorsBanUnban { r#type: String, peers: Vec<String> },
 
     /// Get the unreachable brokers.
@@ -47,7 +47,7 @@ pub enum InfosSubcommands {
     Discovery { r#type: String, peers: Vec<String> },
 
     /// Get history average hashrate on the given time interval.
-    #[command(visible_alias = "hhr")]
+    #[command(visible_alias = "hh")]
     HistoryHashrate {
         from_ts: i64,
         to_ts: Option<i64>,
