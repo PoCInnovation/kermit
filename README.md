@@ -1,9 +1,35 @@
 > If you see this section, you've just created a repository using [PoC Innovation's Open-Source project template](https://github.com/PoCInnovation/open-source-project-template). Check the [getting started guide](./.github/getting-started.md).
 
 
-# [PROJECT'S NAME]
+# Kermit CLI
 
-[Project's description]
+Kermit is a powerful, user-friendly command-line interface (CLI) designed for Alephium to interact with a blockchain node and manage wallets. Whether you're a developer, node operator, or enthusiast, Kermit provides essential utilities to manage blockchain nodes, perform wallet operations, monitor mempool transactions, and retrieve various node metrics.
+
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡴⠖⠛⠛⠛⠛⠳⢯⣁⣀⣤⡴⠦⣥⣀⣬⣷⠶⠭⣥⣄⡀⣠⡼⢤⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡴⠋⠀⣠⣶⣶⣶⠶⠂⠀⠹⣯⠀⢠⣤⣤⠉⠁⠀⣀⣀⠀⠈⠙⢻⣷⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⠁⠀⣠⡿⠟⠋⠀⠀⢀⣠⡶⠛⠀⠀⠀⠹⣦⡀⠀⠈⢻⣿⣷⣤⠀⠹⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣸⣷⠀⠀⣉⠀⠀⣀⣠⠴⠛⠁⠀⡀⠤⠑⠀⡀⠈⠳⣄⠀⠀⠙⢻⣿⠀⠀⣿⣷⡄⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⢀⡤⠞⠋⠁⠘⠳⠶⠶⠶⠛⠋⡁⠠⠐⠤⢁⠂⠀⠀⠀⠀⠀⠀⠉⠳⣤⣀⠈⠋⠀⣰⣿⣸⡇⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⣰⠏⣠⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⢀⠒⠠⠘⡀⠂⠀⠀⠀⠀⠀⠀⠀⠀⠉⠓⠶⠖⠛⢿⣯⣦⣀⣤⣀⣄⣀⡀⠀
+⠀⠀⠀⠀⠀⠀⢸⠇⣸⣿⡄⠀⠠⠄⠁⠀⠀⠀⠀⠀⡈⠄⠒⡠⠐⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢳⣌⣷⠀⢿⠛⠻⡅
+⠀⠀⠀⠀⠀⠀⢺⡄⡹⢾⣷⡀⠀⠀⠀⠀⠀⠀⠀⠌⠀⢂⠁⢂⠁⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⢻⣿⠀⢸⡇⠀⡇
+⠀⠀⠀⠀⠀⠀⢸⡇⢼⡹⣟⣿⡄⠰⣬⣡⠂⢒⠠⢌⠂⡌⠢⠁⢀⠐⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣾⡧⣾⣿⠀⠀⠇⠀⣇
+⠀⠀⠀⠀⠀⠀⠀⢹⡜⣵⢫⢟⣷⡀⠀⠙⠻⣦⣶⣬⣄⣂⡐⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⣠⠴⠛⢫⢵⣿⠧⠀⠀⣸⠀⡿
+⠀⠀⠀⠀⠀⠀⢀⣠⣿⡜⠦⢋⠞⢷⠀⠀⡠⢄⡉⠝⡋⠟⠿⠿⠷⠷⠶⠶⠾⠞⠛⠛⠛⠋⠉⠀⠀⠀⠠⠌⡑⢂⣿⢯⠃⠀⠀⠃⢀⣇
+⠀⢀⣀⣤⠶⠋⠁⣀⣤⣷⡄⠀⢎⡘⢦⠰⣱⢢⢉⠮⡑⢮⠰⣀⠆⢀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⣈⣤⡿⠃⠀⢀⠆⠀⠀⣼⡍
+⠚⠋⢁⣠⠤⢒⢾⡻⣽⢯⣿⡄⠺⣄⠣⡙⢆⡣⢞⡰⡙⢦⢣⢍⡚⢆⢳⠘⡄⠣⠉⠆⢀⡀⢀⠀⢀⢀⣷⠟⠉⠀⢀⡴⠋⠀⠀⢰⡏⠀
+⠠⠒⠉⢠⠒⣭⠶⡽⣧⢿⣿⣇⢶⣌⢡⠓⡬⢜⣣⠲⡙⢦⡉⠶⡘⢆⡣⣉⠘⣅⠚⡌⢂⠠⣁⣬⣾⠟⠃⠀⢀⠒⠈⠀⠀⣠⡴⠋⠀⠀
+⠀⠀⢈⠂⣋⠶⣹⢹⡞⣯⢿⣿⣌⠿⣧⡑⠘⡆⢧⡙⡝⢦⡙⡤⣙⠢⢥⢨⡑⢢⡙⢀⣣⣶⣿⡟⠁⡀⢄⣰⣦⣋⣤⡶⠛⠁⠀⠀⠀⠀
+⠤⠶⠲⢞⣲⠶⠃⡓⢞⡵⣻⣿⣧⢫⠽⣿⣌⠘⢤⠹⡜⣡⠞⡰⡡⢞⢢⡱⡌⠧⣘⣾⣿⢫⣿⠀⠂⠄⠸⢹⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⡴⣩⠞⠁⠀⠀⠌⣈⠲⢍⣿⣿⣌⠫⣝⡻⣧⢀⠫⡜⢤⠋⣖⡙⢦⢃⢖⠩⡒⣿⠋⡞⢿⡿⠀⠄⠀⠀⠀⢻⡆⠀⠀⠀⠀⠀⠀⠀⠀
+⠴⠋⠀⠀⠀⠀⠀⠀⠀⠀⠈⡘⢿⣧⡓⣌⠳⣙⢧⢣⠘⡥⢚⠤⡹⢌⡩⢌⣢⣿⠋⠀⠰⢸⣿⠀⠈⠄⠀⠀⠀⢻⣇⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⢀⣀⣠⣤⡾⠀⠈⠹⢷⣮⣛⡶⣎⣆⠏⣜⡩⢒⡱⢎⣔⣻⡿⠁⠀⠀⠹⣼⣿⡆⢁⠠⠀⠄⠀⠈⣏⣻⠀⠀⠀⠀⠀⠀
+⢠⠴⠖⡲⠛⡭⣁⠐⣨⡿⠈⠀⠀⠀⠀⠉⠛⠛⠻⠻⠿⢶⣧⣷⣶⡷⡾⠋⠀⠀⠀⠀⠀⠉⢻⣷⡈⢠⠀⠀⠀⠀⢸⡟⠀⠀⠀⠀⠀⠀
+⣀⠂⣏⠴⣉⠶⣈⢰⡿⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⡀⢀⠀⠀⠰⣤⠀⠀⠀⠀⠈⠹⣧⡀⢄⠂⠀⠀⠀⣷⡆⠀⠀⠀⠀⠀
+⠀⢀⢻⣞⡯⢷⣠⡿⠁⠀⠀⠀⠀⠀⣀⣼⣇⠀⠀⠀⠀⠀⠀⢘⡇⠀⠀⠀⠀⣿⣿⣦⣄⠀⠀⠀⢿⡔⡈⠔⡀⠀⠀⠸⣇⠀⠀⠀⠀⠀
+⠀⠌⡎⢷⣹⢧⡿⠁⠀⠀⠀⠀⣠⡾⠋⠡⣿⠀⠀⠀⠀⠀⠀⣼⡆⠀⠀⠀⢠⣿⣿⡿⢿⠻⡶⣦⣼⣷⣁⠂⡠⠀⠀⠀⠛⠆⠤⢀⡀⠀
+⠀⠘⡬⢻⣽⡿⠁⠀⠀⣀⣴⠟⠃⠄⡀⢆⣿⠀⠀⠀⠀⠀⣼⣿⣿⡀⠀⢀⣼⣿⣿⣟⣎⠳⡱⢈⠉⠹⣇⠂⠄⠑⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⢘⣰⣻⣿⠁⠀⣠⡾⢋⡅⣨⠐⠠⠐⢬⣿⠀⠀⠀⠀⣸⣟⡯⢿⣇⠀⣸⣿⣿⣚⣿⣎⡷⣑⠣⡄⠀⢫⠌⢂⠠⠀⠀⠀⠀⠀⠀⠀⠀
 
 ## Canva Presentation
 
@@ -11,13 +37,66 @@
 
 ## How does it work?
 
-[Explain how this project is working]
+Kermit is a command-line tool that allows users to interact with a blockchain node and manage wallets through a set of subcommands. The CLI follows a structured format, where each command corresponds to a specific operation related to either blockchain node management or wallet operations.
+
+Basic Structure:
+The Kermit CLI is built using the Clap library, which organizes commands into a hierarchy of options and subcommands. The basic syntax for using Kermit is:
+
+
+`kermit [COMMAND] [SUBCOMMAND] [OPTIONS]`
+
+`COMMAND`: Represents the main category of operations (e.g., wallet, infos).
+
+`SUBCOMMAND`: A specific action or operation under the selected command (e.g., create, status, list for wallet commands).
+
+`OPTIONS`: Additional arguments required to complete the command (e.g., URL, wallet name, password).
+
+All command is based on the Alephium API
 
 ## Getting Started
 
 ### Installation
 
-[Explain how to install all of the project's dependencies]
+To set up the CLI, follow this 2 steps:
+
+1. Clone the Kermit CLI repository:
+
+    ```bash
+    git clone git@github.com:PoCInnovation/kermit.git
+    ```
+
+2. Install the program:
+
+    ```bash
+    cargo install --path .
+    ```
+
+
+
+#### !! If you want to run wallet command !!
+
+#### Setup the Alephium Stack Development Environment
+
+To set up the development environment, follow these steps:
+
+1. Clone the Alephium Stack repository:
+
+    ```bash
+    git clone git@github.com:alephium/alephium-stack.git
+    ```
+
+2. Navigate to the `devnet` directory:
+
+    ```bash
+    cd alephium-stack/devnet
+    ```
+
+3. Start the development environment with Docker:
+
+    ```bash
+    docker-compose up -d
+    ```
+
 
 ### Quickstart
 
@@ -25,7 +104,9 @@
 
 ### Usage
 
-[Explain how to use this project]
+You just need to run the command, all will be explain to you
+
+    docker-compose up -d
 
 ## Get involved
 
@@ -36,12 +117,8 @@ If you're interested in how the project is organized at a higher level, please c
 ## Our PoC team ❤️
 
 Developers
-| [<img src="https://github.com/MrZalTy.png?size=85" width=85><br><sub>[Developer's name]</sub>](https://github.com/MrZalTy) | [<img src="https://github.com/MrZalTy.png?size=85" width=85><br><sub>[Developer's name]</sub>](https://github.com/MrZalTy) | [<img src="https://github.com/MrZalTy.png?size=85" width=85><br><sub>[Developer's name]</sub>](https://github.com/MrZalTy)
+| [<img src="https://github.com/alexandreTimal.png?size=85" width=85><br><sub>[Alexandre Timal]</sub>](https://github.com/Nfire2103) | [<img src="https://github.com/Nfire2103.png?size=85" width=85><br><sub>[Nathan Flattin]</sub>](https://github.com/thomas-pommier-epi) | [<img src="https://github.com/thomas-pommier-epi.png?size=85" width=85><br><sub>[Thomas Pommier]</sub>](https://github.com/thomas-pommier-epi)
 | :---: | :---: | :---: |
-
-Manager
-| [<img src="https://github.com/adrienfort.png?size=85" width=85><br><sub>[Manager's name]</sub>](https://github.com/adrienfort)
-| :---: |
 
 <h2 align=center>
 Organization

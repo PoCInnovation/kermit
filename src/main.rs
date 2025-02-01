@@ -4,6 +4,7 @@ mod infos;
 mod transactions;
 mod utils;
 mod wallet;
+mod memepool;
 
 use anyhow::Result;
 use args::{Kermit, KermitSubcommand};
