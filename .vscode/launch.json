@@ -1,0 +1,18 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+			"type": "lldb",
+			"request": "launch",
+			"name": "Rust: Debug Application",
+			"cargo": {
+				"args": ["build", "--bin", "kermit"]
+			},
+            "args": ["--url", "https://node.mainnet.alephium.org", "contracts", "compile", "tests/sub_contract.ral", "--contract-type", "project"],
+			"env": {
+				"RUST_BACKTRACE": "1"
+			}
+
+        }
+    ]
+}
