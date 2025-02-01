@@ -144,11 +144,12 @@ impl WalletsSubcommands {
                     &format!("/wallets/{}?password={}", wallet_name, password),
                 )
                 .await?;
-            json!("Remove")
+                json!("wallet remove")
             },
             Self::Lock { wallet_name } => {
-                post::<(), Value>(url, &format!("/wallets/{}/lock", wallet_name), Value::Null).await?;
-                json!("Ok")
+                post::<(), Value>(url, &format!("/wallets/{}/lock", wallet_name), Value::Null)
+                    .await?;
+                json!("wallet lock")
             },
             Self::Unlock {
                 wallet_name,
