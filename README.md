@@ -98,15 +98,11 @@ To set up the development environment, follow these steps:
     ```
 
 
-### Quickstart
-
-[Explain how to run this project]
-
 ### Usage
 
 You just need to run the command, all will be explain to you
 
-    docker-compose up -d
+    Kermit
 
 ## Get involved
 
