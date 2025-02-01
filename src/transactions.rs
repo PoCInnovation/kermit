@@ -4,7 +4,7 @@ use secp256k1::{Message, Secp256k1, SecretKey};
 use serde::{de::DeserializeOwned, Deserialize};
 use serde_json::{json, Value};
 
-use crate::utils::post;
+use crate::utils::{get, post};
 
 /// CLI arguments for `kermit transactions`.
 #[derive(Parser)]
@@ -27,7 +27,7 @@ pub enum TransactionsSubcommands {
         gas_price: Option<String>,
     },
     /// Submit a transaction.
-    #[command(visible_alias = "s")]
+    #[command(visible_alias = "sub")]
     Submit {
         /// Transaction ID.
         tx_id: String,
@@ -57,6 +57,12 @@ pub enum TransactionsSubcommands {
         #[arg(long, env)]
         private_key: String,
     },
+    /// Decode an unsigned transaction.
+    #[command(visible_alias = "d")]
+    Decode { unsigned_tx: String },
+    #[command(visible_alias = "s")]
+    /// Get transaction status
+    Status { tx_id: String },
 }
 
 #[derive(Deserialize)]
@@ -152,6 +158,17 @@ impl TransactionsSubcommands {
 
                 let signature = sign(&tx_id, &private_key)?;
                 submit(url, &unsigned_tx, &signature).await?
+            },
+            Self::Decode { unsigned_tx } => {
+                post(
+                    url,
+                    "/transactions/decode-unsigned-tx",
+                    json!({"unsignedTx": unsigned_tx}),
+                )
+                .await?
+            },
+            Self::Status { tx_id } => {
+                get(url, &format!("/transactions/status?txId={}", tx_id)).await?
             },
         };
 
