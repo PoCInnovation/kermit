@@ -1,8 +1,7 @@
-use anyhow::Result;
+use crate::utils::get;
+use anyhow::{Ok, Result};
 use clap::Parser;
-use serde::de::DeserializeOwned;
-use serde_json::{self, Value};
-use std::fmt::Debug;
+use serde_json::Value;
 
 mod types;
 
@@ -36,67 +35,53 @@ pub enum InfosSubcommands {
     /// Get the misbehaviors of peers.
     #[command(visible_alias = "m")]
     Misbehaviors,
-}
 
-async fn get_alephium_data(route: String) -> Result<(u16, String)> {
-    let url = format!("https://node.mainnet.alephium.org/{route}");
-    let response = reqwest::get(&url).await?;
-    let status = response.status();
-    let body = response.text().await?;
+    /// Ban/Unban given peers.
+    #[command(visible_alias = "mb")]
+    MisbehaviorsBanUnban,
 
-    Ok((status.as_u16(), body))
-}
+    /// Get the unreachable brokers.
+    #[command(visible_alias = "ub")]
+    UnreachableBrokers,
 
-fn return_string_from_data<T: DeserializeOwned + std::fmt::Debug>(
-    code: u16,
-    str: String,
-) -> Result<Option<T>> {
-    match code {
-        200 => {
-            let parsed: T = serde_json::from_str(&str)?;
-            Ok(Some(parsed))
-        }
-        _ => Ok(None),
-    }
+    /// Set brokers to be unreachable/reachable.
+    #[command(visible_alias = "ds")]
+    Discovery,
+
+    /// Get history average hashrate on the given time interval.
+    #[command(visible_alias = "hhr")]
+    HistoryHashrate,
+
+    /// Get average hashrate from now - timespan(millis) to now.
+    #[command(visible_alias = "chr")]
+    CurrentHashrate,
+
+    /// Get the average difficulty of the latest blocks from all shards.
+    #[command(visible_alias = "cd")]
+    CurrentDifficulty,
 }
 
 impl InfosSubcommands {
-    pub async fn run(self) -> Result<()> {
-        let (endpoint, result_type) = match self {
-            Self::Node => ("/infos/node", "NodeInfo"),
-            Self::Version => ("/infos/version", "VersionInfo"),
-            Self::ChainParams => ("/infos/chain-params", "ChainParams"),
-            Self::SelfClique => ("/infos/self-clique", "SelfClique"),
-            Self::InterCliquePeerInfo => ("/infos/inter-clique-peer-info", "InterCliquePeerInfo"),
-            Self::DiscoveredNeighbors => ("/infos/discovered-neighbors", "DiscoveredNeighbors"),
-            Self::Misbehaviors => ("/infos/misbehaviors", "Misbehaviors"),
+    pub async fn run(self, url: &str) -> Result<()> {
+        let value: Value = match self {
+            Self::Node => get(url, "/infos/node").await?,
+            Self::Version => get(url, "/infos/version").await?,
+            Self::ChainParams => get(url, "/infos/chain-params").await?,
+            Self::SelfClique => get(url, "/infos/self-clique").await?,
+            Self::InterCliquePeerInfo => get(url, "/infos/inter-clique-peer-info").await?,
+            Self::DiscoveredNeighbors => get(url, "/infos/discovered-neighbors").await?,
+            Self::Misbehaviors => get(url, "/infos/misbehaviors").await?,
+            Self::MisbehaviorsBanUnban => post(url, "/infos/misbehaviors").await?,
+            Self::UnreachableBrokers => get(url, "/infos/unreachable").await?,
+            Self::Discovery => post(url, "/infos/discovery").await?,
+            Self::HistoryHashrate => get(url, "/infos/history-hashrate").await?,
+            Self::CurrentHashrate => get(url, "/infos/current-hashrate").await?,
+            Self::CurrentDifficulty => get(url, "/infos/current-difficulty").await?,
         };
 
-        let data = get_alephium_data(endpoint.to_string()).await?;
-        let result: Value = match result_type {
-            "NodeInfo" => return_string_from_data::<types::NodeInfo>(data.0, data.1)?,
-            "VersionInfo" => return_string_from_data::<types::NodeVersion>(data.0, data.1)?,
-            "ChainParams" => return_string_from_data::<types::ChainParams>(data.0, data.1)?,
-            "SelfClique" => return_string_from_data::<types::SelfClique>(data.0, data.1)?,
-            "InterCliquePeerInfo" => {
-                return_string_from_data::<Vec<types::CliqueInfo>>(data.0, data.1)?
-            }
-            "DiscoveredNeighbors" => {
-                return_string_from_data::<Vec<types::DiscoveredNeighbors>>(data.0, data.1)?
-            }
-            "Misbehaviors" => return_string_from_data::<types::Misbehaviors>(data.0, data.1)?,
-            _ => {
-                eprintln!("Unknown command.");
-                return Ok(());
-            }
-        };
+        serde_json::to_writer_pretty(std::io::stdout(), &value)?;
 
-        
-
-        if let Some(result) = result {
-            println!("Ok.\n{:#?}", result);
-        }
-
+        // println!("{}", );
         Ok(())
     }
 }
