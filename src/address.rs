@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::Parser;
 use serde_json::Value;
 
-use crate::utils::reqwest::get;
+use crate::utils::get;
 
 #[derive(Parser)]
 pub enum AddressSubcommands {

@@ -1,1 +1,2 @@
-pub mod reqwest;
+mod reqwest;
+pub use reqwest::*;
