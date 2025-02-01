@@ -6,7 +6,8 @@ use crate::infos::InfosSubcommands;
 #[derive(Parser)]
 #[command(version)]
 pub struct Kermit {
-    #[clap(long, env, value_hint = ValueHint::Url, default_value="")]
+    #[clap(long, short, env, value_hint = ValueHint::Url,
+    default_value = "https://node.mainnet.alephium.org")]
     pub url: String,
 
     #[clap(subcommand)]
