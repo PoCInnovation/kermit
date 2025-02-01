@@ -3,32 +3,28 @@ use anyhow::Result;
 use clap::{Parser, ValueEnum};
 use regex::Regex;
 use reqwest::Client;
-use serde::Deserialize;
-use serde_json::Value;
+use serde_json::{json, Value};
+use strum::Display;
 
 use std::fs::File;
 use std::io::Read;
 
-#[derive(Clone, Debug, ValueEnum)]
+#[derive(Clone, Debug, Display, ValueEnum)]
 pub enum ContractType {
     Contract,
     Script,
     Project,
 }
 
-impl std::fmt::Display for ContractType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
 #[derive(Parser)]
 pub enum ContractsSubcommands {
     #[command(visible_alias = "c")]
     Compile {
-        #[arg(short, long, default_value_t = ContractType::Project)]
-        contract_type: ContractType,
         file_path: String,
+        #[arg(long, default_value_t = ContractType::Project)]
+        contract_type: ContractType,
+        #[arg(long)]
+        compiler_options_path: Option<String>,
     },
     #[command(visible_alias = "d")]
     Deploy {
@@ -42,7 +38,6 @@ pub enum ContractsSubcommands {
     State {
         address: String,
     },
-    // #[command(visible_alias = "co")]
     Code {
         address: String,
     },
@@ -67,25 +62,41 @@ pub enum ContractsSubcommands {
     },
 }
 
-pub async fn compile_contract(url: String, file_path: String) -> Result<()> {
+pub async fn compile_contract(
+    url: String,
+    compiler_options_path: Option<String>,
+    file_path: String,
+) -> Result<()> {
     let mut file = File::open(file_path)?;
     let mut buffer = String::new();
     file.read_to_string(&mut buffer)?;
 
     let client = Client::new();
-    let url = "https://node.mainnet.alephium.org/contracts/compile-contract";
+    let url = format!("{url}/contracts/compile-contract");
 
-    let body = serde_json::json!({
+    let compiler_options = match compiler_options_path {
+        Some(path) => {
+            let mut option_file = File::open(&path)?;
+            let mut buffer = String::new();
+            option_file.read_to_string(&mut buffer)?;
+            buffer.into()
+        },
+        None => {
+            json!({
+                "ignoreUnusedConstantsWarnings": true
+            })
+        },
+    };
+
+    let body = json!({
         "code": buffer,
-        "compilerOptions": { // todo, get some options
-            "ignoreUnusedConstantsWarnings": true
-        }
+        "compilerOptions": compiler_options
     });
 
     let response = client.post(url).json(&body).send().await?;
     let json_response = response.json::<Value>().await?;
 
-    println!("Contract: {:?}", json_response);
+    println!("Contract: {:#?}", json_response);
     Ok(())
 }
 
@@ -96,7 +107,7 @@ pub async fn deploy_contract(url: String, public_key: String, byte_code: String)
     }
 
     let client = Client::new();
-    let url = "https://node.mainnet.alephium.org/contracts/unigned-tx/deploy-contract";
+    let url = format!("{url}/contracts/unigned-tx/deploy-contract");
 
     let byte_code = if let Ok(mut file) = File::open(&byte_code) {
         let mut buffer = String::new();
@@ -106,7 +117,7 @@ pub async fn deploy_contract(url: String, public_key: String, byte_code: String)
         byte_code
     };
 
-    let body = serde_json::json!({
+    let body = json!({
         "publicKey": public_key,
         "byteCode": byte_code,
     });
@@ -114,7 +125,7 @@ pub async fn deploy_contract(url: String, public_key: String, byte_code: String)
     let response = client.post(url).json(&body).send().await?;
     let json_response = response.json::<Value>().await?;
 
-    println!("Deployment response: {:?}", json_response);
+    println!("Deployment response: {:#?}", json_response);
     Ok(())
 }
 
@@ -123,9 +134,12 @@ impl ContractsSubcommands {
         match self {
             Self::Compile {
                 contract_type,
+                compiler_options_path,
                 file_path,
             } => match contract_type {
-                ContractType::Contract => compile_contract(url, file_path).await?,
+                ContractType::Contract => {
+                    compile_contract(url, compiler_options_path, file_path).await?
+                },
                 _ => todo!("Contract type not yet implemented"),
             },
             Self::Deploy {
