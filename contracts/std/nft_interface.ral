@@ -1,0 +1,48 @@
+@std(id = #0003)
+@using(methodSelector = false)
+Interface INFT {
+   // Token Uri points to a json file containing metadata for the NFT.
+   //
+   // The schema of the json file is:
+   // {
+   //     "title": "NFT Metadata",
+   //     "type": "object",
+   //     "properties": {
+   //         "name": {
+   //             "type": "string",
+   //             "description": "Name of the NFT"
+   //         },
+   //         "description": {
+   //             "type": "string",
+   //             "description": "General description of the NFT",
+   //             "nullable": true
+   //         },
+   //         "image": {
+   //             "type": "string",
+   //             "description": "A URI to the image that represents the NFT"
+   //         },
+   //         "attributes": {
+   //           "type": "array",
+   //           "description": "An array of attributes for the NFT",
+   //           "items": {
+   //             "type": "object",
+   //             "properties": {
+   //               "trait_type": {
+   //                 "type": "string",
+   //                 "description": "The type of trait"
+   //               },
+   //               "value": {
+   //                 "type": ["string", "number", "boolean"],
+   //                 "description": "The value of the trait"
+   //               }
+   //             }
+   //           },
+   //           "nullable": true
+   //         }
+   //     }
+   // }
+   pub fn getTokenUri() -> ByteVec
+
+   // Returns collection id and index of the NFT in the collection.
+   pub fn getCollectionIndex() -> (ByteVec, U256)
+}

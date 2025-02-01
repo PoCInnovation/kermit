@@ -1,5 +1,7 @@
 use clap::{Parser, Subcommand, ValueHint};
 
+use crate::address::AddressSubcommands;
+use crate::contracts::ContractsSubcommands;
 use crate::events::EventsSubcommands;
 use crate::infos::InfosSubcommands;
 use crate::transactions::TransactionsSubcommands;
@@ -44,5 +46,19 @@ pub enum KermitSubcommand {
     Wallets {
         #[command(subcommand)]
         command: WalletsSubcommands,
+    },
+
+    /// Address management utilities.
+    #[command(visible_alias = "a")]
+    Address {
+        #[command(subcommand)]
+        command: AddressSubcommands,
+    },
+
+    /// Contract management utilities.
+    #[command(visible_alias = "c")]
+    Contracts {
+        #[command(subcommand)]
+        command: ContractsSubcommands,
     },
 }
