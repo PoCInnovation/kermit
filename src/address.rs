@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::Parser;
-use serde::Deserialize;
+use serde_json::Value;
 
 use crate::utils::reqwest::get;
 
@@ -18,88 +18,22 @@ pub enum AddressSubcommands {
     Group { address: String },
 }
 
-#[derive(Clone, Debug, Deserialize)]
-struct Item {
-    id: String,
-    amount: String,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-struct BalanceResponse {
-    balance: String,
-    balanceHint: String,
-    lockedBalance: String,
-    lockedBalanceHint: String,
-    transactions: Option<Vec<Item>>,
-    unconfirmedTransactions: Option<Vec<Item>>,
-    utxoNum: u64,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-struct UTXORef {
-    hint: u32,
-    key: String, // 32-byte-hash
-}
-
-#[derive(Clone, Debug, Deserialize)]
-struct UTXOResponse {
-    #[serde(rename = "ref")]
-    reference: UTXORef,
-    amount: String,
-    tokens: Option<Vec<Item>>,
-    lockTime: u64,
-    additionalData: String, // hex-string
-}
-
-#[derive(Clone, Debug, Deserialize)]
-struct UTXOResponses {
-    utxos: Vec<UTXOResponse>,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-struct GroupResponse {
-    group: u32,
-}
-
-async fn get_balance(url: String, address: String, mem_pool: bool) -> Result<()> {
-    let method = format!("/addresses/{address}/balance?mempool={mem_pool}");
-    let response: BalanceResponse = get(&url, &method).await?;
-
-    println!("Balance: {:#?}", response);
-
-    Ok(())
-}
-
-async fn get_utxos(url: String, address: String) -> Result<()> {
-    let method = format!("/addresses/{address}/utxos");
-    let response: UTXOResponses = get(&url, &method).await?;
-
-    println!("UTXOs: {:#?}", response);
-    Ok(())
-}
-
-async fn get_group(url: String, address: String) -> Result<()> {
-    let method = format!("/addresses/{address}/group");
-
-    let group_response: GroupResponse = get(&url, &method).await?;
-
-    println!("Group: {:#?}", group_response);
-    Ok(())
-}
-
 impl AddressSubcommands {
     pub async fn run(self, url: String) -> Result<()> {
-        match self {
+        let endpoint = match self {
             Self::Balance { address, mem_pool } => {
-                get_balance(url, address, mem_pool).await?;
+                format!("/addresses/{address}/balance?mempool={mem_pool}")
             },
             Self::UTXOS { address } => {
-                get_utxos(url, address).await?;
+                format!("/addresses/{address}/utxos")
             },
             Self::Group { address } => {
-                get_group(url, address).await?;
+                format!("/addresses/{address}/group")
             },
-        }
+        };
+
+        let value: Value = get(&url, &endpoint).await?;
+        serde_json::to_writer_pretty(std::io::stdout(), &value)?;
 
         Ok(())
     }
