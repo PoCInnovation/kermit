@@ -6,7 +6,6 @@ mod infos;
 mod transactions;
 mod utils;
 mod wallet;
-mod memepool;
 
 mod contract_encoding;
 
