@@ -2,10 +2,10 @@ use anyhow::Result;
 use args::{Kermit, KermitSubcommand};
 use clap::Parser;
 
-mod args;
-mod wallet;
 mod address;
+mod args;
 mod contracts;
+mod wallet;
 
 #[tokio::main]
 async fn main() -> Result<()> {

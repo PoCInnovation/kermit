@@ -1,6 +1,8 @@
 use clap::{Parser, Subcommand, ValueHint};
 
-use crate::{address::AddressSubcommands, contracts::ContractsSubcommands, wallet::WalletSubcommands};
+use crate::{
+    address::AddressSubcommands, contracts::ContractsSubcommands, wallet::WalletSubcommands,
+};
 
 #[derive(Parser)]
 #[command(version)]
@@ -29,5 +31,5 @@ pub enum KermitSubcommand {
     Contracts {
         #[command(subcommand)]
         command: ContractsSubcommands,
-    }
+    },
 }

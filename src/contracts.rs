@@ -1,5 +1,7 @@
+use anyhow::anyhow;
 use anyhow::Result;
 use clap::{Parser, ValueEnum};
+use regex::Regex;
 use reqwest::Client;
 use serde::Deserialize;
 use serde_json::Value;
@@ -24,9 +26,15 @@ impl std::fmt::Display for ContractType {
 pub enum ContractsSubcommands {
     #[command(visible_alias = "c")]
     Compile {
-        #[arg(short, long, default_value_t = ContractType::Contract)]
+        #[arg(short, long, default_value_t = ContractType::Project)]
         contract_type: ContractType,
         file_path: String,
+    },
+    #[command(visible_alias = "d")]
+    Deploy {
+        public_key: String, // todo: regex if this is a public key
+        #[arg(short, long)]
+        byte_code: String,
     },
     #[command(visible_alias = "s")]
     State {
@@ -74,7 +82,7 @@ impl ContractsSubcommands {
 
                 let body = serde_json::json!({
                     "code": buffer,
-                    "compilerOptions": {
+                    "compilerOptions": { // todo, get some options
                         "ignoreUnusedConstantsWarnings": true
                     }
                 });
@@ -83,6 +91,39 @@ impl ContractsSubcommands {
                 let json_response = response.json::<Value>().await?;
 
                 println!("Contract: {:?}", json_response);
+
+                // display the bytecode
+                // print if the compilation is ok
+            }
+            Self::Deploy {
+                public_key,
+                byte_code,
+            } => {
+                let public_key_regex = Regex::new(r"^[a-f0-9]{64}$")?;
+                if !public_key_regex.is_match(&public_key) {
+                    return Err(anyhow::anyhow!("Invalid public key format"));
+                }
+
+                let client = Client::new();
+                let url = "https://node.mainnet.alephium.org/contracts/unigned-tx/deploy-contract";
+
+                let byte_code = if let Ok(mut file) = File::open(&byte_code) {
+                    let mut buffer = String::new();
+                    file.read_to_string(&mut buffer)?;
+                    buffer
+                } else {
+                    byte_code
+                };
+
+                let body = serde_json::json!({
+                    "publicKey": public_key,
+                    "byteCode": byte_code,
+                });
+
+                let response = client.post(url).json(&body).send().await?;
+                let json_response = response.json::<Value>().await?;
+
+                println!("Deployment response: {:?}", json_response);
             }
             _ => todo!(),
         }

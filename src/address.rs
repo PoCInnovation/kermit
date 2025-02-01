@@ -64,8 +64,7 @@ async fn get_balance(address: String, mem_pool: bool) -> Result<()> {
     let client = Client::new();
     let url = format!(
         "https://node.mainnet.alephium.org/addresses/{}/balance?mempool={}",
-        address,
-        mem_pool
+        address, mem_pool
     );
 
     let response = client.get(&url).send().await?;
