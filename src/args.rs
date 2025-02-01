@@ -1,11 +1,12 @@
 use clap::{Parser, Subcommand, ValueHint};
 
 use crate::wallet::WalletSubcommands;
+use crate::infos::InfosSubcommands;
 
 #[derive(Parser)]
 #[command(version)]
 pub struct Kermit {
-    #[clap(long, env, value_hint = ValueHint::Url)]
+    #[clap(long, env, value_hint = ValueHint::Url, default_value="")]
     pub url: String,
 
     #[clap(subcommand)]
@@ -20,4 +21,9 @@ pub enum KermitSubcommand {
         #[command(subcommand)]
         command: WalletSubcommands,
     },
+    #[command(visible_alias = "i")]
+    Infos {
+        #[command(subcommand)]
+        command: InfosSubcommands,
+    }
 }
