@@ -1,4 +1,3 @@
-use anyhow;
 use serde_json::Value;
 
 use crate::contracts::NetworkType;
@@ -14,11 +13,11 @@ fn _build_debug_bytecode(bytecode: &str, bytecode_patch: &str) -> Result<String,
 
     for parts in pattern.find_iter(bytecode_patch) {
         let part = parts.as_str();
-        let diff_type = part.chars().next().unwrap();
+        let diff_type = part.chars().next().unwrap_or(' ');
 
         match diff_type {
             '=' => {
-                let length = part[1..].parse::<usize>().unwrap();
+                let length = part[1..].parse::<usize>()?;
                 result.push_str(&bytecode[index..index + length]);
                 index += length;
             },
@@ -26,7 +25,7 @@ fn _build_debug_bytecode(bytecode: &str, bytecode_patch: &str) -> Result<String,
                 result.push_str(&part[1..]);
             },
             '-' => {
-                let length = part[1..].parse::<usize>().unwrap();
+                let length = part[1..].parse::<usize>()?;
                 index += length;
             },
             _ => {},
