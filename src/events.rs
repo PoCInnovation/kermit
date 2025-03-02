@@ -46,7 +46,7 @@ impl EventsSubcommands {
                     endpoint.push_str(&format!("&limit={}", limit));
                 }
                 if let Some(group) = group {
-                    endpoint.push_str(&format!("&limit={}", group));
+                    endpoint.push_str(&format!("&group={}", group));
                 }
                 get(url, &endpoint).await?
             },
@@ -57,14 +57,14 @@ impl EventsSubcommands {
             Self::TxContractEvents { tx_id, group } => {
                 let mut endpoint = format!("/events/tx-id/{}", tx_id);
                 if let Some(group) = group {
-                    endpoint.push_str(&format!("&limit={}", group));
+                    endpoint.push_str(&format!("&group={}", group));
                 }
                 get(url, &endpoint).await?
             },
             Self::BlockContractEvents { block_hash, group } => {
                 let mut endpoint = format!("/events/block-hash/{}", block_hash);
                 if let Some(group) = group {
-                    endpoint.push_str(&format!("&limit={}", group));
+                    endpoint.push_str(&format!("&group={}", group));
                 }
                 get(url, &endpoint).await?
             },
