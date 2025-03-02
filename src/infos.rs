@@ -44,7 +44,7 @@ pub enum InfosSubcommands {
     UnreachableBrokers,
 
     /// Set brokers to be unreachable/reachable.
-    #[command(visible_alias = "ds")]
+    #[command(visible_alias = "d")]
     Discovery { r#type: String, peers: Vec<String> },
 
     /// Get history average hashrate on the given time interval.
@@ -52,7 +52,7 @@ pub enum InfosSubcommands {
     HistoryHashrate { from_ts: i64, to_ts: Option<i64> },
 
     /// Get average hashrate from now - timespan(millis) to now.
-    #[command(visible_alias = "chr")]
+    #[command(visible_alias = "ch")]
     CurrentHashrate { timespan: Option<i64> },
 
     /// Get the average difficulty of the latest blocks from all shards.

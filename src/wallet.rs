@@ -8,44 +8,44 @@ use crate::utils::{delete, get, post, put};
 #[derive(Parser)]
 pub enum WalletsSubcommands {
     /// List available wallets.
-    #[command(visible_alias = "lw")]
+    #[command(visible_alias = "l")]
     List,
 
     /// Restore a wallet from your mnemonic.
-    #[command(visible_alias = "rw")]
+    #[command(visible_alias = "r")]
     Restore { mnemonic: String },
 
     /// Create a new wallet.
-    #[command(visible_alias = "cw")]
+    #[command(visible_alias = "c")]
     Create {
         wallet_name: String,
         password: String,
     },
 
     /// Get wallet's status.
-    #[command(visible_alias = "ws")]
+    #[command(visible_alias = "st")]
     Status { wallet_name: String },
 
     /// Delete your wallet file (can be recovered with your mnemonic).
-    #[command(visible_alias = "dw")]
+    #[command(visible_alias = "d")]
     Delete {
         wallet_name: String,
         password: String,
     },
 
     /// Lock your wallet.
-    #[command(visible_alias = "wl")]
+    #[command(visible_alias = "lk")]
     Lock { wallet_name: String },
 
     /// Unlock your wallet.
-    #[command(visible_alias = "wu")]
+    #[command(visible_alias = "u")]
     Unlock {
         wallet_name: String,
         password: String,
     },
 
     /// Get your total balance.
-    #[command(visible_alias = "wb")]
+    #[command(visible_alias = "b")]
     Balances { wallet_name: String },
 
     /// Reveal your mnemonic. !!! Use it with caution !!!
@@ -56,7 +56,7 @@ pub enum WalletsSubcommands {
     },
 
     /// Transfer ALPH from the active address.
-    #[command(visible_alias = "wt")]
+    #[command(visible_alias = "t")]
     Transfer {
         wallet_name: String,
         to_address: String,
@@ -64,7 +64,6 @@ pub enum WalletsSubcommands {
     },
 
     /// Transfer all unlocked ALPH from the active address to another address.
-    #[command(visible_alias = "wa")]
     SweepActiveAddress {
         wallet_name: String,
         to_address: String,
@@ -72,36 +71,35 @@ pub enum WalletsSubcommands {
 
     /// Transfer unlocked ALPH from all addresses (including mining addresses)
     /// to another address.
-    #[command(visible_alias = "waa")]
     SweepAllAddresses {
         wallet_name: String,
         to_address: String,
     },
 
     /// Sign the given data and return back the signature.
-    #[command(visible_alias = "wsign")]
+    #[command(visible_alias = "s")]
     Sign { wallet_name: String, data: String },
 
     /// List all your wallet's addresses.
-    #[command(visible_alias = "wal")]
+    #[command(visible_alias = "a")]
     Addresses { wallet_name: String },
 
     /// Get address' info.
-    #[command(visible_alias = "wai")]
+    #[command(visible_alias = "ai")]
     AddressInfo {
         wallet_name: String,
         address: String,
     },
 
     /// Derive your next address.
-    #[command(visible_alias = "wna")]
+    #[command(visible_alias = "dna")]
     DeriveNextAddress {
         wallet_name: String,
         group: Option<i32>,
     },
 
     /// Choose the active address.
-    #[command(visible_alias = "wca")]
+    #[command(visible_alias = "caa")]
     ChangeActiveAddress {
         wallet_name: String,
         address: String,

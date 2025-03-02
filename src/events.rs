@@ -8,7 +8,7 @@ use crate::utils::get;
 #[derive(Parser)]
 pub enum EventsSubcommands {
     /// Get events for a contract within a counter range.
-    #[command(visible_alias = "ec")]
+    #[command(visible_alias = "ce")]
     ContractEvents {
         contract_address: String,
         start: i32,
@@ -17,15 +17,15 @@ pub enum EventsSubcommands {
     },
 
     /// Get the current value of the events counter for a contract.
-    #[command(visible_alias = "cc")]
+    #[command(visible_alias = "ccc")]
     ContractCurrentCount { contract_address: String },
 
     /// Get contract events for a transaction.
-    #[command(visible_alias = "etc")]
+    #[command(visible_alias = "tce")]
     TxContractEvents { tx_id: String, group: Option<i32> },
 
     /// Get contract events for a block.
-    #[command(visible_alias = "ebh")]
+    #[command(visible_alias = "bce")]
     BlockContractEvents {
         block_hash: String,
         group: Option<i32>,
