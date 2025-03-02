@@ -1,11 +1,9 @@
 use clap::{Parser, Subcommand, ValueHint};
 
-use crate::address::AddressSubcommands;
-use crate::contracts::ContractsSubcommands;
-use crate::events::EventsSubcommands;
-use crate::infos::InfosSubcommands;
-use crate::transactions::TransactionsSubcommands;
-use crate::wallet::WalletsSubcommands;
+use crate::{
+    address::AddressSubcommands, contracts::ContractsSubcommands, events::EventsSubcommands,
+    infos::InfosSubcommands, transactions::TransactionsSubcommands, wallet::WalletsSubcommands,
+};
 
 #[derive(Parser)]
 #[command(version)]

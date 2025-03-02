@@ -1,8 +1,8 @@
-use crate::utils::{delete, get, post, put};
-use anyhow::{anyhow, Result};
-
+use anyhow::{Result, anyhow};
 use clap::Parser;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
+
+use crate::utils::{delete, get, post, put};
 
 /// CLI arguments for `kermit wallets`.
 #[derive(Parser)]
@@ -70,7 +70,8 @@ pub enum WalletsSubcommands {
         to_address: String,
     },
 
-    /// Transfer unlocked ALPH from all addresses (including mining addresses) to another address.
+    /// Transfer unlocked ALPH from all addresses (including mining addresses)
+    /// to another address.
     #[command(visible_alias = "waa")]
     SweepAllAddresses {
         wallet_name: String,

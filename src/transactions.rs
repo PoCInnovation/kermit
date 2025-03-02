@@ -1,8 +1,8 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use clap::Parser;
 use secp256k1::{Message, Secp256k1, SecretKey};
-use serde::{de::DeserializeOwned, Deserialize};
-use serde_json::{json, Value};
+use serde::{Deserialize, de::DeserializeOwned};
+use serde_json::{Value, json};
 
 use crate::utils::{get, post};
 

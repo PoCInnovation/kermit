@@ -1,7 +1,8 @@
-use crate::utils::{get, post};
 use anyhow::{Ok, Result};
 use clap::Parser;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
+
+use crate::utils::{get, post};
 
 /// CLI arguments for `kermit infos`.
 #[derive(Parser)]
@@ -48,16 +49,11 @@ pub enum InfosSubcommands {
 
     /// Get history average hashrate on the given time interval.
     #[command(visible_alias = "hh")]
-    HistoryHashrate {
-        from_ts: i64,
-        to_ts: Option<i64>,
-    },
+    HistoryHashrate { from_ts: i64, to_ts: Option<i64> },
 
     /// Get average hashrate from now - timespan(millis) to now.
     #[command(visible_alias = "chr")]
-    CurrentHashrate {
-        timespan: Option<i64>,
-    },
+    CurrentHashrate { timespan: Option<i64> },
 
     /// Get the average difficulty of the latest blocks from all shards.
     #[command(visible_alias = "cd")]

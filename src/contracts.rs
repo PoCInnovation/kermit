@@ -1,13 +1,11 @@
-use anyhow::anyhow;
-use anyhow::Result;
+use std::{fs::File, io::Read};
+
+use anyhow::{Result, anyhow};
 use clap::{Parser, ValueEnum};
 use regex::Regex;
 use reqwest::Client;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use strum::Display;
-
-use std::fs::File;
-use std::io::Read;
 
 use crate::contract_encoding::_encode_contract_fields;
 
@@ -200,7 +198,8 @@ pub async fn deploy_contract(
             .ok_or_else(|| anyhow!("Bytecode not found"))?;
 
         let fields = &contract["fields"];
-        let final_byte_code = _encode_contract_fields(byte_code, byte_code_debug, &network, fields)?;
+        let final_byte_code =
+            _encode_contract_fields(byte_code, byte_code_debug, &network, fields)?;
 
         let body = json!({
             "fromPublicKey": public_key,
@@ -252,7 +251,7 @@ impl ContractsSubcommands {
                 network,
                 compile_output_path,
             } => match contract_type {
-                /* Problems with devnet bytecode, doesn't deploy */
+                // Problems with devnet bytecode, doesn't deploy
                 ContractType::Contract => {
                     deploy_contract(url, public_key, network, compile_output_path).await?
                 },
