@@ -1,9 +1,9 @@
-use anyhow;
+use anyhow::Result;
 use serde_json::Value;
 
 use crate::contracts::NetworkType;
 
-fn _build_debug_bytecode(bytecode: &str, bytecode_patch: &str) -> Result<String, anyhow::Error> {
+fn _build_debug_bytecode(bytecode: &str, bytecode_patch: &str) -> Result<String> {
     if bytecode_patch.is_empty() {
         return Ok(bytecode.to_string());
     }

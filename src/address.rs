@@ -12,8 +12,8 @@ pub enum AddressSubcommands {
         #[arg(short, long, default_value_t = false)]
         mem_pool: bool,
     },
-    #[command(visible_alias = "utxo")]
-    UTXOS { address: String },
+    #[command(visible_alias = "u")]
+    Utxos { address: String },
     #[command(visible_alias = "g")]
     Group { address: String },
 }
@@ -24,7 +24,7 @@ impl AddressSubcommands {
             Self::Balance { address, mem_pool } => {
                 format!("/addresses/{address}/balance?mempool={mem_pool}")
             },
-            Self::UTXOS { address } => {
+            Self::Utxos { address } => {
                 format!("/addresses/{address}/utxos")
             },
             Self::Group { address } => {
@@ -33,6 +33,7 @@ impl AddressSubcommands {
         };
 
         let value: Value = get(&url, &endpoint).await?;
+
         serde_json::to_writer_pretty(std::io::stdout(), &value)?;
         println!();
 

@@ -1,6 +1,6 @@
-use std::{fs::File, io::Read};
+use std::{fs::File, io::Read, path::Path};
 
-use anyhow::{Result, anyhow};
+use anyhow::{Context, Result};
 use clap::{Parser, ValueEnum};
 use regex::Regex;
 use reqwest::Client;
@@ -42,32 +42,6 @@ pub enum ContractsSubcommands {
         #[arg(long, default_value_t = ContractType::Project)]
         contract_type: ContractType,
     },
-    #[command(visible_alias = "s")]
-    State {
-        address: String,
-    },
-    Code {
-        address: String,
-    },
-    Test {
-        // body
-    },
-    Call {
-        // body
-        #[arg(short, long)]
-        multiple: Option<bool>,
-    },
-    Parent {
-        address: String,
-    },
-    SubContracts {
-        address: String,
-        #[arg(short, long)]
-        current_count: Option<bool>,
-    },
-    CallTxScript {
-        // body
-    },
 }
 
 fn get_file_buffer(file_path: &str) -> Result<String> {
@@ -79,7 +53,7 @@ fn get_file_buffer(file_path: &str) -> Result<String> {
 
 pub async fn compile_file(
     url: &str,
-    compiler_options_path: Option<String>,
+    compiler_options_path: Option<&str>,
     file_buffer: &str,
     end_point: &str,
 ) -> Result<()> {
@@ -106,7 +80,7 @@ pub async fn compile_file(
     });
 
     let response = client.post(url).json(&body).send().await?;
-    let value = response.json::<Value>().await?;
+    let value: Value = response.json().await?;
 
     serde_json::to_writer_pretty(std::io::stdout(), &value)?;
     println!();
@@ -116,15 +90,15 @@ pub async fn compile_file(
 
 pub async fn compile_project(
     url: &str,
-    compiler_options_path: Option<String>,
+    compiler_options_path: Option<&str>,
     file_path: &str,
 ) -> Result<()> {
     let re = Regex::new(r#"^import "[^"./]+/[^"]*[a-z][a-z_0-9]*(\.ral)?"#)?;
 
-    let file_path: &std::path::Path = std::path::Path::new(file_path);
+    let file_path = Path::new(file_path);
     let project_cwd = file_path
         .parent()
-        .ok_or_else(|| anyhow!("Invalid file path"))?
+        .context("Invalid file path")?
         .canonicalize()?;
 
     let mut buffer = String::new();
@@ -154,11 +128,11 @@ pub async fn compile_project(
                 project_cwd.join(import_file).into()
             };
 
-            let path = path_buf.to_str().ok_or_else(|| anyhow!("Invalid path"))?;
+            let path = path_buf.to_str().context("Invalid path")?;
 
             Ok(get_file_buffer(path)?)
         })
-        .collect::<Result<Vec<String>, anyhow::Error>>()?;
+        .collect::<Result<Vec<_>>>()?;
 
     compile_file(
         url,
@@ -170,10 +144,10 @@ pub async fn compile_project(
 }
 
 pub async fn deploy_contract(
-    url: String,
-    public_key: String,
+    url: &str,
+    public_key: &str,
     network: NetworkType,
-    compile_output_path: String,
+    compile_output_path: &str,
 ) -> Result<()> {
     let client = Client::new();
     let url = format!("{url}/contracts/unsigned-tx/deploy-contract");
@@ -187,17 +161,17 @@ pub async fn deploy_contract(
 
     let contracts = compile_output["contracts"]
         .as_array()
-        .ok_or_else(|| anyhow!("contracts Not an array"))?
+        .context("contracts Not an array")?
         .get(0)
-        .ok_or_else(|| anyhow!("no contracts in array"));
+        .context("no contracts in array");
 
     for contract in contracts.iter() {
         let byte_code = contract["bytecode"]
             .as_str()
-            .ok_or_else(|| anyhow!("Bytecode not found"))?;
+            .context("Bytecode not found")?;
         let byte_code_debug = contract["bytecodeDebugPatch"]
             .as_str()
-            .ok_or_else(|| anyhow!("Bytecode not found"))?;
+            .context("Bytecode not found")?;
 
         let fields = &contract["fields"];
         let final_byte_code =
@@ -228,19 +202,19 @@ impl ContractsSubcommands {
                 ContractType::Contract => {
                     compile_file(
                         &url,
-                        compiler_options_path,
+                        compiler_options_path.as_deref(),
                         &get_file_buffer(&file_path)?,
                         "/compile-contract",
                     )
                     .await?
                 },
                 ContractType::Project => {
-                    compile_project(&url, compiler_options_path, &file_path).await?
+                    compile_project(&url, compiler_options_path.as_deref(), &file_path).await?
                 },
                 ContractType::Script => {
                     compile_file(
                         &url,
-                        compiler_options_path,
+                        compiler_options_path.as_deref(),
                         &get_file_buffer(&file_path)?,
                         "/compile-script",
                     )
@@ -255,11 +229,10 @@ impl ContractsSubcommands {
             } => match contract_type {
                 // Problems with devnet bytecode, doesn't deploy
                 ContractType::Contract => {
-                    deploy_contract(url, public_key, network, compile_output_path).await?
+                    deploy_contract(&url, &public_key, network, &compile_output_path).await?
                 },
-                _ => todo!("Contract type not yet deployable"),
+                _ => unimplemented!("Contract type not supported yet"),
             },
-            _ => todo!(),
         }
 
         Ok(())
