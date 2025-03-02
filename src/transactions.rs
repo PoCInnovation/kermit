@@ -173,6 +173,7 @@ impl TransactionsSubcommands {
         };
 
         serde_json::to_writer_pretty(std::io::stdout(), &value)?;
+        println!();
 
         Ok(())
     }

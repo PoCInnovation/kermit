@@ -109,6 +109,8 @@ pub async fn compile_file(
     let value = response.json::<Value>().await?;
 
     serde_json::to_writer_pretty(std::io::stdout(), &value)?;
+    println!();
+
     Ok(())
 }
 

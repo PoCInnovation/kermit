@@ -34,6 +34,7 @@ impl AddressSubcommands {
 
         let value: Value = get(&url, &endpoint).await?;
         serde_json::to_writer_pretty(std::io::stdout(), &value)?;
+        println!();
 
         Ok(())
     }
