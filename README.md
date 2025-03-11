@@ -143,7 +143,7 @@ If you're interested in how the project is organized at a higher level, please c
 ## Our PoC team ❤️
 
 Developers
-| [<img src="https://github.com/alexandreTimal.png?size=85" width=85><br><sub>[Alexandre Timal]</sub>](https://github.com/Nfire2103) | [<img src="https://github.com/Nfire2103.png?size=85" width=85><br><sub>[Nathan Flattin]</sub>](https://github.com/thomas-pommier-epi) | [<img src="https://github.com/thomas-pommier-epi.png?size=85" width=85><br><sub>[Thomas Pommier]</sub>](https://github.com/thomas-pommier-epi)
+| [<img src="https://github.com/alexandreTimal.png?size=85" width=85><br><sub>[Alexandre Timal]</sub>](https://github.com/alexandreTimal) | [<img src="https://github.com/Nfire2103.png?size=85" width=85><br><sub>[Nathan Flattin]</sub>](https://github.com/thomas-pommier-epi) | [<img src="https://github.com/thomas-pommier-epi.png?size=85" width=85><br><sub>[Thomas Pommier]</sub>](https://github.com/thomas-pommier-epi)
 | :---: | :---: | :---: |
 
 <h2 align=center>
