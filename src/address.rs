@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::Parser;
 use serde_json::Value;
 
-use crate::utils::get;
+use crate::utils::{get, HttpResponse};
 
 #[derive(Parser)]
 pub enum AddressSubcommands {
@@ -32,9 +32,9 @@ impl AddressSubcommands {
             },
         };
 
-        let value: Value = get(&url, &endpoint).await?;
+        let value: HttpResponse<Value> = get(&url, &endpoint).await?;
 
-        serde_json::to_writer_pretty(std::io::stdout(), &value)?;
+        serde_json::to_writer_pretty(std::io::stdout(), &value.data)?;
         println!();
 
         Ok(())

@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::Parser;
 use serde_json::Value;
 
-use crate::utils::get;
+use crate::utils::{get, HttpResponse};
 
 /// CLI arguments for `kermit events`.
 #[derive(Parser)]
@@ -48,25 +48,25 @@ impl EventsSubcommands {
                 if let Some(group) = group {
                     endpoint.push_str(&format!("&group={}", group));
                 }
-                get(url, &endpoint).await?
+                get(url, &endpoint).await?.data
             },
             Self::ContractCurrentCount { contract_address } => {
                 let endpoint = format!("/events/contract/{}/current-count", contract_address);
-                get(url, &endpoint).await?
+                get(url, &endpoint).await?.data
             },
             Self::TxContractEvents { tx_id, group } => {
                 let mut endpoint = format!("/events/tx-id/{}", tx_id);
                 if let Some(group) = group {
                     endpoint.push_str(&format!("&group={}", group));
                 }
-                get(url, &endpoint).await?
+                get(url, &endpoint).await?.data
             },
             Self::BlockContractEvents { block_hash, group } => {
                 let mut endpoint = format!("/events/block-hash/{}", block_hash);
                 if let Some(group) = group {
                     endpoint.push_str(&format!("&group={}", group));
                 }
-                get(url, &endpoint).await?
+                get(url, &endpoint).await?.data
             },
         };
 

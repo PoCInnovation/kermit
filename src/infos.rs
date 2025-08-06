@@ -2,7 +2,7 @@ use anyhow::{Ok, Result};
 use clap::Parser;
 use serde_json::{Value, json};
 
-use crate::utils::{get, post};
+use crate::utils::{get, post, HttpResponse};
 
 /// CLI arguments for `kermit infos`.
 #[derive(Parser)]
@@ -63,13 +63,13 @@ pub enum InfosSubcommands {
 impl InfosSubcommands {
     pub async fn run(self, url: &str) -> Result<()> {
         let value: Value = match self {
-            Self::Node => get(url, "/infos/node").await?,
-            Self::Version => get(url, "/infos/version").await?,
-            Self::ChainParams => get(url, "/infos/chain-params").await?,
-            Self::SelfClique => get(url, "/infos/self-clique").await?,
-            Self::InterCliquePeerInfo => get(url, "/infos/inter-clique-peer-info").await?,
-            Self::DiscoveredNeighbors => get(url, "/infos/discovered-neighbors").await?,
-            Self::Misbehaviors => get(url, "/infos/misbehaviors").await?,
+            Self::Node => get(url, "/infos/node").await?.data,
+            Self::Version => get(url, "/infos/version").await?.data,
+            Self::ChainParams => get(url, "/infos/chain-params").await?.data,
+            Self::SelfClique => get(url, "/infos/self-clique").await?.data,
+            Self::InterCliquePeerInfo => get(url, "/infos/inter-clique-peer-info").await?.data,
+            Self::DiscoveredNeighbors => get(url, "/infos/discovered-neighbors").await?.data,
+            Self::Misbehaviors => get(url, "/infos/misbehaviors").await?.data,
             Self::MisbehaviorsBanUnban { r#type, peers } => {
                 post(
                     url,
@@ -79,9 +79,9 @@ impl InfosSubcommands {
                         "peers": peers
                     }),
                 )
-                .await?
+                .await?.data
             },
-            Self::UnreachableBrokers => get(url, "/infos/unreachable").await?,
+            Self::UnreachableBrokers => get(url, "/infos/unreachable").await?.data,
             Self::Discovery { r#type, peers } => {
                 post(
                     url,
@@ -91,23 +91,23 @@ impl InfosSubcommands {
                         "peers": peers
                     }),
                 )
-                .await?
+                .await?.data
             },
             Self::HistoryHashrate { from_ts, to_ts } => {
                 let mut endpoint = format!("/infos/history-hashrate?fromTs={}", from_ts);
                 if let Some(to_ts) = to_ts {
                     endpoint.push_str(&format!("&toTs={}", to_ts));
                 }
-                get(url, &endpoint).await?
+                get(url, &endpoint).await?.data
             },
             Self::CurrentHashrate { timespan } => {
                 let mut endpoint = "/infos/current-hashrate".to_string();
                 if let Some(timespan) = timespan {
                     endpoint.push_str(&format!("?timespan={}", timespan));
                 }
-                get(url, &endpoint).await?
+                get(url, &endpoint).await?.data
             },
-            Self::CurrentDifficulty => get(url, "/infos/current-difficulty").await?,
+            Self::CurrentDifficulty => get(url, "/infos/current-difficulty").await?.data,
         };
 
         serde_json::to_writer_pretty(std::io::stdout(), &value)?;

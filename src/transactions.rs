@@ -4,7 +4,7 @@ use secp256k1::{Message, Secp256k1, SecretKey};
 use serde::{Deserialize, de::DeserializeOwned};
 use serde_json::{Value, json};
 
-use crate::utils::{get, post};
+use crate::utils::{get, post, HttpResponse};
 
 /// CLI arguments for `kermit transactions`.
 #[derive(Parser)]
@@ -79,7 +79,7 @@ async fn build<T: DeserializeOwned>(
     amount: String,
     gas_amount: Option<u64>,
     gas_price: Option<String>,
-) -> Result<T> {
+) -> Result<HttpResponse<T>> {
     post(
         url,
         "/transactions/build",
@@ -115,7 +115,7 @@ fn sign(tx_id: &str, private_key: &str) -> Result<String> {
     Ok(signature)
 }
 
-async fn submit(url: &str, unsigned_tx: &str, signature: &str) -> Result<Value> {
+async fn submit(url: &str, unsigned_tx: &str, signature: &str) -> Result<HttpResponse<Value>> {
     post(
         url,
         "/transactions/submit",
@@ -136,14 +136,14 @@ impl TransactionsSubcommands {
                 amount,
                 gas_amount,
                 gas_price,
-            } => build(url, public_key, to_addr, amount, gas_amount, gas_price).await?,
+            } => build(url, public_key, to_addr, amount, gas_amount, gas_price).await?.data,
             Self::Submit {
                 tx_id,
                 unsigned_tx,
                 private_key,
             } => {
                 let signature = sign(&tx_id, &private_key)?;
-                submit(url, &unsigned_tx, &signature).await?
+                submit(url, &unsigned_tx, &signature).await?.data
             },
             Self::Create {
                 public_key,
@@ -154,10 +154,10 @@ impl TransactionsSubcommands {
                 private_key,
             } => {
                 let BuildTransactionResponse { tx_id, unsigned_tx } =
-                    build(url, public_key, to_addr, amount, gas_amount, gas_price).await?;
+                    build(url, public_key, to_addr, amount, gas_amount, gas_price).await?.data;
 
                 let signature = sign(&tx_id, &private_key)?;
-                submit(url, &unsigned_tx, &signature).await?
+                submit(url, &unsigned_tx, &signature).await?.data
             },
             Self::Decode { unsigned_tx } => {
                 post(
@@ -165,10 +165,10 @@ impl TransactionsSubcommands {
                     "/transactions/decode-unsigned-tx",
                     json!({"unsignedTx": unsigned_tx}),
                 )
-                .await?
+                .await?.data
             },
             Self::Status { tx_id } => {
-                get(url, &format!("/transactions/status?txId={}", tx_id)).await?
+                get(url, &format!("/transactions/status?txId={}", tx_id)).await?.data
             },
         };
 

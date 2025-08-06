@@ -1,5 +1,6 @@
 use anyhow::{Result, bail};
 use reqwest::Client;
+use reqwest::StatusCode;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 #[derive(Deserialize)]
@@ -7,10 +8,15 @@ struct Error {
     detail: String,
 }
 
-/// Perform a GET request to the given URL
-pub async fn get<T: DeserializeOwned>(url: &str, endpoint: &str) -> Result<T> {
-    let client = Client::new();
+/// The result of an HTTP request, containing the status code and the data.
+pub struct HttpResponse<T> {
+    pub status: StatusCode,
+    pub data: T,
+}
 
+/// Perform a GET request to the given URL
+pub async fn get<T: DeserializeOwned>(url: &str, endpoint: &str) -> Result<HttpResponse<T>> {
+    let client = Client::new();
     let url = format!("{}{}", url, endpoint);
 
     let res = client
@@ -19,14 +25,15 @@ pub async fn get<T: DeserializeOwned>(url: &str, endpoint: &str) -> Result<T> {
         .send()
         .await?;
 
-    if !res.status().is_success() {
+    let status = res.status();
+
+    if !status.is_success() {
         let err: Error = res.json().await?;
         bail!(err.detail);
     }
 
     let data = res.json().await?;
-
-    Ok(data)
+    Ok(HttpResponse { status, data })
 }
 
 /// Perform a POST request to the given URL
@@ -34,9 +41,8 @@ pub async fn post<T: DeserializeOwned, U: Serialize>(
     url: &str,
     endpoint: &str,
     body: U,
-) -> Result<T> {
+) -> Result<HttpResponse<T>> {
     let client = Client::new();
-
     let url = format!("{}{}", url, endpoint);
 
     let res = client
@@ -46,14 +52,15 @@ pub async fn post<T: DeserializeOwned, U: Serialize>(
         .send()
         .await?;
 
-    if !res.status().is_success() {
+    let status = res.status();
+
+    if !status.is_success() {
         let err: Error = res.json().await?;
         bail!(err.detail);
     }
 
     let data = res.json().await?;
-
-    Ok(data)
+    Ok(HttpResponse { status, data })
 }
 
 /// Perform a PUT request to the given URL
@@ -61,9 +68,8 @@ pub async fn put<T: DeserializeOwned, U: Serialize>(
     url: &str,
     endpoint: &str,
     body: U,
-) -> Result<T> {
+) -> Result<HttpResponse<T>> {
     let client = Client::new();
-
     let url = format!("{}{}", url, endpoint);
 
     let res = client
@@ -73,20 +79,20 @@ pub async fn put<T: DeserializeOwned, U: Serialize>(
         .send()
         .await?;
 
-    if !res.status().is_success() {
+    let status = res.status();
+
+    if !status.is_success() {
         let err: Error = res.json().await?;
         bail!(err.detail);
     }
 
     let data = res.json().await?;
-
-    Ok(data)
+    Ok(HttpResponse { status, data })
 }
 
 /// Perform a DELETE request to the given URL
-pub async fn delete(url: &str, endpoint: &str) -> Result<()> {
+pub async fn delete(url: &str, endpoint: &str) -> Result<StatusCode> {
     let client = Client::new();
-
     let url = format!("{}{}", url, endpoint);
 
     let res = client
@@ -95,10 +101,12 @@ pub async fn delete(url: &str, endpoint: &str) -> Result<()> {
         .send()
         .await?;
 
-    if !res.status().is_success() {
+    let status = res.status();
+
+    if !status.is_success() {
         let err: Error = res.json().await?;
         bail!(err.detail);
     }
 
-    Ok(())
+    Ok(status)
 }

@@ -115,9 +115,9 @@ impl WalletsSubcommands {
             ));
         }
         let value: Value = match self {
-            Self::List => get(url, "/wallets").await?,
+            Self::List => get(url, "/wallets").await?.data,
             Self::Restore { mnemonic } => {
-                put(url, "/wallets", json!({ "mnemonic": mnemonic })).await?
+                put(url, "/wallets", json!({ "mnemonic": mnemonic })).await?.data
             },
             Self::Create {
                 wallet_name,
@@ -131,9 +131,9 @@ impl WalletsSubcommands {
                         "walletName": wallet_name
                     }),
                 )
-                .await?
+                .await?.data
             },
-            Self::Status { wallet_name } => get(url, &format!("/wallets/{}", wallet_name)).await?,
+            Self::Status { wallet_name } => get(url, &format!("/wallets/{}", wallet_name)).await?.data,
             Self::Delete {
                 wallet_name,
                 password,
@@ -159,10 +159,10 @@ impl WalletsSubcommands {
                     &format!("/wallets/{}/unlock", wallet_name),
                     json!({ "password": password }),
                 )
-                .await?
+                .await?.data
             },
             Self::Balances { wallet_name } => {
-                get(url, &format!("/wallets/{}/balances", wallet_name)).await?
+                get(url, &format!("/wallets/{}/balances", wallet_name)).await?.data
             },
             Self::RevealMnemonic {
                 wallet_name,
@@ -173,7 +173,7 @@ impl WalletsSubcommands {
                     &format!("/wallets/{}/reveal-mnemonic", wallet_name),
                     json!({ "password": password }),
                 )
-                .await?
+                .await?.data
             },
             Self::Transfer {
                 wallet_name,
@@ -193,7 +193,7 @@ impl WalletsSubcommands {
 
                     }),
                 )
-                .await?
+                .await?.data
             },
             Self::SweepActiveAddress {
                 wallet_name,
@@ -204,7 +204,7 @@ impl WalletsSubcommands {
                     &format!("/wallets/{}/sweep-active-address", wallet_name),
                     json!({ "toAddress": to_address }),
                 )
-                .await?
+                .await?.data
             },
             Self::SweepAllAddresses {
                 wallet_name,
@@ -215,7 +215,7 @@ impl WalletsSubcommands {
                     &format!("/wallets/{}/sweep-all-addresses", wallet_name),
                     json!({ "toAddress": to_address }),
                 )
-                .await?
+                .await?.data
             },
             Self::Sign { wallet_name, data } => {
                 post(
@@ -223,10 +223,10 @@ impl WalletsSubcommands {
                     &format!("/wallets/{}/sign", wallet_name),
                     json!({ "data": data }),
                 )
-                .await?
+                .await?.data
             },
             Self::Addresses { wallet_name } => {
-                get(url, &format!("/wallets/{}/addresses", wallet_name)).await?
+                get(url, &format!("/wallets/{}/addresses", wallet_name)).await?.data
             },
             Self::AddressInfo {
                 wallet_name,
@@ -236,14 +236,14 @@ impl WalletsSubcommands {
                     url,
                     &format!("/wallets/{}/addresses/{}", wallet_name, address),
                 )
-                .await?
+                .await?.data
             },
             Self::DeriveNextAddress { wallet_name, group } => {
                 let mut endpoint = format!("/wallets/{}/derive-next-address", wallet_name);
                 if let Some(group) = group {
                     endpoint.push_str(&format!("&toTs={}", group));
                 }
-                post(url, &endpoint, json!({})).await?
+                post(url, &endpoint, json!({})).await?.data
             },
             Self::ChangeActiveAddress {
                 wallet_name,
@@ -254,7 +254,7 @@ impl WalletsSubcommands {
                     &format!("/wallets/{}/change-active-address", wallet_name),
                     json!({ "address": address }),
                 )
-                .await?
+                .await?.data
             },
         };
 
