@@ -1,8 +1,10 @@
 mod address;
 mod args;
 mod contracts;
+mod contracts_funcs;
 mod events;
 mod infos;
+mod network;
 mod transactions;
 mod utils;
 mod wallet;

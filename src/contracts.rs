@@ -1,13 +1,13 @@
 use std::{fs::File, io::Read, path::Path};
 
 use anyhow::{Context, Result};
-use clap::{Parser, ValueEnum};
+use clap::{Parser, ValueEnum, Args};
 use regex::Regex;
 use reqwest::Client;
 use serde_json::{Value, json};
 use strum::Display;
 
-use crate::contract_encoding::_encode_contract_fields;
+use crate::contracts_funcs::compile::compile;
 
 #[derive(Clone, Debug, Display, ValueEnum)]
 pub enum ContractType {
@@ -23,15 +23,47 @@ pub enum NetworkType {
     Dev,
 }
 
+#[derive(Debug, Clone, Args)]
+pub struct IgnoreWarnings {
+    #[arg(long, default_value_t = false, help = "Ignore external caller warnings")]
+    pub ignore_check_external_caller_warnings: bool,
+
+    #[arg(long, default_value_t = false, help = "Ignore unused constants warnings")]
+    pub ignore_unused_constants_warnings: bool,
+
+    #[arg(long, default_value_t = false, help = "Ignore unused fields warnings")]
+    pub ignore_unused_fields_warnings: bool,
+
+    #[arg(long, default_value_t = false, help = "Ignore unused function return warnings")]
+    pub ignore_unused_function_return_warnings: bool,
+
+    #[arg(long, default_value_t = false, help = "Ignore unused private functions warnings")]
+    pub ignore_unused_private_functions_warnings: bool,
+
+    #[arg(long, default_value_t = false, help = "Ignore unused variables warnings")]
+    pub ignore_unused_variables_warnings: bool,
+
+    #[arg(long, default_value_t = false, help = "Ignore update fields check warnings")]
+    pub ignore_update_fields_check_warnings: bool,
+}
+
 #[derive(Parser)]
 pub enum ContractsSubcommands {
     #[command(visible_alias = "c")]
     Compile {
         file_path: String,
-        #[arg(long, default_value_t = ContractType::Project)]
-        contract_type: ContractType,
-        #[arg(long)]
-        compiler_options_path: Option<String>,
+        #[arg(long, default_value_t = NetworkType::Main)]
+        network: NetworkType,
+        #[arg(long, value_name = "config", help = "Path to the config YAML file")]
+        config_path: Option<String>,
+        #[command(flatten)]
+        ignore_warnings: IgnoreWarnings,
+        #[arg(long, help = "skip generate typescript code by contract artifacts", default_value_t = false)]
+        skip_generate: bool,
+        #[arg(long, help = "show detailed debug information such as error stack traces", default_value_t = false)]
+        debug: bool,
+        #[arg(long, help = "enable force recompile", default_value_t = false)]
+        force: bool,
     },
     #[command(visible_alias = "d")]
     Deploy {
@@ -44,197 +76,35 @@ pub enum ContractsSubcommands {
     },
 }
 
-fn get_file_buffer(file_path: &str) -> Result<String> {
-    let mut file = File::open(file_path)?;
-    let mut buffer = String::new();
-    file.read_to_string(&mut buffer)?;
-    Ok(buffer)
-}
-
-pub async fn compile_file(
-    url: &str,
-    compiler_options_path: Option<&str>,
-    file_buffer: &str,
-    end_point: &str,
-) -> Result<()> {
-    let client = Client::new();
-    let url = format!("{url}/contracts{end_point}");
-
-    let compiler_options = match compiler_options_path {
-        Some(path) => {
-            let mut option_file = File::open(&path)?;
-            let mut buffer = String::new();
-            option_file.read_to_string(&mut buffer)?;
-            buffer.into()
-        },
-        None => {
-            json!({
-                "ignoreUnusedConstantsWarnings": true
-            })
-        },
-    };
-
-    let body = json!({
-        "code": file_buffer,
-        "compilerOptions": compiler_options
-    });
-
-    let response = client.post(url).json(&body).send().await?;
-    let value: Value = response.json().await?;
-
-    serde_json::to_writer_pretty(std::io::stdout(), &value)?;
-    println!();
-
-    Ok(())
-}
-
-pub async fn compile_project(
-    url: &str,
-    compiler_options_path: Option<&str>,
-    file_path: &str,
-) -> Result<()> {
-    let re = Regex::new(r#"^import "[^"./]+/[^"]*[a-z][a-z_0-9]*(\.ral)?"#)?;
-
-    let file_path = Path::new(file_path);
-    let project_cwd = file_path
-        .parent()
-        .context("Invalid file path")?
-        .canonicalize()?;
-
-    let mut buffer = String::new();
-    File::open(file_path)?.read_to_string(&mut buffer)?;
-
-    let full_buffer = buffer
-        .lines()
-        .into_iter()
-        .map(|line| {
-            if !re.is_match(line) {
-                return Ok(line.to_string());
-            }
-            let trimmed = line.trim();
-            let line = trimmed.split_whitespace().collect::<Vec<&str>>();
-
-            let import_file = if let Some(second) = line.get(1) {
-                second.to_string().trim_matches('"').to_string()
-            } else {
-                String::new()
-            };
-
-            // handle with missing .ral, concat it
-
-            let path_buf = if import_file.starts_with("std") {
-                std::env::current_dir()?.join("contracts").join(import_file)
-            } else {
-                project_cwd.join(import_file).into()
-            };
-
-            let path = path_buf.to_str().context("Invalid path")?;
-
-            Ok(get_file_buffer(path)?)
-        })
-        .collect::<Result<Vec<_>>>()?;
-
-    compile_file(
-        url,
-        compiler_options_path,
-        &full_buffer.join("\n"),
-        "/compile-project",
-    )
-    .await
-}
-
-pub async fn deploy_contract(
-    url: &str,
-    public_key: &str,
-    network: NetworkType,
-    compile_output_path: &str,
-) -> Result<()> {
-    let client = Client::new();
-    let url = format!("{url}/contracts/unsigned-tx/deploy-contract");
-
-    let compile_output: Value = {
-        let mut file = File::open(&compile_output_path)?;
-        let mut buffer = String::new();
-        file.read_to_string(&mut buffer)?;
-        serde_json::from_str(&buffer)?
-    };
-
-    let contracts = compile_output["contracts"]
-        .as_array()
-        .context("contracts Not an array")?
-        .get(0)
-        .context("no contracts in array");
-
-    for contract in contracts.iter() {
-        let byte_code = contract["bytecode"]
-            .as_str()
-            .context("Bytecode not found")?;
-        let byte_code_debug = contract["bytecodeDebugPatch"]
-            .as_str()
-            .context("Bytecode not found")?;
-
-        let fields = &contract["fields"];
-        let final_byte_code =
-            _encode_contract_fields(byte_code, byte_code_debug, &network, fields)?;
-
-        let body = json!({
-            "fromPublicKey": public_key,
-            "bytecode": final_byte_code,
-        });
-
-        let response = client.post(&url).json(&body).send().await?;
-        let json_response = response.json::<Value>().await?;
-
-        println!("Deployment response: {:#?}", json_response);
-    }
-
-    Ok(())
-}
-
 impl ContractsSubcommands {
     pub async fn run(self, url: String) -> Result<()> {
         match self {
             Self::Compile {
-                contract_type,
-                compiler_options_path,
                 file_path,
-            } => match contract_type {
-                ContractType::Contract => {
-                    compile_file(
-                        &url,
-                        compiler_options_path.as_deref(),
-                        &get_file_buffer(&file_path)?,
-                        "/compile-contract",
-                    )
-                    .await?
-                },
-                ContractType::Project => {
-                    compile_project(&url, compiler_options_path.as_deref(), &file_path).await?
-                },
-                ContractType::Script => {
-                    compile_file(
-                        &url,
-                        compiler_options_path.as_deref(),
-                        &get_file_buffer(&file_path)?,
-                        "/compile-script",
-                    )
-                    .await?
-                },
+                network,
+                config_path,
+                ignore_warnings,
+                skip_generate,
+                debug,
+                force,
+            } => {
+                return compile(
+                    &file_path,
+                    network,
+                    config_path.as_deref(),
+                    skip_generate,
+                    debug,
+                    force
+                ).await;
             },
             Self::Deploy {
                 contract_type,
                 public_key,
                 network,
                 compile_output_path,
-            } => match contract_type {
-                // Problems with devnet bytecode, doesn't deploy
-                ContractType::Contract => {
-                    deploy_contract(&url, &public_key, network, &compile_output_path).await?
-                },
-                _ => unimplemented!("Contract type not supported yet"),
+            } => {
+                unimplemented!("Contract type not supported yet")
             },
         }
-
-        Ok(())
     }
 }
