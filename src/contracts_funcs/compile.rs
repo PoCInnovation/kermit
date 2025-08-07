@@ -1,9 +1,14 @@
 use anyhow::{Context, Result};
 use serde::Deserialize;
+use serde_json::{Value, json};
 use std::fs;
 use std::path::Path;
 
-use crate::{contracts::NetworkType, network::health::is_network_alive};
+use crate::{
+    contracts::{CompilerOptions, NetworkType},
+    network::health::is_network_alive,
+    utils::post,
+};
 use once_cell::sync::Lazy;
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
@@ -214,8 +219,7 @@ fn load_file(
     import_file_paths_cache: &Vec<String>,
     is_imported: bool,
 ) -> Result<(Vec<SourceInfo>, Vec<String>)> {
-    let file_content =
-        fs::read_to_string(path).with_context(|| format!("Failed to read file: {}", path))?;
+    let file_content = fs::read_to_string(path).context("Failed to read file")?;
 
     let re = regex::Regex::new(r#"^import "[^"./]+/[^"]*[a-z][a-z_0-9]*(\.ral)?""#)
         .context("Failed to compile regex")?;
@@ -278,20 +282,22 @@ fn load_file(
 }
 
 pub async fn compile(
+    url: &str,
     file_path: &str,
     network: NetworkType,
     config_path: Option<&str>,
+    compiler_options: CompilerOptions,
     skip_generate: bool,
     debug: bool,
     force: bool,
-) -> Result<()> {
+) -> Result<Value> {
     let config_path = config_path.as_ref().context("Config path is required")?;
 
     let config_content = std::fs::read_to_string(config_path)
-        .with_context(|| format!("Failed to read config file: {}", config_path))?;
+        .context(format!("Failed to read config file: {}", config_path))?;
 
     let config: Config = serde_yaml::from_str(&config_content)
-        .with_context(|| format!("Failed to parse YAML config: {}", config_path))?;
+        .context(format!("Failed to parse YAML config: {}", config_path))?;
 
     let network_url = match network {
         NetworkType::Dev => &config.configuration.networks.devnet.node_url,
@@ -319,8 +325,27 @@ pub async fn compile(
         ));
     }
 
+    // Remove duplicate code
+    all_source_infos.sort_by_key(|info| info.source_code_hash.clone());
+    all_source_infos.dedup_by_key(|info| info.source_code_hash.clone());
+
     // The sorting will be used to concat the sources to compile the contract
     all_source_infos.sort_by_key(|info| info.kind);
 
-    Ok(())
+    let concatenated_code = all_source_infos
+        .iter()
+        .map(|info| info.source_code.as_str())
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    Ok(post(
+        url,
+        "/contracts/compile-project",
+        json!({
+            "code": concatenated_code,
+            "compiler_options": json!(compiler_options)
+        }),
+    )
+    .await?
+    .data)
 }

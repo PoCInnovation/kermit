@@ -28,7 +28,7 @@ async fn run() -> Result<()> {
 
     match kermit.cmd {
         KermitSubcommand::Address { command } => command.run(kermit.url).await?,
-        KermitSubcommand::Contracts { command } => command.run(kermit.url).await?,
+        KermitSubcommand::Contracts { command } => command.run(&kermit.url).await?,
         KermitSubcommand::Events { command } => command.run(&kermit.url).await?,
         KermitSubcommand::Infos { command } => command.run(&kermit.url).await?,
         KermitSubcommand::Transactions { command } => command.run(&kermit.url).await?,
