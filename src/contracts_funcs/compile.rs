@@ -1,72 +1,19 @@
 use anyhow::{Context, Result};
-use serde::Deserialize;
+use regex::{Error, Regex, RegexBuilder};
 use serde_json::{Value, json};
-use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::{
     contracts::{CompilerOptions, NetworkType},
-    network::health::is_network_alive,
-    utils::post,
+    contracts_funcs::source_info::{SourceInfo, SourceKind},
+    network::{health::is_network_alive, node::Config},
+    utils::{fs::read_file, post},
 };
 use once_cell::sync::Lazy;
-use sha2::{Digest, Sha256};
-use std::collections::HashMap;
-
-#[derive(Debug, Deserialize)]
-struct Config {
-    #[serde(rename = "defaultSettings")]
-    default_settings: DefaultSettings,
-    configuration: Configuration,
-}
-
-#[derive(Debug, Deserialize)]
-struct DefaultSettings {
-    #[serde(rename = "issueTokenAmount")]
-    issue_token_amount: u64,
-    #[serde(rename = "openaiAPIKey")]
-    openai_api_key: String,
-    ipfs: Ipfs,
-}
-
-#[derive(Debug, Deserialize)]
-struct Ipfs {
-    infura: Infura,
-}
-
-#[derive(Debug, Deserialize)]
-struct Infura {
-    #[serde(rename = "projectId")]
-    project_id: String,
-    #[serde(rename = "projectSecret")]
-    project_secret: String,
-}
-
-#[derive(Debug, Deserialize)]
-struct Configuration {
-    networks: Networks,
-}
-
-#[derive(Debug, Deserialize)]
-struct Networks {
-    devnet: Network,
-    testnet: Network,
-    mainnet: Network,
-}
-
-#[derive(Debug, Deserialize)]
-struct Network {
-    #[serde(rename = "nodeUrl")]
-    node_url: String,
-    #[serde(rename = "privateKeys")]
-    private_keys: Vec<String>,
-    settings: DefaultSettings,
-}
+use std::collections::{HashMap, HashSet};
 
 fn load_ral_files(file_path: &str) -> Result<Vec<String>> {
-    let dir = Path::new(file_path)
-        .parent()
-        .context("Failed to get parent directory of file_path")?;
+    let dir = Path::new(file_path);
 
     let mut ral_files_path = Vec::new();
     for entry in walkdir::WalkDir::new(dir)
@@ -82,83 +29,40 @@ fn load_ral_files(file_path: &str) -> Result<Vec<String>> {
     Ok(ral_files_path)
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd)]
-enum SourceKind {
-    Contract,
-    Script,
-    AbstractContract,
-    Interface,
-    Struct,
-    Constants,
-}
-
-impl Ord for SourceKind {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        (*self as u8).cmp(&(*other as u8))
-    }
-}
-
-static SOURCE_KIND_REGEX: Lazy<Result<HashMap<SourceKind, regex::Regex>, regex::Error>> =
-    Lazy::new(|| {
-        let mut m = HashMap::new();
-        m.insert(
-            SourceKind::AbstractContract,
-            regex::Regex::new(r"^Abstract Contract ([A-Z][a-zA-Z0-9]*)")?,
-        );
-        m.insert(
-            SourceKind::Contract,
-            regex::Regex::new(r"^Contract ([A-Z][a-zA-Z0-9]*)")?,
-        );
-        m.insert(
-            SourceKind::Interface,
-            regex::Regex::new(r"^Interface ([A-Z][a-zA-Z0-9]*)")?,
-        );
-        m.insert(
-            SourceKind::Script,
-            regex::Regex::new(r"^TxScript ([A-Z][a-zA-Z0-9]*)")?,
-        );
-        m.insert(
-            SourceKind::Struct,
-            regex::Regex::new(r"struct ([A-Z][a-zA-Z0-9]*)")?,
-        );
-        Ok(m)
-    });
-
-struct SourceInfo {
-    kind: SourceKind,
-    name: String,
-    from_index: Option<usize>,
-    contract_relative_path: String,
-    source_code: String,
-    source_code_hash: String,
-    is_external: bool,
-}
-
-impl SourceInfo {
-    pub fn from(
-        kind: SourceKind,
-        name: String,
-        from_index: Option<usize>,
-        source_code: String,
-        contract_relative_path: String,
-        is_external: bool,
-    ) -> Self {
-        let source_code_hash = {
-            let mut hasher = Sha256::new();
-            hasher.update(source_code.as_bytes());
-            format!("{:x}", hasher.finalize())
-        };
-        Self {
-            kind,
-            name,
-            from_index,
-            contract_relative_path,
-            source_code,
-            source_code_hash,
-            is_external,
-        }
-    }
-}
+static SOURCE_KIND_REGEX: Lazy<Result<HashMap<SourceKind, Regex>, Error>> = Lazy::new(|| {
+    let mut m = HashMap::new();
+    m.insert(
+        SourceKind::AbstractContract,
+        RegexBuilder::new(r"^Abstract Contract ([A-Z][a-zA-Z0-9]*)")
+            .multi_line(true)
+            .build()?,
+    );
+    m.insert(
+        SourceKind::Contract,
+        RegexBuilder::new(r"^Contract ([A-Z][a-zA-Z0-9]*)")
+            .multi_line(true)
+            .build()?,
+    );
+    m.insert(
+        SourceKind::Interface,
+        RegexBuilder::new(r"^Interface ([A-Z][a-zA-Z0-9]*)")
+            .multi_line(true)
+            .build()?,
+    );
+    m.insert(
+        SourceKind::Script,
+        RegexBuilder::new(r"^TxScript ([A-Z][a-zA-Z0-9]*)")
+            .multi_line(true)
+            .build()?,
+    );
+    m.insert(
+        SourceKind::Struct,
+        RegexBuilder::new(r"struct ([A-Z][a-zA-Z0-9]*)")
+            .multi_line(true)
+            .build()?,
+    );
+    Ok(m)
+});
 
 fn get_source_info(
     source_code: String,
@@ -208,27 +112,35 @@ fn get_source_info(
     Ok(source_infos)
 }
 
-fn get_import_path(projectRootDir: &str, importPath: &str) -> String {
-    importPath.to_string()
-    // todo!("test multiple path, since some are relatives")
+fn get_import_path(import_path: &str) -> Result<String> {
+    let parts: Vec<&str> = import_path.split('/').collect();
+    if parts.len() > 1 && parts[0] == "std" {
+        let current_dir = std::env::current_dir().context("Failed to get current directory")?;
+        return Ok(Path::new(&current_dir)
+            .join(["contracts", import_path].iter().collect::<PathBuf>())
+            .to_string_lossy()
+            .to_string());
+    }
+
+    Ok(import_path.to_string())
 }
 
 fn load_file(
     path: &str,
     contracts_relative_path: &str,
-    import_file_paths_cache: &Vec<String>,
+    import_file_paths_cache: &HashSet<String>,
     is_imported: bool,
-) -> Result<(Vec<SourceInfo>, Vec<String>)> {
-    let file_content = fs::read_to_string(path).context("Failed to read file")?;
+) -> Result<(Vec<SourceInfo>, HashSet<String>)> {
+    let file_content = read_file(path)?;
 
-    let re = regex::Regex::new(r#"^import "[^"./]+/[^"]*[a-z][a-z_0-9]*(\.ral)?""#)
+    let re = Regex::new(r#"^import "[^"./]+/[^"]*[a-z][a-z_0-9]*(\.ral)?""#)
         .context("Failed to compile regex")?;
 
     let mut source_content = file_content.clone();
     let mut import_file_paths = Vec::new();
 
     for mat in re.find_iter(&file_content) {
-        let mut import_path = mat.as_str()[8..].to_string(); // get rid of the 'import ...' line
+        let mut import_path = mat.as_str()[8..mat.as_str().len() - 1].to_string(); // get rid of the "import ..." chunk, as well as the final quote
         if !import_path.ends_with(".ral") {
             import_path.push_str(".ral");
         }
@@ -240,37 +152,30 @@ fn load_file(
     }
 
     // these are incomplete import statements
-    if regex::Regex::new(r#"^import ""#)?
-        .find(&source_content)
-        .is_some()
-    {
+    if Regex::new(r#"^import ""#)?.find(&source_content).is_some() {
         return Err(anyhow::anyhow!(
             "Invalid import statements, source: {}",
             path
         ));
     }
 
-    let mut new_import_file_paths_cache = import_file_paths_cache
-        .iter()
-        .chain(import_file_paths.iter())
-        .cloned()
-        .collect::<Vec<String>>();
-
+    let mut new_import_file_paths_cache = import_file_paths_cache.clone();
     let mut imported_source_infos = Vec::new();
 
     for import_path in &import_file_paths {
-        let import_path = get_import_path(path, &import_path);
+        let import_path = get_import_path(&import_path)?;
         if new_import_file_paths_cache.contains(&import_path) {
             continue;
         }
 
-        new_import_file_paths_cache.push(import_path.clone());
-        let (imported_source_info, _) = load_file(
+        new_import_file_paths_cache.insert(import_path.clone());
+        let (imported_source_info, loaded_file_import_cache) = load_file(
             &import_path,
             &import_path,
             &new_import_file_paths_cache,
             true,
         )?;
+        new_import_file_paths_cache.extend(loaded_file_import_cache);
         imported_source_infos.extend(imported_source_info);
     }
 
@@ -285,20 +190,35 @@ pub async fn compile(
     url: &str,
     file_path: &str,
     network: NetworkType,
-    config_path: Option<&str>,
+    config_path: &str,
     compiler_options: CompilerOptions,
     skip_generate: bool,
     debug: bool,
     force: bool,
 ) -> Result<Value> {
-    let config_path = config_path.as_ref().context("Config path is required")?;
+    let config_content = read_file(config_path)?;
 
-    let config_content = std::fs::read_to_string(config_path)
-        .context(format!("Failed to read config file: {}", config_path))?;
+    let config = serde_yaml::from_str::<serde_yaml::Value>(&config_content);
+    if config.is_err() {
+        return Err(anyhow::anyhow!(
+            "Failed to parse config file: {} : {}",
+            config_path,
+            config.unwrap_err()
+        ));
+    }
 
-    let config: Config = serde_yaml::from_str(&config_content)
-        .context(format!("Failed to parse YAML config: {}", config_path))?;
+    let mut config = config?;
+    config.apply_merge()?;
+    let config = serde_yaml::from_value::<Config>(config);
+    if config.is_err() {
+        return Err(anyhow::anyhow!(
+            "Failed to parse config file: {} : {}",
+            config_path,
+            config.unwrap_err()
+        ));
+    }
 
+    let config = config?;
     let network_url = match network {
         NetworkType::Dev => &config.configuration.networks.devnet.node_url,
         NetworkType::Test => &config.configuration.networks.testnet.node_url,
@@ -311,7 +231,7 @@ pub async fn compile(
 
     let source_file_paths = load_ral_files(file_path)?;
     let mut all_source_infos = Vec::new();
-    let mut import_file_paths_cache = Vec::new();
+    let mut import_file_paths_cache = HashSet::new();
 
     for path in &source_file_paths {
         let (source_infos, new_cache) = load_file(path, path, &import_file_paths_cache, false)?;
@@ -322,6 +242,16 @@ pub async fn compile(
     if all_source_infos.is_empty() {
         return Err(anyhow::anyhow!(
             "No valid source information found in the provided files."
+        ));
+    }
+
+    // Ensure there is at least one Contract or Script
+    if !all_source_infos
+        .iter()
+        .any(|info| matches!(info.kind, SourceKind::Contract | SourceKind::Script))
+    {
+        return Err(anyhow::anyhow!(
+            "No Contract or Script found in the provided project files."
         ));
     }
 

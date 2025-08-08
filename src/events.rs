@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::Parser;
 use serde_json::Value;
 
-use crate::utils::{get, HttpResponse};
+use crate::utils::get;
 
 /// CLI arguments for `kermit events`.
 #[derive(Parser)]

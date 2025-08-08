@@ -89,8 +89,8 @@ pub enum ContractsSubcommands {
         file_path: String,
         #[arg(long, default_value_t = NetworkType::Main)]
         network: NetworkType,
-        #[arg(long, value_name = "config", help = "Path to the config YAML file")]
-        config_path: Option<String>,
+        #[arg(long, value_name = "config", help = "Path to the config YAML file", default_value_t=String::from("./alephium.config.yaml"))]
+        config_path: String,
         #[command(flatten)]
         compiler_options: CompilerOptions,
         #[arg(
@@ -135,7 +135,7 @@ impl ContractsSubcommands {
                     url,
                     &file_path,
                     network,
-                    config_path.as_deref(),
+                    &config_path,
                     compiler_options,
                     skip_generate,
                     debug,

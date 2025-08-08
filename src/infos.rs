@@ -2,7 +2,7 @@ use anyhow::{Ok, Result};
 use clap::Parser;
 use serde_json::{Value, json};
 
-use crate::utils::{get, post, HttpResponse};
+use crate::utils::{get, post};
 
 /// CLI arguments for `kermit infos`.
 #[derive(Parser)]
