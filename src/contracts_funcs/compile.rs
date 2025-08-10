@@ -5,8 +5,8 @@ use std::path::{Path, PathBuf};
 
 use crate::{
     contracts::{CompilerOptions, NetworkType},
-    contracts_funcs::source_info::{SourceInfo, SourceKind},
-    network::{health::is_network_alive, node::Config},
+    contracts_funcs::{config::Config, source_info::{SourceInfo, SourceKind}},
+    network::{health::is_network_alive},
     utils::{fs::read_file, post},
 };
 use once_cell::sync::Lazy;
@@ -196,29 +196,7 @@ pub async fn compile(
     debug: bool,
     force: bool,
 ) -> Result<Value> {
-    let config_content = read_file(config_path)?;
-
-    let config = serde_yaml::from_str::<serde_yaml::Value>(&config_content);
-    if config.is_err() {
-        return Err(anyhow::anyhow!(
-            "Failed to parse config file: {} : {}",
-            config_path,
-            config.unwrap_err()
-        ));
-    }
-
-    let mut config = config?;
-    config.apply_merge()?;
-    let config = serde_yaml::from_value::<Config>(config);
-    if config.is_err() {
-        return Err(anyhow::anyhow!(
-            "Failed to parse config file: {} : {}",
-            config_path,
-            config.unwrap_err()
-        ));
-    }
-
-    let config = config?;
+    let config = Config::new(config_path)?;
     let network_url = match network {
         NetworkType::Dev => &config.configuration.networks.devnet.node_url,
         NetworkType::Test => &config.configuration.networks.testnet.node_url,

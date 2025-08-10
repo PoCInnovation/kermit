@@ -1,6 +1,7 @@
-mod artificat;
-mod source_info;
+mod config;
+mod contract_address;
 mod project;
+mod source_info;
 
-pub mod deploy;
 pub mod compile;
+pub mod deploy;

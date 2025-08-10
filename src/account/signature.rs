@@ -1,27 +1,6 @@
 use anyhow::{Context, Result};
 use secp256k1::{PublicKey, Secp256k1, SecretKey};
-use blake2::Blake2bVar;
-use blake2::digest::{Update, VariableOutput};
-use bs58;
 use hex;
-
-fn get_contract_address(public_key_hex: &str) -> Result<String> {
-    let public_key_bytes = hex::decode(public_key_hex).context("Invalid hex")?;
-    let mut hasher = Blake2bVar::new(32).context("Failed to create Blake2bVar")?;
-    hasher.update(&public_key_bytes);
-    let mut hash_bytes = [0u8; 32];
-    hasher
-        .finalize_variable(&mut hash_bytes)
-        .context("Failed to finalize Blake2bVar")?;
-    let hash_bytes = &hash_bytes[..32];
-
-    let mut address_bytes = Vec::with_capacity(1 + 32);
-    address_bytes.push(1u8); // AddressType.P2PKH
-    address_bytes.extend_from_slice(&hash_bytes);
-    address_bytes.extend_from_slice(hash_bytes);
-
-    Ok(bs58::encode(address_bytes).into_string())
-}
 
 pub trait PrivateKey {
     fn is_valid(hex_key: &str) -> bool;
