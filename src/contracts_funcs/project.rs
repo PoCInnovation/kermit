@@ -7,13 +7,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize)]
-pub struct Project {
-    pub node_version: String,
-    pub compiler_options: CompilerOptions,
-    pub infos: Vec<CodeInfo>,
-}
-
-#[derive(Serialize, Deserialize)]
 struct ProjectJson {
     #[serde(rename = "fullNodeVersion")]
     node_version: String,
@@ -45,6 +38,15 @@ impl JsonCodeInfo {
             code_hash_debug: json.code_hash_debug,
         })
     }
+}
+
+//////////////////
+
+#[derive(Serialize, Deserialize)]
+pub struct Project {
+    pub node_version: String,
+    pub compiler_options: CompilerOptions,
+    pub infos: Vec<CodeInfo>,
 }
 
 impl Project {

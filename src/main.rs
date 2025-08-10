@@ -1,4 +1,5 @@
 mod address;
+mod account;
 mod args;
 mod contracts;
 mod contracts_funcs;
