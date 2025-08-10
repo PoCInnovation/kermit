@@ -256,15 +256,15 @@ pub async fn compile(
     }
 
     // Remove duplicate code
-    all_source_infos.sort_by_key(|info| info.source_code_hash.clone());
-    all_source_infos.dedup_by_key(|info| info.source_code_hash.clone());
+    all_source_infos.sort_by_key(|info| info.code_info.source_code_hash.clone());
+    all_source_infos.dedup_by_key(|info| info.code_info.source_code_hash.clone());
 
     // The sorting will be used to concat the sources to compile the contract
     all_source_infos.sort_by_key(|info| info.kind);
 
     let concatenated_code = all_source_infos
         .iter()
-        .map(|info| info.source_code.as_str())
+        .map(|info| info.code_info.source_code.as_str())
         .collect::<Vec<_>>()
         .join("\n");
 

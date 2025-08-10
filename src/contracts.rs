@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use clap::{Args, Parser, ValueEnum};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use strum::Display;
 
@@ -20,7 +20,7 @@ pub enum NetworkType {
     Dev,
 }
 
-#[derive(Debug, Clone, Args, Serialize)]
+#[derive(Debug, Clone, Args, Serialize, Deserialize)]
 pub struct CompilerOptions {
     #[arg(
         long,
