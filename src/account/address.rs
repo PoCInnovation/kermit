@@ -8,14 +8,14 @@ use crate::utils::crypto::{djb2, xor_byte};
 
 const TOTAL_NUMBER_OF_GROUPS: u8 = 4;
 
-struct ContractAddress {
+pub struct Address {
     pub key: String,
     pub bytes: Vec<u8>
 }
 
-impl ContractAddress {
-    fn new(&self, public_key_hex: &str) -> Result<Self> {
-        let public_key_bytes = hex::decode(public_key_hex).context("Invalid hex")?;
+impl Address {
+    pub fn new(public_key_str: &str) -> Result<Self> {
+        let public_key_bytes = hex::decode(public_key_str).context("Invalid hex")?;
         let mut hasher = Blake2bVar::new(32).context("Failed to create Blake2bVar")?;
         hasher.update(&public_key_bytes);
         let mut hash_bytes = [0u8; 32];
@@ -35,7 +35,7 @@ impl ContractAddress {
         })
     }
 
-    fn groupFromBytes(&self) -> u8 {
+    pub fn group_from_bytes(&self) -> u8 {
         let hint = djb2(&self.bytes) | 1;
         let hash = xor_byte(hint);
         hash % TOTAL_NUMBER_OF_GROUPS

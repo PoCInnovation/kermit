@@ -1,4 +1,5 @@
-use anyhow::{Context, Result};
+use anyhow::Result;
+use serde_json::Value;
 
 use crate::{
     contracts::CompilerOptions,
@@ -7,6 +8,7 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
+use std::convert::{TryFrom, TryInto};
 
 #[derive(Serialize, Deserialize)]
 struct ProjectJson {
@@ -30,7 +32,7 @@ struct JsonCodeInfo {
 }
 
 impl JsonCodeInfo {
-    fn from_json(key_name: &str, json: JsonCodeInfo) -> Result<CodeInfo> {
+    fn try_into(key_name: &str, json: JsonCodeInfo) -> Result<CodeInfo> {
         Ok(CodeInfo {
             name: key_name.to_string(),
             source_code: read_file(json.contract_relative_path.as_str())?,
@@ -166,47 +168,6 @@ pub struct Project {
 }
 
 impl Project {
-    pub fn from_json(json_str: &str) -> Result<Project> {
-        let pj: ProjectJson = serde_json::from_str(json_str)?;
-        Ok(Project {
-            node_version: pj.node_version,
-            compiler_options: pj.compiler_options,
-            infos: pj
-                .infos
-                .into_iter()
-                .map(|(key, json)| {
-                    JsonCodeInfo::from_json(&key, json).map(|code_info| (key, code_info))
-                })
-                .collect::<Result<HashMap<String, CodeInfo>>>()?,
-        })
-    }
-
-    pub fn to_json(&self) -> Result<String> {
-        let infos: HashMap<String, JsonCodeInfo> = self
-            .infos
-            .iter()
-            .map(|(key, info)| {
-                (
-                    key.clone(),
-                    JsonCodeInfo {
-                        contract_relative_path: info.contract_relative_path.clone(),
-                        source_code_hash: info.source_code_hash.clone(),
-                        bytecode_debug_patch: info.bytecode_debug_patch.clone(),
-                        code_hash_debug: info.code_hash_debug.clone(),
-                    },
-                )
-            })
-            .collect();
-
-        let project_json = ProjectJson {
-            node_version: self.node_version.clone(),
-            compiler_options: self.compiler_options.clone(),
-            infos,
-        };
-
-        Ok(serde_json::to_string(&project_json)?)
-    }
-
     // Return the names of the sources who there content has changed, to trigger a recompilation
     pub fn get_changed_sources(&self, source_infos: &Vec<SourceInfo>) -> Result<Vec<String>> {
         let dependencies = get_dependencies(&source_infos)?;
@@ -246,5 +207,54 @@ impl Project {
         }
 
         Ok(result.into_iter().collect())
+    }
+}
+
+impl TryFrom<&str> for Project {
+    type Error = anyhow::Error;
+
+    fn try_from(json_str: &str) -> Result<Self, Self::Error> {
+        let pj: ProjectJson = serde_json::from_str(json_str)?;
+        Ok(Self {
+            node_version: pj.node_version,
+            compiler_options: pj.compiler_options,
+            infos: pj
+                .infos
+                .into_iter()
+                .map(|(key, json)| {
+                    JsonCodeInfo::try_into(&key, json).map(|code_info| (key, code_info))
+                })
+                .collect::<Result<HashMap<String, CodeInfo>>>()?,
+        })
+    }
+}
+
+impl TryInto<Value> for Project {
+    type Error = anyhow::Error;
+
+    fn try_into(self) -> Result<Value, Self::Error> {
+        let infos: HashMap<String, JsonCodeInfo> = self
+            .infos
+            .iter()
+            .map(|(key, info)| {
+                (
+                    key.clone(),
+                    JsonCodeInfo {
+                        contract_relative_path: info.contract_relative_path.clone(),
+                        source_code_hash: info.source_code_hash.clone(),
+                        bytecode_debug_patch: info.bytecode_debug_patch.clone(),
+                        code_hash_debug: info.code_hash_debug.clone(),
+                    },
+                )
+            })
+            .collect();
+
+        let project_json = ProjectJson {
+            node_version: self.node_version.clone(),
+            compiler_options: self.compiler_options.clone(),
+            infos,
+        };
+
+        Ok(serde_json::to_value(&project_json)?)
     }
 }

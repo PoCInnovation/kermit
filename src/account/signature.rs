@@ -1,16 +1,17 @@
 use anyhow::{Context, Result};
 use secp256k1::{PublicKey, Secp256k1, SecretKey};
-use hex;
 
-pub trait PrivateKey {
-    fn is_valid(hex_key: &str) -> bool;
+pub trait PrivateKey: Send + Sync {
+    fn is_valid(hex_key: &str) -> bool
+    where
+        Self: Sized;
     fn as_hex(&self) -> String;
     fn get_public_key(&self) -> Result<String>;
 }
 
 pub struct GLSecp256k1PrivateKey {
-    hex_key: String,
-    key: SecretKey,
+    pub hex_key: String,
+    pub key: SecretKey,
 }
 
 impl PrivateKey for GLSecp256k1PrivateKey {
@@ -30,11 +31,13 @@ impl PrivateKey for GLSecp256k1PrivateKey {
 }
 
 impl GLSecp256k1PrivateKey {
-    pub fn new(key: &str) -> Self {
-        GLSecp256k1PrivateKey {
-            key: SecretKey::from_slice(&hex::decode(key).expect("Invalid hex key"))
-                .expect("Failed to create secret key"),
+    pub fn new(key: &str) -> Result<Self> {
+        let private_key = SecretKey::from_slice(&hex::decode(key).context("Invalid hex key")?)
+            .context("Failed to create secret key")?;
+
+        Ok(GLSecp256k1PrivateKey {
+            key: private_key,
             hex_key: key.to_string(),
-        }
+        })
     }
 }

@@ -25,18 +25,18 @@ pub struct CodeInfo {
     pub source_code_hash: String,
     pub bytecode_debug_patch: Option<String>,
     pub code_hash_debug: Option<String>,
-    pub contract_relative_path: String
+    pub contract_relative_path: String,
 }
 
 pub struct SourceInfo {
     pub kind: SourceKind,
     pub from_index: Option<usize>,
     pub is_external: bool,
-    pub code_info: CodeInfo
+    pub code_info: CodeInfo,
 }
 
 impl SourceInfo {
-    pub fn from(
+    pub fn new(
         kind: SourceKind,
         name: String,
         from_index: Option<usize>,
@@ -59,14 +59,18 @@ impl SourceInfo {
                 source_code_hash,
                 bytecode_debug_patch: None,
                 code_hash_debug: None,
-                contract_relative_path
+                contract_relative_path,
             },
         }
     }
 
     pub fn get_artifact_path(&self, artifact_root_dir: &str) -> String {
         let relative_path = if self.is_external {
-            let parts: Vec<&str> = self.code_info.contract_relative_path.split(MAIN_SEPARATOR).collect();
+            let parts: Vec<&str> = self
+                .code_info
+                .contract_relative_path
+                .split(MAIN_SEPARATOR)
+                .collect();
             let filtered: Vec<&str> = parts
                 .iter()
                 .skip_while(|&&p| p == ".." || p == ".")

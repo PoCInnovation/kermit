@@ -81,7 +81,7 @@ fn get_source_info(
                 .map(|m| m.as_str().to_string())
                 .context("Invalid match")?;
             let from_index = cap.get(1).map(|m| m.start());
-            let source_info = SourceInfo::from(
+            let source_info = SourceInfo::new(
                 *kind,
                 name,
                 from_index,
@@ -100,7 +100,7 @@ fn get_source_info(
             .context("Failed to extract file stem for constants")?
             .to_string();
 
-        source_infos.push(SourceInfo::from(
+        source_infos.push(SourceInfo::new(
             SourceKind::Constants,
             name,
             None,
