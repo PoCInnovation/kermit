@@ -1,5 +1,5 @@
-use anyhow::{Context, Result};
-use secp256k1::{PublicKey, Secp256k1, SecretKey};
+use anyhow::{Context, Result, anyhow};
+use secp256k1::{Message, PublicKey, Secp256k1, SecretKey};
 
 pub trait PrivateKey: Send + Sync {
     fn is_valid(hex_key: &str) -> bool
@@ -7,6 +7,7 @@ pub trait PrivateKey: Send + Sync {
         Self: Sized;
     fn as_hex(&self) -> String;
     fn get_public_key(&self) -> Result<String>;
+    fn sign(&self, tx_id: &str) -> Result<String>;
 }
 
 pub struct GLSecp256k1PrivateKey {
@@ -27,6 +28,22 @@ impl PrivateKey for GLSecp256k1PrivateKey {
         let secp = Secp256k1::new();
         let public_key = PublicKey::from_secret_key(&secp, &self.key);
         Ok(public_key.to_string())
+    }
+
+    fn sign(&self, tx_id: &str) -> Result<String> {
+        let tx_id_bytes = hex::decode(tx_id)?;
+        let message = Message::from_digest(
+            tx_id_bytes
+                .try_into()
+                .map_err(|_| anyhow!("Invalid hash length"))?,
+        );
+
+        let secp = Secp256k1::new();
+        let signature = secp.sign_ecdsa(&message, &self.key);
+        let serialized = signature.serialize_compact();
+        let signature = hex::encode(serialized);
+
+        Ok(signature)
     }
 }
 

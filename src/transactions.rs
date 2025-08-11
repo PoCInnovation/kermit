@@ -1,10 +1,12 @@
-use anyhow::{Result, anyhow};
+use anyhow::Result;
 use clap::Parser;
-use secp256k1::{Message, Secp256k1, SecretKey};
 use serde::{Deserialize, de::DeserializeOwned};
 use serde_json::{Value, json};
 
-use crate::utils::{get, post, HttpResponse};
+use crate::{
+    account::signature::{GLSecp256k1PrivateKey, PrivateKey},
+    utils::{HttpResponse, get, post},
+};
 
 /// CLI arguments for `kermit transactions`.
 #[derive(Parser)]
@@ -96,25 +98,6 @@ async fn build<T: DeserializeOwned>(
     .await
 }
 
-fn sign(tx_id: &str, private_key: &str) -> Result<String> {
-    let secp = Secp256k1::new();
-    let private_key_bytes = hex::decode(private_key)?;
-    let secret_key = SecretKey::from_slice(&private_key_bytes)?;
-
-    let tx_id_bytes = hex::decode(tx_id)?;
-    let message = Message::from_digest(
-        tx_id_bytes
-            .try_into()
-            .map_err(|_| anyhow!("Invalid hash length"))?,
-    );
-
-    let signature = secp.sign_ecdsa(&message, &secret_key);
-    let serialized = signature.serialize_compact();
-    let signature = hex::encode(serialized);
-
-    Ok(signature)
-}
-
 async fn submit(url: &str, unsigned_tx: &str, signature: &str) -> Result<HttpResponse<Value>> {
     post(
         url,
@@ -136,13 +119,18 @@ impl TransactionsSubcommands {
                 amount,
                 gas_amount,
                 gas_price,
-            } => build(url, public_key, to_addr, amount, gas_amount, gas_price).await?.data,
+            } => {
+                build(url, public_key, to_addr, amount, gas_amount, gas_price)
+                    .await?
+                    .data
+            },
             Self::Submit {
                 tx_id,
                 unsigned_tx,
                 private_key,
             } => {
-                let signature = sign(&tx_id, &private_key)?;
+                let private_key = GLSecp256k1PrivateKey::new(&private_key)?;
+                let signature = private_key.sign(&tx_id)?;
                 submit(url, &unsigned_tx, &signature).await?.data
             },
             Self::Create {
@@ -153,10 +141,13 @@ impl TransactionsSubcommands {
                 gas_price,
                 private_key,
             } => {
+                let private_key = GLSecp256k1PrivateKey::new(&private_key)?;
                 let BuildTransactionResponse { tx_id, unsigned_tx } =
-                    build(url, public_key, to_addr, amount, gas_amount, gas_price).await?.data;
+                    build(url, public_key, to_addr, amount, gas_amount, gas_price)
+                        .await?
+                        .data;
 
-                let signature = sign(&tx_id, &private_key)?;
+                let signature = private_key.sign(&tx_id)?;
                 submit(url, &unsigned_tx, &signature).await?.data
             },
             Self::Decode { unsigned_tx } => {
@@ -165,10 +156,13 @@ impl TransactionsSubcommands {
                     "/transactions/decode-unsigned-tx",
                     json!({"unsignedTx": unsigned_tx}),
                 )
-                .await?.data
+                .await?
+                .data
             },
             Self::Status { tx_id } => {
-                get(url, &format!("/transactions/status?txId={}", tx_id)).await?.data
+                get(url, &format!("/transactions/status?txId={}", tx_id))
+                    .await?
+                    .data
             },
         };
 
