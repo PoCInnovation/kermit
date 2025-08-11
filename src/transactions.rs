@@ -42,9 +42,6 @@ pub enum TransactionsSubcommands {
     /// Create a transaction.
     #[command(visible_alias = "c")]
     Create {
-        /// Public key of the sender.
-        #[arg(env)]
-        public_key: String,
         /// Address of the recipient.
         to_addr: String,
         /// Amount to send.
@@ -98,7 +95,7 @@ async fn build<T: DeserializeOwned>(
     .await
 }
 
-async fn submit(url: &str, unsigned_tx: &str, signature: &str) -> Result<HttpResponse<Value>> {
+pub async fn submit(url: &str, unsigned_tx: &str, signature: &str, gas_price: Option<String>) -> Result<HttpResponse<Value>> {
     post(
         url,
         "/transactions/submit",
@@ -131,10 +128,9 @@ impl TransactionsSubcommands {
             } => {
                 let private_key = GLSecp256k1PrivateKey::new(&private_key)?;
                 let signature = private_key.sign(&tx_id)?;
-                submit(url, &unsigned_tx, &signature).await?.data
+                submit(url, &unsigned_tx, &signature, None).await?.data
             },
             Self::Create {
-                public_key,
                 to_addr,
                 amount,
                 gas_amount,
@@ -142,13 +138,14 @@ impl TransactionsSubcommands {
                 private_key,
             } => {
                 let private_key = GLSecp256k1PrivateKey::new(&private_key)?;
+                let public_key = private_key.get_public_key()?;
                 let BuildTransactionResponse { tx_id, unsigned_tx } =
                     build(url, public_key, to_addr, amount, gas_amount, gas_price)
                         .await?
                         .data;
 
                 let signature = private_key.sign(&tx_id)?;
-                submit(url, &unsigned_tx, &signature).await?.data
+                submit(url, &unsigned_tx, &signature, None).await?.data
             },
             Self::Decode { unsigned_tx } => {
                 post(

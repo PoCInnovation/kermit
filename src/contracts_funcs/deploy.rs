@@ -1,11 +1,15 @@
 use std::collections::HashMap;
 
 use anyhow::{Context, Result, anyhow};
-use serde::Deserialize;
-use serde_json::Value;
+use serde::{Deserialize, de::DeserializeOwned};
+use serde_json::{Value, json};
 
 use crate::{
-    account::{account::Account, signature::GLSecp256k1PrivateKey},
+    account::{
+        account::Account,
+        address::Address,
+        signature::{GLSecp256k1PrivateKey, PrivateKey},
+    },
     contracts::NetworkType,
     contracts_funcs::{
         compile_output::{Contract, RalphValue},
@@ -14,7 +18,8 @@ use crate::{
         project::Project,
     },
     network::health::is_network_alive,
-    utils::{fs::read_file, get},
+    transactions::submit,
+    utils::{HttpResponse, fs::read_file, get, post},
 };
 
 #[derive(Debug, Deserialize)]
@@ -62,8 +67,67 @@ async fn validate_chain_params(
     Ok(())
 }
 
+////////////////////////////////////////
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct BuildTransactionResponse {
+    contract_id: String,
+    tx_id: String,
+    unsigned_tx: String,
+    gas_price: String,
+}
+
+async fn build<T: DeserializeOwned>(
+    url: &str,
+    public_key: &str,
+    address: &str,
+    bytecode: &str,
+    issue_token_amount: u64,
+) -> Result<HttpResponse<T>> {
+    post(
+        url,
+        "/contracts/unsigned-tx/deploy-contract",
+        json!({
+            "fromPublicKey": public_key,
+            "fromPublicKeyType": "default",
+            "signerAddress": address,
+            "signerKeyType": "default",
+            "bytecode": bytecode,
+            "issueTokenAmount": issue_token_amount
+        }),
+    )
+    .await
+}
+
+pub async fn send_tx(
+    url: &str,
+    private_key: &Box<dyn PrivateKey>,
+    address: &Address,
+    bytecode: &str,
+    issue_token_amount: u64,
+) -> Result<Value> {
+    let public_key = private_key.get_public_key()?;
+    let BuildTransactionResponse {
+        contract_id,
+        tx_id,
+        unsigned_tx,
+        gas_price,
+    } = build(url, &public_key, &address.key, bytecode, issue_token_amount)
+        .await?
+        .data;
+
+    let signature = private_key.sign(&tx_id)?;
+    Ok(submit(url, &unsigned_tx, &signature, Some(gas_price))
+        .await?
+        .data)
+}
+
+////////////////////////////////////////
+
 pub async fn deploy(
     url: &str,
+    private_key: Option<Box<dyn PrivateKey>>,
     network_id: NetworkType,
     config_path: &str,
     project_path: &str,
@@ -81,25 +145,34 @@ pub async fn deploy(
         return Err(anyhow!("Network is not reachable: {}", network.node_url));
     }
 
-    let private_keys = config
-        .configuration
-        .networks
-        .devnet
-        .private_keys
-        .ok_or_else(|| anyhow!("No private keys found in devnet configuration"))?;
+    let private_key = if let Some(private_key) = private_key {
+        private_key
+    } else {
+        let private_keys = network
+            .private_keys
+            .clone()
+            .ok_or_else(|| anyhow!("No private keys found in devnet configuration"))?;
 
-    let private_key = private_keys
-        .get(0)
-        .context("No private keys found in devnet configuration")?;
+        let private_key = private_keys
+            .get(0)
+            .context("No private keys found in devnet configuration")?;
 
-    let private_key = Box::new(GLSecp256k1PrivateKey::new(private_key)?);
+        Box::new(GLSecp256k1PrivateKey::new(private_key)?)
+    };
+
     let account = Account::new(private_key)?;
-
-    let project: Project = Project::try_from(read_file(project_path)?.as_str())?;
     let chain_params = get::<ChainParams>(url, "/infos/chain-params").await?.data;
 
     validate_chain_params(network_id as u8, &vec![account.group], chain_params).await?;
 
     let bytecode = build_bytecode_contract(&contract, init_fields, network_id == NetworkType::Dev)?;
-    todo!()
+
+    Ok(send_tx(
+        url,
+        &account.private_key,
+        &account.address,
+        &bytecode,
+        network.settings.issue_token_amount.clone(),
+    )
+    .await?)
 }
