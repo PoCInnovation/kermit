@@ -1,4 +1,5 @@
-use anyhow::{Context, Result, anyhow};
+use anyhow::{anyhow, Context, Error, Result};
+use i256::{I256, U256};
 use serde::{Deserialize, de::{self, Deserializer}};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -200,11 +201,11 @@ impl TryFrom<&str> for TypeName {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RalphValue {
     Bool(bool),
-    U256(u128),
-    I256(i128),
+    U256(U256),
+    I256(I256),
     ByteVec(Vec<u8>),
     Address(String),
     Map(HashMap<RalphValue, RalphValue>),
@@ -242,14 +243,14 @@ impl RalphValue {
                 let n = value
                     .as_str()
                     .context("Expected U256 as string or number")?;
-                let parsed = n.parse::<u128>().context("Failed to parse U256")?;
+                let parsed = n.parse::<U256>().map_err(Error::msg)?;
                 Ok(RalphValue::U256(parsed))
             },
             TypeName::I256 => {
                 let n = value
                     .as_str()
                     .context("Expected I256 as string or number")?;
-                let parsed = n.parse::<i128>().context("Failed to parse I256")?;
+                let parsed = n.parse::<I256>().map_err(Error::msg)?;
                 Ok(RalphValue::I256(parsed))
             },
             TypeName::ByteVec => {
@@ -264,7 +265,7 @@ impl RalphValue {
                         .collect::<Result<Vec<u8>>>();
                     Ok(RalphValue::ByteVec(bytes?))
                 } else if let Some(s) = value.as_str() {
-                    Ok(RalphValue::ByteVec(s.into()))
+                    Ok(RalphValue::ByteVec(hex::decode(s)?))
                 } else {
                     Err(anyhow!("Expected ByteVec as array or string"))
                 }

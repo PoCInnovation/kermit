@@ -13,7 +13,7 @@ pub enum ContractType {
     Project,
 }
 
-#[derive(Clone, Debug, Display, ValueEnum)]
+#[derive(Clone, Copy, Debug, Display, ValueEnum, PartialEq, Eq)]
 pub enum NetworkType {
     Main,
     Test,

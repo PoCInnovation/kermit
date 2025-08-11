@@ -2,8 +2,13 @@ use anyhow::{Context, Result, anyhow};
 use regex::Regex;
 use std::collections::HashMap;
 
-use crate::contracts_funcs::compile_output::{
-    CompileProject, Contract, FieldsMap, FieldsTypesMap, RalphValue, TypeName,
+use crate::contracts_funcs::{
+    compile_output::{CompileProject, Contract, FieldsMap, FieldsTypesMap, RalphValue, TypeName},
+    contract_codec::encode_i32,
+    deploy_vm_encode::{
+        encode_vmbyte_address, encode_vmbyte_bool, encode_vmbyte_i256, encode_vmbyte_u256,
+        encode_vmbyte_vec,
+    },
 };
 
 fn get_std_prefix(std_interface_id: &str) -> Option<String> {
@@ -50,17 +55,33 @@ fn get_debug_bytecode(bytecode: &str, bytecode_patch: &str) -> Result<String> {
 }
 
 fn encode_fields_by_type(fields: FieldsMap) -> Result<String> {
-    todo!()
+    let size_buffer = encode_i32(fields.keys().len() as i32);
+    let bytecode = fields.iter().try_fold(size_buffer, |mut acc, (name, (value, _))| {
+        let encoded_value = match value {
+            RalphValue::Bool(b) => encode_vmbyte_bool(*b),
+            RalphValue::U256(n) => encode_vmbyte_u256(*n),
+            RalphValue::I256(n) => encode_vmbyte_i256(*n),
+            RalphValue::ByteVec(bytes) => encode_vmbyte_vec(bytes),
+            RalphValue::Address(addr) => encode_vmbyte_address(addr),
+            _ => return Err(anyhow!("Unsupported value type for field '{}'", name)),
+        }?;
+        acc.extend_from_slice(&[name.as_bytes().to_vec(), encoded_value].concat());
+        Ok(acc)
+    })?;
+    Ok(hex::encode(bytecode))
 }
 
-fn encode_fields(fields: FieldsMap) -> Result<String> {
-    todo!()
-}
-
-fn build_bytecode_contract(
+pub fn build_bytecode_contract(
     contract: &Contract,
     init_fields: HashMap<String, RalphValue>,
+    is_devnet: bool,
 ) -> Result<String> {
+    let main_bytecode = if is_devnet {
+        get_debug_bytecode(&contract.bytecode, &contract.bytecode_debug_patch)?
+    } else {
+        contract.bytecode.clone()
+    };
+
     let fields_types: FieldsTypesMap = contract.fields.clone().try_into()?;
     let mut fields = fields_types
         .iter()
@@ -78,11 +99,19 @@ fn build_bytecode_contract(
         .collect::<Result<FieldsMap>>()?;
 
     let encoded_prefix = get_std_prefix(&contract.std_interface_id);
-    if let Some(z) = encoded_prefix {
+    if let Some(s) = encoded_prefix {
         fields.insert(
             "__stdInterfaceId".to_string(),
-            (RalphValue::ByteVec(z.into()), false),
+            (RalphValue::ByteVec(s.into()), false),
         );
     }
-    todo!()
+
+    let (mutables, immutables): (HashMap<_, _>, HashMap<_, _>) = fields
+        .into_iter()
+        .partition(|(_, (_, is_mutable))| *is_mutable);
+
+    let imm_bytecode = encode_fields_by_type(immutables)?;
+    let mut_bytecode = encode_fields_by_type(mutables)?;
+
+    Ok(main_bytecode + &imm_bytecode + &mut_bytecode)
 }

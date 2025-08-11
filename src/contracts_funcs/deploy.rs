@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use anyhow::{Context, Result, anyhow};
 use serde::Deserialize;
 use serde_json::Value;
@@ -5,7 +7,12 @@ use serde_json::Value;
 use crate::{
     account::{account::Account, signature::GLSecp256k1PrivateKey},
     contracts::NetworkType,
-    contracts_funcs::{config::Config, project::Project},
+    contracts_funcs::{
+        compile_output::{Contract, RalphValue},
+        config::Config,
+        deploy_bytecode::build_bytecode_contract,
+        project::Project,
+    },
     network::health::is_network_alive,
     utils::{fs::read_file, get},
 };
@@ -60,9 +67,11 @@ pub async fn deploy(
     network_id: NetworkType,
     config_path: &str,
     project_path: &str,
+    contract: Contract,
+    init_fields: HashMap<String, RalphValue>,
 ) -> Result<Value> {
     let config = Config::new(config_path)?;
-    let network = match network_id {
+    let network = match &network_id {
         NetworkType::Dev => &config.configuration.networks.devnet,
         NetworkType::Test => &config.configuration.networks.testnet,
         NetworkType::Main => &config.configuration.networks.mainnet,
@@ -90,5 +99,7 @@ pub async fn deploy(
     let chain_params = get::<ChainParams>(url, "/infos/chain-params").await?.data;
 
     validate_chain_params(network_id as u8, &vec![account.group], chain_params).await?;
+
+    let bytecode = build_bytecode_contract(&contract, init_fields, network_id == NetworkType::Dev)?;
     todo!()
 }
