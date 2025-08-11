@@ -1,7 +1,10 @@
 use anyhow::{Context, Result, anyhow};
 use regex::Regex;
+use std::collections::HashMap;
 
-use crate::contracts_funcs::compile_output::{CompileProject, Contract, FieldsMap, TypeName};
+use crate::contracts_funcs::compile_output::{
+    CompileProject, Contract, FieldsMap, FieldsTypesMap, RalphValue, TypeName,
+};
 
 fn get_std_prefix(std_interface_id: &str) -> Option<String> {
     const STD_INTERFACE_PREFIX: &str = "414c5048";
@@ -54,18 +57,32 @@ fn encode_fields(fields: FieldsMap) -> Result<String> {
     todo!()
 }
 
-fn build_bytecode_contract(contract: &Contract) -> Result<String> {
-    let mut fields: FieldsMap = contract.fields.clone().try_into()?;
-    let encoded_prefix = get_std_prefix(&contract.std_interface_id);
-    if let Some(z) =  encoded_prefix {
-        fields.insert("__stdInterfaceId".to_string(), (TypeName::ByteVec, false));
-    }
-    todo!()
-}
+fn build_bytecode_contract(
+    contract: &Contract,
+    init_fields: HashMap<String, RalphValue>,
+) -> Result<String> {
+    let fields_types: FieldsTypesMap = contract.fields.clone().try_into()?;
+    let mut fields = fields_types
+        .iter()
+        .zip(init_fields.iter())
+        .map(|((name, (ty, is_mutable)), (init_name, value))| {
+            if name != init_name {
+                return Err(anyhow!(
+                    "Field name mismatch: expected '{}', found '{}'",
+                    name,
+                    init_name
+                ));
+            }
+            Ok((name.clone(), (value.clone(), *is_mutable)))
+        })
+        .collect::<Result<FieldsMap>>()?;
 
-pub fn build_bytecode(compiled_project: CompileProject) -> Result<String> {
-    for a in &compiled_project.contracts {
-        let bytecode = build_bytecode_contract(a)?;
+    let encoded_prefix = get_std_prefix(&contract.std_interface_id);
+    if let Some(z) = encoded_prefix {
+        fields.insert(
+            "__stdInterfaceId".to_string(),
+            (RalphValue::ByteVec(z.into()), false),
+        );
     }
     todo!()
 }

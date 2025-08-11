@@ -1,10 +1,11 @@
 use anyhow::{Context, Result, anyhow};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, de::{self, Deserializer}};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::convert::TryFrom;
+use std::hash::{Hash, Hasher};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CompileProject {
     pub contracts: Vec<Contract>,
@@ -12,7 +13,7 @@ pub struct CompileProject {
     pub structs: Vec<StructDef>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Contract {
     pub version: String,
@@ -31,7 +32,7 @@ pub struct Contract {
     pub std_interface_id: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Script {
     pub version: String,
@@ -43,7 +44,7 @@ pub struct Script {
     pub warnings: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StructDef {
     pub name: String,
@@ -52,7 +53,7 @@ pub struct StructDef {
     pub is_mutable: Vec<bool>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Fields {
     pub names: Vec<String>,
@@ -60,9 +61,10 @@ pub struct Fields {
     pub is_mutable: Vec<bool>,
 }
 
-pub type FieldsMap = HashMap<String, (TypeName, bool)>;
+pub type FieldsTypesMap = HashMap<String, (TypeName, bool)>;
+pub type FieldsMap = HashMap<String, (RalphValue, bool)>;
 
-impl Into<FieldsMap> for Fields {
+impl Into<FieldsTypesMap> for Fields {
     fn into(self) -> HashMap<String, (TypeName, bool)> {
         self.names
             .into_iter()
@@ -73,7 +75,7 @@ impl Into<FieldsMap> for Fields {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Function {
     pub name: String,
@@ -86,42 +88,42 @@ pub struct Function {
     pub return_types: Vec<TypeName>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Constant {
     pub name: String,
     pub value: ConstantValue,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ConstantValue {
     pub type_name: TypeName,
     pub value: FieldValue,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EnumDef {
     pub name: String,
     pub fields: Vec<EnumField>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EnumField {
     pub name: String,
     pub value: EnumFieldValue,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EnumFieldValue {
     pub type_name: TypeName,
     pub value: FieldValue,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Event {
     pub name: String,
@@ -129,21 +131,40 @@ pub struct Event {
     pub field_types: Vec<TypeName>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Maps {
     pub names: Vec<String>,
     pub types: Vec<TypeName>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone)]
 pub struct FieldValue {
-    pub tyne_name: TypeName,
-    pub value: Value, // they can be converted to TypeName...
+    pub type_name: TypeName,
+    pub value: RalphValue,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+impl<'de> Deserialize<'de> for FieldValue {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct Helper {
+            #[serde(rename = "typeName")]
+            type_name: String,
+            value: serde_json::Value,
+        }
+
+        let helper = Helper::deserialize(deserializer)?;
+        let type_name = TypeName::try_from(helper.type_name.as_str()).map_err(de::Error::custom)?;
+        let value = RalphValue::from_typename_and_value(&type_name, &helper.value)
+            .map_err(de::Error::custom)?;
+        Ok(FieldValue { type_name, value })
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
 pub enum TypeName {
     Bool,
     U256,
@@ -175,6 +196,94 @@ impl TryFrom<&str> for TypeName {
                 ))
             },
             _ => Err(anyhow!("Unknown type name: {}", s)),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+pub enum RalphValue {
+    Bool(bool),
+    U256(u128),
+    I256(i128),
+    ByteVec(Vec<u8>),
+    Address(String),
+    Map(HashMap<RalphValue, RalphValue>),
+}
+
+impl Hash for RalphValue {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        // Hash the variant discriminant first so different variants
+        // with the same inner value don't collide
+        std::mem::discriminant(self).hash(state);
+        match self {
+            RalphValue::Bool(b) => b.hash(state),
+            RalphValue::U256(u) => u.hash(state),
+            RalphValue::I256(i) => i.hash(state),
+            RalphValue::ByteVec(bytes) => bytes.hash(state),
+            RalphValue::Address(addr) => addr.hash(state),
+            RalphValue::Map(map) => {
+                for (key, value) in map {
+                    key.hash(state);
+                    value.hash(state);
+                }
+            },
+        }
+    }
+}
+
+impl RalphValue {
+    pub fn from_typename_and_value(ty: &TypeName, value: &Value) -> Result<Self> {
+        match ty {
+            TypeName::Bool => {
+                let b = value.as_bool().context("Expected bool value")?;
+                Ok(RalphValue::Bool(b))
+            },
+            TypeName::U256 => {
+                let n = value
+                    .as_str()
+                    .context("Expected U256 as string or number")?;
+                let parsed = n.parse::<u128>().context("Failed to parse U256")?;
+                Ok(RalphValue::U256(parsed))
+            },
+            TypeName::I256 => {
+                let n = value
+                    .as_str()
+                    .context("Expected I256 as string or number")?;
+                let parsed = n.parse::<i128>().context("Failed to parse I256")?;
+                Ok(RalphValue::I256(parsed))
+            },
+            TypeName::ByteVec => {
+                if let Some(arr) = value.as_array() {
+                    let bytes = arr
+                        .iter()
+                        .map(|v| {
+                            v.as_u64()
+                                .map(|b| b as u8)
+                                .context("Expected u8 in ByteVec array")
+                        })
+                        .collect::<Result<Vec<u8>>>();
+                    Ok(RalphValue::ByteVec(bytes?))
+                } else if let Some(s) = value.as_str() {
+                    Ok(RalphValue::ByteVec(s.into()))
+                } else {
+                    Err(anyhow!("Expected ByteVec as array or string"))
+                }
+            },
+            TypeName::Address => {
+                let addr = value.as_str().context("Expected Address as string")?;
+                Ok(RalphValue::Address(addr.to_string()))
+            },
+            TypeName::Map(key_ty, val_ty) => {
+                let obj = value.as_object().context("Expected Map as object")?;
+                let mut map = HashMap::new();
+                for (k, v) in obj {
+                    let key =
+                        RalphValue::from_typename_and_value(key_ty, &Value::String(k.clone()))?;
+                    let val = RalphValue::from_typename_and_value(val_ty, v)?;
+                    map.insert(key, val);
+                }
+                Ok(RalphValue::Map(map))
+            },
         }
     }
 }
