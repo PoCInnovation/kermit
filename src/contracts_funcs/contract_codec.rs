@@ -1,4 +1,3 @@
-use anyhow::{Context, Result, anyhow};
 use i256::{I256, U256};
 
 const ONE_BYTE_BOUND: i32 = 0x40;
@@ -138,8 +137,8 @@ pub fn encode_i256(value: I256) -> Vec<u8> {
 }
 
 pub fn encode_u256(value: U256) -> Vec<u8> {
-    let zero = U256::from(0u32);
-    let upper_bound = U256::from(1u32) << 256;
+    // let zero = U256::from(0u32);
+    // let upper_bound = U256::from(1u32) << 256;
     let four_byte_bound = U256::from(FOUR_BYTE_BOUND as u32);
 
     if value < four_byte_bound {

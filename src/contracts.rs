@@ -1,16 +1,25 @@
+use std::collections::HashMap;
+
 use anyhow::{Context, Result};
 use clap::{Args, Parser, ValueEnum};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use strum::Display;
 
-use crate::contracts_funcs::compile::compile;
+use crate::{
+    account::signature::{GLSecp256k1PrivateKey, PrivateKey},
+    contracts_funcs::{
+        compile::{compile, get_compiled_project},
+        deploy::deploy_contract,
+        project::Project,
+    },
+    utils::fs::read_file,
+};
 
 #[derive(Clone, Debug, Display, ValueEnum)]
-pub enum ContractType {
+pub enum CompiledType {
     Contract,
     Script,
-    Project,
 }
 
 #[derive(Clone, Copy, Debug, Display, ValueEnum, PartialEq, Eq)]
@@ -67,18 +76,10 @@ pub struct CompilerOptions {
     )]
     pub ignore_update_fields_check_warnings: bool,
 
-    #[arg(
-        long,
-        default_value_t = false,
-        help = "Skip abstract contract check"
-    )]
+    #[arg(long, default_value_t = false, help = "Skip abstract contract check")]
     pub skip_abstract_contract_check: bool,
 
-    #[arg(
-        long,
-        default_value_t = false,
-        help = "Skip tests"
-    )]
+    #[arg(long, default_value_t = false, help = "Skip tests")]
     pub skip_tests: bool,
 }
 
@@ -110,12 +111,17 @@ pub enum ContractsSubcommands {
     },
     #[command(visible_alias = "d")]
     Deploy {
-        public_key: String,
         #[arg(long, default_value_t = NetworkType::Main)]
         network: NetworkType,
+        #[arg(long, default_value_t = CompiledType::Contract)]
+        compiled_type: CompiledType,
+        #[arg(help = "Index in the list of the wanted compiled object")]
+        compiled_index: u32,
         compile_output_path: String,
-        #[arg(long, default_value_t = ContractType::Project)]
-        contract_type: ContractType,
+        project_path: String,
+        config_file_path: Option<String>,
+        #[arg(long, env)]
+        private_key: Option<String>,
     },
 }
 
@@ -144,12 +150,48 @@ impl ContractsSubcommands {
                 .await?
             },
             Self::Deploy {
-                contract_type,
-                public_key,
                 network,
+                compiled_type,
+                compiled_index,
                 compile_output_path,
+                project_path,
+                config_file_path,
+                private_key,
             } => {
-                unimplemented!("Contract type not supported yet")
+                let _project = Project::try_from(read_file(&project_path)?.as_str())?;
+                let compiled_project = get_compiled_project(&compile_output_path)?;
+
+                match compiled_type {
+                    CompiledType::Contract => {
+                        let contract = compiled_project
+                            .contracts
+                            .get(compiled_index as usize)
+                            .context("Invalid compiled index")?;
+                        let initial_fields = HashMap::new();
+
+                        let private_key = if let Some(path) = private_key {
+                            let private_key: Box<dyn PrivateKey> =
+                                Box::new(GLSecp256k1PrivateKey::new(&path)?);
+                            Some(private_key)
+                        } else {
+                            None
+                        };
+
+                        deploy_contract(
+                            url,
+                            private_key,
+                            network,
+                            &config_file_path
+                                .unwrap_or_else(|| String::from("./alephium.config.yaml")),
+                            contract.clone(),
+                            initial_fields,
+                        )
+                        .await?
+                    },
+                    CompiledType::Script => {
+                        unimplemented!("Script deployment is not implemented yet");
+                    },
+                }
             },
         };
 

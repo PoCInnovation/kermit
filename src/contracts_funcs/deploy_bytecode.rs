@@ -3,7 +3,7 @@ use regex::Regex;
 use std::collections::HashMap;
 
 use crate::contracts_funcs::{
-    compile_output::{CompileProject, Contract, FieldsMap, FieldsTypesMap, RalphValue, TypeName},
+    compile_output::{Contract, FieldsMap, FieldsTypesMap, RalphValue},
     contract_codec::encode_i32,
     deploy_vm_encode::{
         encode_vmbyte_address, encode_vmbyte_bool, encode_vmbyte_i256, encode_vmbyte_u256,
@@ -56,18 +56,20 @@ fn get_debug_bytecode(bytecode: &str, bytecode_patch: &str) -> Result<String> {
 
 fn encode_fields_by_type(fields: FieldsMap) -> Result<String> {
     let size_buffer = encode_i32(fields.keys().len() as i32);
-    let bytecode = fields.iter().try_fold(size_buffer, |mut acc, (name, (value, _))| {
-        let encoded_value = match value {
-            RalphValue::Bool(b) => encode_vmbyte_bool(*b),
-            RalphValue::U256(n) => encode_vmbyte_u256(*n),
-            RalphValue::I256(n) => encode_vmbyte_i256(*n),
-            RalphValue::ByteVec(bytes) => encode_vmbyte_vec(bytes),
-            RalphValue::Address(addr) => encode_vmbyte_address(addr),
-            _ => return Err(anyhow!("Unsupported value type for field '{}'", name)),
-        }?;
-        acc.extend_from_slice(&[name.as_bytes().to_vec(), encoded_value].concat());
-        Ok(acc)
-    })?;
+    let bytecode = fields
+        .iter()
+        .try_fold(size_buffer, |mut acc, (name, (value, _))| {
+            let encoded_value = match value {
+                RalphValue::Bool(b) => encode_vmbyte_bool(*b),
+                RalphValue::U256(n) => encode_vmbyte_u256(*n),
+                RalphValue::I256(n) => encode_vmbyte_i256(*n),
+                RalphValue::ByteVec(bytes) => encode_vmbyte_vec(bytes),
+                RalphValue::Address(addr) => encode_vmbyte_address(addr),
+                _ => return Err(anyhow!("Unsupported value type for field '{}'", name)),
+            }?;
+            acc.extend_from_slice(&[name.as_bytes().to_vec(), encoded_value].concat());
+            Ok(acc)
+        })?;
     Ok(hex::encode(bytecode))
 }
 
@@ -86,7 +88,7 @@ pub fn build_bytecode_contract(
     let mut fields = fields_types
         .iter()
         .zip(init_fields.iter())
-        .map(|((name, (ty, is_mutable)), (init_name, value))| {
+        .map(|((name, (_, is_mutable)), (init_name, value))| {
             if name != init_name {
                 return Err(anyhow!(
                     "Field name mismatch: expected '{}', found '{}'",

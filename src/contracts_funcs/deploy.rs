@@ -15,11 +15,10 @@ use crate::{
         compile_output::{Contract, RalphValue},
         config::Config,
         deploy_bytecode::build_bytecode_contract,
-        project::Project,
     },
     network::health::is_network_alive,
     transactions::submit,
-    utils::{HttpResponse, fs::read_file, get, post},
+    utils::{HttpResponse, get, post},
 };
 
 #[derive(Debug, Deserialize)]
@@ -100,7 +99,7 @@ async fn build<T: DeserializeOwned>(
     .await
 }
 
-pub async fn send_tx(
+async fn send_tx(
     url: &str,
     private_key: &Box<dyn PrivateKey>,
     address: &Address,
@@ -109,7 +108,7 @@ pub async fn send_tx(
 ) -> Result<Value> {
     let public_key = private_key.get_public_key()?;
     let BuildTransactionResponse {
-        contract_id,
+        contract_id: _contract_id,
         tx_id,
         unsigned_tx,
         gas_price,
@@ -125,12 +124,11 @@ pub async fn send_tx(
 
 ////////////////////////////////////////
 
-pub async fn deploy(
+pub async fn deploy_contract(
     url: &str,
     private_key: Option<Box<dyn PrivateKey>>,
     network_id: NetworkType,
     config_path: &str,
-    project_path: &str,
     contract: Contract,
     init_fields: HashMap<String, RalphValue>,
 ) -> Result<Value> {

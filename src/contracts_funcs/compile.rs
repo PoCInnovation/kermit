@@ -5,8 +5,12 @@ use std::path::{Path, PathBuf};
 
 use crate::{
     contracts::{CompilerOptions, NetworkType},
-    contracts_funcs::{config::Config, source_info::{SourceInfo, SourceKind}},
-    network::{health::is_network_alive},
+    contracts_funcs::{
+        compile_output::CompileProject,
+        config::Config,
+        source_info::{SourceInfo, SourceKind},
+    },
+    network::health::is_network_alive,
     utils::{fs::read_file, post},
 };
 use once_cell::sync::Lazy;
@@ -184,6 +188,13 @@ fn load_file(
     source_infos.extend(imported_source_infos);
 
     Ok((source_infos, new_import_file_paths_cache))
+}
+
+pub fn get_compiled_project(path: &str) -> Result<CompileProject> {
+    let content = read_file(path)?;
+    let compile_project: CompileProject =
+        serde_json::from_str(&content).context("Failed to parse compile output JSON")?;
+    Ok(compile_project)
 }
 
 pub async fn compile(

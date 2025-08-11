@@ -1,4 +1,4 @@
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Context, Result};
 use i256::{I256, U256};
 
 use crate::contracts_funcs::contract_codec::{encode_i32, encode_i256, encode_u256};

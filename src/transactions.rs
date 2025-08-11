@@ -95,13 +95,19 @@ async fn build<T: DeserializeOwned>(
     .await
 }
 
-pub async fn submit(url: &str, unsigned_tx: &str, signature: &str, gas_price: Option<String>) -> Result<HttpResponse<Value>> {
+pub async fn submit(
+    url: &str,
+    unsigned_tx: &str,
+    signature: &str,
+    gas_price: Option<String>,
+) -> Result<HttpResponse<Value>> {
     post(
         url,
         "/transactions/submit",
         json!({
             "unsignedTx": unsigned_tx,
             "signature": signature,
+            "gasPrice": gas_price
         }),
     )
     .await
