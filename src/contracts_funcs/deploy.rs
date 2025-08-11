@@ -11,6 +11,7 @@ use crate::{
 };
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct ChainParams {
     network_id: u8,
     num_zeros_at_least_in_hash: u8,

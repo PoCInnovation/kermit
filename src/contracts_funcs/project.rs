@@ -11,23 +11,19 @@ use std::collections::{HashMap, HashSet};
 use std::convert::{TryFrom, TryInto};
 
 #[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct ProjectJson {
-    #[serde(rename = "fullNodeVersion")]
     node_version: String,
-    #[serde(rename = "compilerOptionsUsed")]
     compiler_options: CompilerOptions,
     infos: HashMap<String, JsonCodeInfo>,
 }
 
 #[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct JsonCodeInfo {
-    #[serde(rename = "sourceFile")]
     contract_relative_path: String,
-    #[serde(rename = "sourceCodeHash")]
     source_code_hash: String,
-    #[serde(rename = "bytecodeDebugPatch")]
     bytecode_debug_patch: Option<String>,
-    #[serde(rename = "codeHashDebug")]
     code_hash_debug: Option<String>,
 }
 
@@ -161,6 +157,7 @@ fn get_dependencies(source_infos: &Vec<SourceInfo>) -> Result<HashMap<String, Ve
 //////////////////
 
 #[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Project {
     pub node_version: String,
     pub compiler_options: CompilerOptions,

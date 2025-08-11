@@ -10,8 +10,6 @@ mod transactions;
 mod utils;
 mod wallet;
 
-mod contract_encoding;
-
 use anyhow::Result;
 use args::{Kermit, KermitSubcommand};
 use clap::Parser;
