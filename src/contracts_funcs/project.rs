@@ -13,15 +13,15 @@ use std::convert::{TryFrom, TryInto};
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ProjectJson {
-    node_version: String,
-    compiler_options: CompilerOptions,
+    full_node_version: String,
+    compiler_options_used: CompilerOptions,
     infos: HashMap<String, JsonCodeInfo>,
 }
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct JsonCodeInfo {
-    contract_relative_path: String,
+    source_file: String,
     source_code_hash: String,
     bytecode_debug_patch: Option<String>,
     code_hash_debug: Option<String>,
@@ -31,8 +31,8 @@ impl JsonCodeInfo {
     fn try_into(key_name: &str, json: JsonCodeInfo) -> Result<CodeInfo> {
         Ok(CodeInfo {
             name: key_name.to_string(),
-            source_code: read_file(json.contract_relative_path.as_str())?,
-            contract_relative_path: json.contract_relative_path,
+            source_code: read_file(json.source_file.as_str())?,
+            contract_relative_path: json.source_file,
             source_code_hash: json.source_code_hash,
             bytecode_debug_patch: json.bytecode_debug_patch,
             code_hash_debug: json.code_hash_debug,
@@ -213,8 +213,8 @@ impl TryFrom<&str> for Project {
     fn try_from(json_str: &str) -> Result<Self, Self::Error> {
         let pj: ProjectJson = serde_json::from_str(json_str)?;
         Ok(Self {
-            node_version: pj.node_version,
-            compiler_options: pj.compiler_options,
+            node_version: pj.full_node_version,
+            compiler_options: pj.compiler_options_used,
             infos: pj
                 .infos
                 .into_iter()
@@ -237,7 +237,7 @@ impl TryInto<Value> for Project {
                 (
                     key.clone(),
                     JsonCodeInfo {
-                        contract_relative_path: info.contract_relative_path.clone(),
+                        source_file: info.contract_relative_path.clone(),
                         source_code_hash: info.source_code_hash.clone(),
                         bytecode_debug_patch: info.bytecode_debug_patch.clone(),
                         code_hash_debug: info.code_hash_debug.clone(),
@@ -247,8 +247,8 @@ impl TryInto<Value> for Project {
             .collect();
 
         let project_json = ProjectJson {
-            node_version: self.node_version.clone(),
-            compiler_options: self.compiler_options.clone(),
+            full_node_version: self.node_version.clone(),
+            compiler_options_used: self.compiler_options.clone(),
             infos,
         };
 

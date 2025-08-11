@@ -190,13 +190,6 @@ fn load_file(
     Ok((source_infos, new_import_file_paths_cache))
 }
 
-pub fn get_compiled_project(path: &str) -> Result<CompileProject> {
-    let content = read_file(path)?;
-    let compile_project: CompileProject =
-        serde_json::from_str(&content).context("Failed to parse compile output JSON")?;
-    Ok(compile_project)
-}
-
 pub async fn compile(
     url: &str,
     file_path: &str,

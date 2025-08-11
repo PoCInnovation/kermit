@@ -11,12 +11,12 @@ use crate::contracts_funcs::{
     },
 };
 
-fn get_std_prefix(std_interface_id: &str) -> Option<String> {
+fn get_std_prefix(std_interface_id: &Option<String>) -> Option<String> {
     const STD_INTERFACE_PREFIX: &str = "414c5048";
-    if std_interface_id.is_empty() {
-        return None;
+    if let Some(std_interface_id) = std_interface_id {
+        return Some(STD_INTERFACE_PREFIX.to_string() + &std_interface_id)
     }
-    Some(STD_INTERFACE_PREFIX.to_string() + std_interface_id)
+    None
 }
 
 fn get_debug_bytecode(bytecode: &str, bytecode_patch: &str) -> Result<String> {
@@ -100,7 +100,8 @@ pub fn build_bytecode_contract(
         })
         .collect::<Result<FieldsMap>>()?;
 
-    let encoded_prefix = get_std_prefix(&contract.std_interface_id);
+    let contract_prefix = &contract.std_interface_id;
+    let encoded_prefix = get_std_prefix(contract_prefix);
     if let Some(s) = encoded_prefix {
         fields.insert(
             "__stdInterfaceId".to_string(),

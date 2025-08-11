@@ -1,6 +1,9 @@
-use anyhow::{anyhow, Context, Error, Result};
+use anyhow::{Context, Error, Result, anyhow};
 use i256::{I256, U256};
-use serde::{Deserialize, de::{self, Deserializer}};
+use serde::{
+    Deserialize,
+    de::{self, Deserializer},
+};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -11,7 +14,10 @@ use std::hash::{Hash, Hasher};
 pub struct CompileProject {
     pub contracts: Vec<Contract>,
     pub scripts: Vec<Script>,
-    pub structs: Vec<StructDef>,
+    pub structs: Option<Vec<StructDef>>,
+    pub constants: Option<Vec<Constant>>,
+    pub enums: Option<Vec<EnumDef>>,
+    pub warnings: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -29,8 +35,8 @@ pub struct Contract {
     pub enums: Vec<EnumDef>,
     pub events: Vec<Event>,
     pub warnings: Vec<String>,
-    pub maps: Maps,
-    pub std_interface_id: String,
+    pub maps: Option<Maps>,
+    pub std_interface_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -64,9 +70,11 @@ pub struct Fields {
 
 pub type FieldsTypesMap = HashMap<String, (TypeName, bool)>;
 pub type FieldsMap = HashMap<String, (RalphValue, bool)>;
+pub type InputFieldsMap = HashMap<String, RalphValue>;
+pub type InputFieldsTypesMap = HashMap<String, TypeName>;
 
 impl Into<FieldsTypesMap> for Fields {
-    fn into(self) -> HashMap<String, (TypeName, bool)> {
+    fn into(self) -> FieldsTypesMap {
         self.names
             .into_iter()
             .zip(self.types.into_iter())
@@ -74,6 +82,32 @@ impl Into<FieldsTypesMap> for Fields {
             .map(|((name, ty), is_mut)| (name, (ty, is_mut)))
             .collect()
     }
+}
+
+impl Into<InputFieldsTypesMap> for Fields {
+    fn into(self) -> InputFieldsTypesMap {
+        self.names
+            .into_iter()
+            .zip(self.types.into_iter())
+            .map(|(name, ty)| (name, ty))
+            .collect()
+    }
+}
+
+pub fn fields_vec_to_fields_map(
+    v: Vec<(String, String)>,
+    types: &InputFieldsTypesMap,
+) -> Result<InputFieldsMap> {
+    let mut result = HashMap::new();
+    for (name, value) in v {
+        let type_name = types.get(&name).context(anyhow!(
+            "Type for field '{}' not found in provided types map",
+            name
+        ))?;
+        let ralph_value = RalphValue::from_typename_and_value(type_name, &Value::String(value))?;
+        result.insert(name, ralph_value);
+    }
+    Ok(result)
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -114,13 +148,6 @@ pub struct EnumDef {
 #[serde(rename_all = "camelCase")]
 pub struct EnumField {
     pub name: String,
-    pub value: EnumFieldValue,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct EnumFieldValue {
-    pub type_name: TypeName,
     pub value: FieldValue,
 }
 
@@ -150,11 +177,11 @@ impl<'de> Deserialize<'de> for FieldValue {
     where
         D: Deserializer<'de>,
     {
-        #[derive(Deserialize)]
+        #[derive(Debug, Deserialize)]
         struct Helper {
-            #[serde(rename = "typeName")]
+            #[serde(rename = "type")]
             type_name: String,
-            value: serde_json::Value,
+            value: serde_json::Value
         }
 
         let helper = Helper::deserialize(deserializer)?;
@@ -236,8 +263,17 @@ impl RalphValue {
     pub fn from_typename_and_value(ty: &TypeName, value: &Value) -> Result<Self> {
         match ty {
             TypeName::Bool => {
-                let b = value.as_bool().context("Expected bool value")?;
-                Ok(RalphValue::Bool(b))
+                if let Some(b) = value.as_bool() {
+                    Ok(RalphValue::Bool(b))
+                } else if let Some(s) = value.as_str() {
+                    match s {
+                        "true" => Ok(RalphValue::Bool(true)),
+                        "false" => Ok(RalphValue::Bool(false)),
+                        _ => Err(anyhow!("Expected 'true' or 'false' string for Bool")),
+                    }
+                } else {
+                    Err(anyhow!("Expected bool value or 'true'/'false' string"))
+                }
             },
             TypeName::U256 => {
                 let n = value

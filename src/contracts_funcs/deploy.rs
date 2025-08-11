@@ -165,6 +165,8 @@ pub async fn deploy_contract(
 
     let bytecode = build_bytecode_contract(&contract, init_fields, network_id == NetworkType::Dev)?;
 
+    println!("Deploying contract with bytecode: {}", bytecode);
+    todo!();
     Ok(send_tx(
         url,
         &account.private_key,
