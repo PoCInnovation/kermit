@@ -8,8 +8,19 @@ use crate::utils::crypto::{djb2, xor_byte};
 
 const TOTAL_NUMBER_OF_GROUPS: u8 = 4;
 
+#[repr(u8)]
+pub enum AddressType {
+    P2PKH = 0x00,
+    P2MPKH = 0x01,
+    P2SH = 0x02,
+    P2C = 0x03,
+    P2PK = 0x04,
+    P2HMPK = 0x05,
+}
+
 pub struct Address {
     pub key: String,
+    pub full_bytes: Vec<u8>,
     pub bytes: Vec<u8>
 }
 
@@ -25,13 +36,13 @@ impl Address {
         let hash_bytes = &hash_bytes[..32];
     
         let mut address_bytes = Vec::with_capacity(1 + 32);
-        address_bytes.push(1u8); // AddressType.P2PKH
-        address_bytes.extend_from_slice(&hash_bytes);
+        address_bytes.push(AddressType::P2PKH as u8);
         address_bytes.extend_from_slice(hash_bytes);
     
         Ok(Self {
             key: bs58::encode(&address_bytes).into_string(),
-            bytes: address_bytes,
+            full_bytes: address_bytes,
+            bytes: hash_bytes.into()
         })
     }
 

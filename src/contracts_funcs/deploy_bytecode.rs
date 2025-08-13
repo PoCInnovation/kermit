@@ -14,7 +14,7 @@ use crate::contracts_funcs::{
 fn get_std_prefix(std_interface_id: &Option<String>) -> Option<String> {
     const STD_INTERFACE_PREFIX: &str = "414c5048";
     if let Some(std_interface_id) = std_interface_id {
-        return Some(STD_INTERFACE_PREFIX.to_string() + &std_interface_id)
+        return Some(STD_INTERFACE_PREFIX.to_string() + &std_interface_id);
     }
     None
 }
@@ -85,6 +85,15 @@ pub fn build_bytecode_contract(
     };
 
     let fields_types: FieldsTypesMap = contract.fields.clone().try_into()?;
+
+    if fields_types.len() != init_fields.len() {
+        return Err(anyhow!(
+            "Initial fields count mismatch: expected {}, found {}",
+            fields_types.len(),
+            init_fields.len()
+        ));
+    }
+
     let mut fields = fields_types
         .iter()
         .zip(init_fields.iter())

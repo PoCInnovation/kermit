@@ -25,9 +25,9 @@ use crate::{
 #[serde(rename_all = "camelCase")]
 struct ChainParams {
     network_id: u8,
-    num_zeros_at_least_in_hash: u8,
-    group_num_per_broker: u8,
-    groups: u8,
+    num_zeros_at_least_in_hash: u32,
+    group_num_per_broker: u32,
+    groups: u32,
 }
 
 async fn validate_chain_params(
@@ -55,11 +55,10 @@ async fn validate_chain_params(
         ));
     }
 
-    if groups.iter().any(|&group| group >= chain_params.groups) {
-        let valid_range: Vec<u8> = (0..chain_params.groups).collect();
+    if groups.iter().any(|&group| group >= chain_params.groups as u8) {
         return Err(anyhow!(
             "Group indexes should be subset of {:?}",
-            valid_range
+            (0..chain_params.groups).collect::<Vec<_>>()
         ));
     }
 
@@ -148,7 +147,7 @@ pub async fn deploy_contract(
     } else {
         let private_keys = network
             .private_keys
-            .clone()
+            .as_ref()
             .ok_or_else(|| anyhow!("No private keys found in devnet configuration"))?;
 
         let private_key = private_keys

@@ -23,9 +23,9 @@ pub enum CompiledType {
 
 #[derive(Clone, Copy, Debug, Display, ValueEnum, PartialEq, Eq)]
 pub enum NetworkType {
-    Main,
-    Test,
-    Dev,
+    Main = 0,
+    Test = 1,
+    Dev = 4,
 }
 
 #[derive(Debug, Clone, Args, Serialize, Deserialize)]
