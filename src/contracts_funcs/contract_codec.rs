@@ -1,17 +1,17 @@
 use i256::{I256, U256};
 
 const ONE_BYTE_BOUND: i32 = 0x40;
-const TWO_BYTE_BOUND: i32 = 0x2000;
-const FOUR_BYTE_BOUND: i32 = 0x10000000;
+const TWO_BYTE_BOUND: i32 = ONE_BYTE_BOUND << 8;
+const FOUR_BYTE_BOUND: i32 = ONE_BYTE_BOUND << (8 * 3);
 
-const SINGLE_BYTE_PREFIX: u8 = 0x80;
-const TWO_BYTE_PREFIX: u8 = 0xc0;
-const FOUR_BYTE_PREFIX: u8 = 0xe0;
-const MULTI_BYTE_PREFIX: u8 = 0xff;
+const SINGLE_BYTE_PREFIX: u8 = 0x00;
+const TWO_BYTE_PREFIX: u8 = 0x40;
+const FOUR_BYTE_PREFIX: u8 = 0x80;
+const MULTI_BYTE_PREFIX: u8 = 0xc0;
 
-const SINGLE_BYTE_NEG_PREFIX: u8 = 0x3f;
-const TWO_BYTE_NEG_PREFIX: u8 = 0x1f;
-const FOUR_BYTE_NEG_PREFIX: u8 = 0x0f;
+const SINGLE_BYTE_NEG_PREFIX: u8 = 0xc0;
+const TWO_BYTE_NEG_PREFIX: u8 = 0x80;
+const FOUR_BYTE_NEG_PREFIX: u8 = 0x40;
 
 pub fn encode_i32(value: i32) -> Vec<u8> {
     if value >= 0 {

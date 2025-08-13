@@ -70,6 +70,7 @@ async fn validate_chain_params(
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct BuildTransactionResponse {
+    #[serde(rename="contractAddress")]
     contract_id: String,
     tx_id: String,
     unsigned_tx: String,
@@ -164,8 +165,6 @@ pub async fn deploy_contract(
 
     let bytecode = build_bytecode_contract(&contract, init_fields, network_id == NetworkType::Dev)?;
 
-    println!("Deploying contract with bytecode: {}", bytecode);
-    todo!();
     Ok(send_tx(
         url,
         &account.private_key,

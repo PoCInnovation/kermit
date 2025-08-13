@@ -132,7 +132,9 @@ pub enum ContractsSubcommands {
         config_file_path: String,
         #[arg(long, env)]
         private_key: Option<String>,
-        #[arg(long = "initial-fields", value_parser = parse_key_val, number_of_values = 1)]
+        #[arg(long = "initial-fields", value_parser = parse_key_val, 
+             num_args = 1.., 
+            help = "Initial fields in the format KEY=VALUE, e.g. --initial-fields field1=value1 field2=value2")]
         initial_fields: Vec<(String, String)>,
     },
 }

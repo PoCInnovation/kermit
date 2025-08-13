@@ -79,6 +79,7 @@ impl Into<FieldsTypesMap> for Fields {
             .into_iter()
             .zip(self.types.into_iter())
             .zip(self.is_mutable.into_iter())
+            .filter(|((name, _), _)| !name.starts_with("__"))
             .map(|((name, ty), is_mut)| (name, (ty, is_mut)))
             .collect()
     }
@@ -89,6 +90,7 @@ impl Into<InputFieldsTypesMap> for Fields {
         self.names
             .into_iter()
             .zip(self.types.into_iter())
+            .filter(|(name, _)| !name.starts_with("__"))
             .map(|(name, ty)| (name, ty))
             .collect()
     }
@@ -99,6 +101,15 @@ pub fn fields_vec_to_fields_map(
     types: &InputFieldsTypesMap,
 ) -> Result<InputFieldsMap> {
     let mut result = HashMap::new();
+
+    if v.len() != types.len() {
+        return Err(anyhow!(
+            "Fields count mismatch with initial fields: expected {}, found {}",
+            types.len(),
+            v.len()
+        ));
+    }
+
     for (name, value) in v {
         let type_name = types.get(&name).context(anyhow!(
             "Type for field '{}' not found in provided types map",
@@ -181,7 +192,7 @@ impl<'de> Deserialize<'de> for FieldValue {
         struct Helper {
             #[serde(rename = "type")]
             type_name: String,
-            value: serde_json::Value
+            value: serde_json::Value,
         }
 
         let helper = Helper::deserialize(deserializer)?;
@@ -259,6 +270,16 @@ impl Hash for RalphValue {
     }
 }
 
+impl TryFrom<&str> for RalphValue {
+    type Error = anyhow::Error;
+
+    fn try_from(s: &str) -> Result<Self> {
+        let hex_str = hex::encode(s.as_bytes());
+        let decoded = hex::decode(hex_str)?;
+        Ok(RalphValue::ByteVec(decoded))
+    }
+}
+
 impl RalphValue {
     pub fn from_typename_and_value(ty: &TypeName, value: &Value) -> Result<Self> {
         match ty {
@@ -301,7 +322,7 @@ impl RalphValue {
                         .collect::<Result<Vec<u8>>>();
                     Ok(RalphValue::ByteVec(bytes?))
                 } else if let Some(s) = value.as_str() {
-                    Ok(RalphValue::ByteVec(hex::decode(s)?))
+                    Ok(s.try_into()?)
                 } else {
                     Err(anyhow!("Expected ByteVec as array or string"))
                 }

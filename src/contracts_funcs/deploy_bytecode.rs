@@ -11,14 +11,6 @@ use crate::contracts_funcs::{
     },
 };
 
-fn get_std_prefix(std_interface_id: &Option<String>) -> Option<String> {
-    const STD_INTERFACE_PREFIX: &str = "414c5048";
-    if let Some(std_interface_id) = std_interface_id {
-        return Some(STD_INTERFACE_PREFIX.to_string() + &std_interface_id);
-    }
-    None
-}
-
 fn get_debug_bytecode(bytecode: &str, bytecode_patch: &str) -> Result<String> {
     if bytecode_patch.is_empty() {
         return Ok(bytecode.to_string());
@@ -67,7 +59,7 @@ fn encode_fields_by_type(fields: FieldsMap) -> Result<String> {
                 RalphValue::Address(addr) => encode_vmbyte_address(addr),
                 _ => return Err(anyhow!("Unsupported value type for field '{}'", name)),
             }?;
-            acc.extend_from_slice(&[name.as_bytes().to_vec(), encoded_value].concat());
+            acc.extend_from_slice(&encoded_value);
             Ok(acc)
         })?;
     Ok(hex::encode(bytecode))
@@ -86,36 +78,28 @@ pub fn build_bytecode_contract(
 
     let fields_types: FieldsTypesMap = contract.fields.clone().try_into()?;
 
-    if fields_types.len() != init_fields.len() {
-        return Err(anyhow!(
-            "Initial fields count mismatch: expected {}, found {}",
-            fields_types.len(),
-            init_fields.len()
-        ));
-    }
-
-    let mut fields = fields_types
-        .iter()
-        .zip(init_fields.iter())
-        .map(|((name, (_, is_mutable)), (init_name, value))| {
-            if name != init_name {
-                return Err(anyhow!(
-                    "Field name mismatch: expected '{}', found '{}'",
-                    name,
-                    init_name
-                ));
-            }
-            Ok((name.clone(), (value.clone(), *is_mutable)))
+    let mut fields: FieldsMap = fields_types
+        .into_iter()
+        .map(|(name, (_, is_mutable))| {
+            let value = init_fields
+                .get(&name)
+                .cloned()
+                .ok_or_else(|| anyhow!("Missing initial value for field '{}'", name))?;
+            Ok((name, (value, is_mutable)))
         })
         .collect::<Result<FieldsMap>>()?;
 
     let contract_prefix = &contract.std_interface_id;
-    let encoded_prefix = get_std_prefix(contract_prefix);
-    if let Some(s) = encoded_prefix {
-        fields.insert(
-            "__stdInterfaceId".to_string(),
-            (RalphValue::ByteVec(s.into()), false),
-        );
+    if let Some(contract_prefix_str) = contract_prefix {
+        let std_bytes = match "ALPH".try_into()? {
+            RalphValue::ByteVec(bytes) => bytes,
+            _ => return Err(anyhow!("Unsupported RalphValue type for std_value")),
+        };
+
+        let contract_prefix_bytes = hex::decode(contract_prefix_str)?;
+        let final_value = RalphValue::ByteVec([std_bytes, contract_prefix_bytes].concat());
+
+        fields.insert("__stdInterfaceId".to_string(), (final_value, false));
     }
 
     let (mutables, immutables): (HashMap<_, _>, HashMap<_, _>) = fields
