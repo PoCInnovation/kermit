@@ -5,14 +5,9 @@ use serde_json::Value;
 use strum::Display;
 
 use crate::{
-    account::signature::{GLSecp256k1PrivateKey, PrivateKey},
-    contracts_funcs::{
-        compile::compile,
-        compile_output::{CompileProject, InputFieldsTypesMap, fields_vec_to_fields_map},
-        deploy::deploy_contract,
-        project::Project,
-    },
-    utils::fs::read_file,
+    account::signature::{GLSecp256k1PrivateKey, PrivateKey}, contracts_funcs::{
+        compile::compile, config::Config, deploy::deploy_contract, compile_project::compile_project::{fields_vec_to_fields_map, load_compile_project}, project::Project, state::state, test::test_contract
+    }, network::health::is_network_alive, utils::fs::read_file
 };
 
 #[derive(Clone, Debug, Display, ValueEnum)]
@@ -137,6 +132,23 @@ pub enum ContractsSubcommands {
             help = "Initial fields in the format KEY=VALUE, e.g. --initial-fields field1=value1 field2=value2")]
         initial_fields: Vec<(String, String)>,
     },
+    #[command(visible_alias = "s")]
+    State {
+        #[arg(long, value_name = "config", help = "Path to the config YAML file", default_value_t=String::from("./alephium.config.yaml"))]
+        config_file_path: String,
+        #[arg(long, default_value_t = NetworkType::Main)]
+        network: NetworkType,
+        contract_id: String,
+    },
+    #[command(visible_alias = "t")]
+    Test {
+        #[arg(long, value_name = "config", help = "Path to the config YAML file", default_value_t=String::from("./alephium.config.yaml"))]
+        config_file_path: String,
+        #[arg(long, default_value_t = NetworkType::Main)]
+        network: NetworkType,
+        method_name: String,
+        contract_id: String
+    }
 }
 
 impl ContractsSubcommands {
@@ -173,26 +185,18 @@ impl ContractsSubcommands {
                 private_key,
                 initial_fields,
             } => {
-                let _project = Project::try_from(read_file(&project_path)?.as_str())?;
-                let compiled_project_result =
-                    serde_json::from_str::<CompileProject>(&read_file(&compile_output_path)?);
-
-                let compiled_project = match compiled_project_result {
-                    Ok(project) => project,
-                    Err(e) => {
-                        return Err(anyhow!("Error parsing compile output: {}", e));
-                    },
-                };
+                let project = Project::try_from(read_file(&project_path)?.as_str())?;
+                let compiled_project = load_compile_project(&compile_output_path)?;
 
                 match compiled_type {
                     CompiledType::Contract => {
+                        let config = Config::new(&config_path)?;
                         let contract = compiled_project
                             .contracts
                             .get(compiled_index)
                             .context("Invalid compiled index")?;
 
-                        let types: InputFieldsTypesMap = contract.fields.clone().into();
-                        let initial_fields = fields_vec_to_fields_map(initial_fields, &types)?;
+                        let initial_fields = fields_vec_to_fields_map(initial_fields, &contract.fields_types)?;
 
                         let private_key = if let Some(path) = private_key {
                             let private_key: Box<dyn PrivateKey> =
@@ -206,8 +210,8 @@ impl ContractsSubcommands {
                             url,
                             private_key,
                             network,
-                            &config_path,
-                            contract.clone(),
+                            config,
+                            &contract,
                             initial_fields,
                         )
                         .await?
@@ -217,6 +221,46 @@ impl ContractsSubcommands {
                     },
                 }
             },
+            Self::State { network, contract_id, config_file_path } => {
+                let config = Config::new(&config_file_path)?;
+
+                let network = match &network {
+                    NetworkType::Dev => &config.configuration.networks.devnet,
+                    NetworkType::Test => &config.configuration.networks.testnet,
+                    NetworkType::Main => &config.configuration.networks.mainnet,
+                };
+
+                if !is_network_alive(&network.node_url).await? {
+                    return Err(anyhow!("Network is not reachable: {}", network.node_url));
+                }
+
+                state(
+                    url,
+                    &contract_id,
+                )
+                .await?
+            },
+            Self::Test { config_file_path, network, method_name, contract_id } => {
+                let config = Config::new(&config_file_path)?;
+
+                let network = match &network {
+                    NetworkType::Dev => &config.configuration.networks.devnet,
+                    NetworkType::Test => &config.configuration.networks.testnet,
+                    NetworkType::Main => &config.configuration.networks.mainnet,
+                };
+
+                if !is_network_alive(&network.node_url).await? {
+                    return Err(anyhow!("Network is not reachable: {}", network.node_url));
+                }
+
+                test_contract(
+                    url,
+                    &config,
+                    &method_name,
+                    &contract_id,
+                    vec![]
+                ).await?
+            }
         };
 
         serde_json::to_writer_pretty(std::io::stdout(), &value)?;

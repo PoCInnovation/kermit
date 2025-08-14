@@ -3,11 +3,14 @@ use regex::Regex;
 use std::collections::HashMap;
 
 use crate::contracts_funcs::{
-    compile_output::{Contract, FieldsMap, FieldsTypesMap, RalphValue},
     contract_codec::encode_i32,
     deploy_vm_encode::{
         encode_vmbyte_address, encode_vmbyte_bool, encode_vmbyte_i256, encode_vmbyte_u256,
         encode_vmbyte_vec,
+    },
+    compile_project::{
+        compile_project::{Contract, FieldsMap, InputFieldsMap},
+        compile_project_values::RalphValue,
     },
 };
 
@@ -46,7 +49,7 @@ fn get_debug_bytecode(bytecode: &str, bytecode_patch: &str) -> Result<String> {
     Ok(result)
 }
 
-fn encode_fields_by_type(fields: FieldsMap) -> Result<String> {
+fn encode_fields_by_type(fields: FieldsMap, is_mutable: bool) -> Result<Vec<u8>> {
     let size_buffer = encode_i32(fields.keys().len() as i32);
     let bytecode = fields
         .iter()
@@ -57,17 +60,42 @@ fn encode_fields_by_type(fields: FieldsMap) -> Result<String> {
                 RalphValue::I256(n) => encode_vmbyte_i256(*n),
                 RalphValue::ByteVec(bytes) => encode_vmbyte_vec(bytes),
                 RalphValue::Address(addr) => encode_vmbyte_address(addr),
+                RalphValue::Array(arr) => {
+                    let mut encoded: Vec<u8> = Vec::new();
+                    for item in arr {
+                        encoded.extend_from_slice(&encode_fields_by_type(
+                            vec![(name.clone(), (item.clone(), is_mutable))]
+                                .into_iter()
+                                .collect(),
+                            is_mutable,
+                        )?);
+                    }
+                    Ok(encoded)
+                },
+                // Normally, if the structure is mutable, then at least one of the attributes is
+                RalphValue::Structure(fields) => {
+                    let mut encoded: Vec<u8> = Vec::new();
+                    for (field_name, field_value) in fields {
+                        encoded.extend_from_slice(&encode_fields_by_type(
+                            vec![(field_name.clone(), (field_value.clone(), is_mutable))]
+                                .into_iter()
+                                .collect(),
+                            is_mutable,
+                        )?);
+                    }
+                    Ok(encoded)
+                },
                 _ => return Err(anyhow!("Unsupported value type for field '{}'", name)),
             }?;
             acc.extend_from_slice(&encoded_value);
             Ok(acc)
         })?;
-    Ok(hex::encode(bytecode))
+    Ok(bytecode)
 }
 
 pub fn build_bytecode_contract(
     contract: &Contract,
-    init_fields: HashMap<String, RalphValue>,
+    init_fields: InputFieldsMap,
     is_devnet: bool,
 ) -> Result<String> {
     let main_bytecode = if is_devnet {
@@ -76,9 +104,9 @@ pub fn build_bytecode_contract(
         contract.bytecode.clone()
     };
 
-    let fields_types: FieldsTypesMap = contract.fields.clone().try_into()?;
-
-    let mut fields: FieldsMap = fields_types
+    let mut fields: FieldsMap = contract
+        .fields_types
+        .clone()
         .into_iter()
         .map(|(name, (_, is_mutable))| {
             let value = init_fields
@@ -106,8 +134,8 @@ pub fn build_bytecode_contract(
         .into_iter()
         .partition(|(_, (_, is_mutable))| *is_mutable);
 
-    let imm_bytecode = encode_fields_by_type(immutables)?;
-    let mut_bytecode = encode_fields_by_type(mutables)?;
+    let imm_bytecode = encode_fields_by_type(immutables, false)?;
+    let mut_bytecode = encode_fields_by_type(mutables, true)?;
 
-    Ok(main_bytecode + &imm_bytecode + &mut_bytecode)
+    Ok(main_bytecode + &hex::encode(imm_bytecode) + &hex::encode(mut_bytecode))
 }

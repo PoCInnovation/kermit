@@ -13,3 +13,7 @@ pub fn xor_byte(int_value: i32) -> u8 {
     let byte3 = (int_value & 0xff) as u8;
     (byte0 ^ byte1 ^ byte2 ^ byte3) & 0xff
 }
+
+pub fn is_hex_string(input: &str) -> bool {
+    input.starts_with("0x") && (input.len() - 2) % 2 == 0 && input[2..].chars().all(|c| c.is_ascii_hexdigit())
+}

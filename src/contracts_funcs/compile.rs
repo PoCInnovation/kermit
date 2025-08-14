@@ -6,7 +6,6 @@ use std::path::{Path, PathBuf};
 use crate::{
     contracts::{CompilerOptions, NetworkType},
     contracts_funcs::{
-        compile_output::CompileProject,
         config::Config,
         source_info::{SourceInfo, SourceKind},
     },

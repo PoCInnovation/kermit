@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use anyhow::{Context, Result, anyhow};
 use serde::{Deserialize, de::DeserializeOwned};
 use serde_json::{Value, json};
@@ -12,13 +10,13 @@ use crate::{
     },
     contracts::NetworkType,
     contracts_funcs::{
-        compile_output::{Contract, RalphValue},
+        compile_project::compile_project::{Contract, InputFieldsMap},
         config::Config,
         deploy_bytecode::build_bytecode_contract,
     },
     network::health::is_network_alive,
     transactions::submit,
-    utils::{HttpResponse, get, post},
+    utils::{get, post, HttpResponse},
 };
 
 #[derive(Debug, Deserialize)]
@@ -28,6 +26,14 @@ struct ChainParams {
     num_zeros_at_least_in_hash: u32,
     group_num_per_broker: u32,
     groups: u32,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all="camelCase")]
+pub struct DeployedContract {
+    pub contract_id: String,
+    pub from_group: i32,
+    pub to_group: i32
 }
 
 async fn validate_chain_params(
@@ -55,7 +61,10 @@ async fn validate_chain_params(
         ));
     }
 
-    if groups.iter().any(|&group| group >= chain_params.groups as u8) {
+    if groups
+        .iter()
+        .any(|&group| group >= chain_params.groups as u8)
+    {
         return Err(anyhow!(
             "Group indexes should be subset of {:?}",
             (0..chain_params.groups).collect::<Vec<_>>()
@@ -70,7 +79,7 @@ async fn validate_chain_params(
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct BuildTransactionResponse {
-    #[serde(rename="contractAddress")]
+    #[serde(rename = "contractAddress")]
     contract_id: String,
     tx_id: String,
     unsigned_tx: String,
@@ -99,7 +108,7 @@ async fn build<T: DeserializeOwned>(
     .await
 }
 
-async fn send_tx(
+async fn send_contract_tx(
     url: &str,
     private_key: &Box<dyn PrivateKey>,
     address: &Address,
@@ -108,7 +117,7 @@ async fn send_tx(
 ) -> Result<Value> {
     let public_key = private_key.get_public_key()?;
     let BuildTransactionResponse {
-        contract_id: _contract_id,
+        contract_id,
         tx_id,
         unsigned_tx,
         gas_price,
@@ -117,9 +126,15 @@ async fn send_tx(
         .data;
 
     let signature = private_key.sign(&tx_id)?;
-    Ok(submit(url, &unsigned_tx, &signature, Some(gas_price))
+    let mut tx_res = submit(url, &unsigned_tx, &signature, Some(gas_price))
         .await?
-        .data)
+        .data;
+
+    // represents the DeployedContract structure
+    if let Some(obj) = tx_res.as_object_mut() {
+        obj.insert("contractId".to_string(), Value::String(contract_id));
+    }
+    Ok(tx_res)
 }
 
 ////////////////////////////////////////
@@ -128,11 +143,10 @@ pub async fn deploy_contract(
     url: &str,
     private_key: Option<Box<dyn PrivateKey>>,
     network_id: NetworkType,
-    config_path: &str,
-    contract: Contract,
-    init_fields: HashMap<String, RalphValue>,
+    config: Config,
+    contract: &Contract,
+    init_fields: InputFieldsMap,
 ) -> Result<Value> {
-    let config = Config::new(config_path)?;
     let network = match &network_id {
         NetworkType::Dev => &config.configuration.networks.devnet,
         NetworkType::Test => &config.configuration.networks.testnet,
@@ -165,7 +179,7 @@ pub async fn deploy_contract(
 
     let bytecode = build_bytecode_contract(&contract, init_fields, network_id == NetworkType::Dev)?;
 
-    Ok(send_tx(
+    Ok(send_contract_tx(
         url,
         &account.private_key,
         &account.address,
