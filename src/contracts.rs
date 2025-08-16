@@ -6,7 +6,7 @@ use strum::Display;
 
 use crate::{
     account::signature::{GLSecp256k1PrivateKey, PrivateKey}, contracts_funcs::{
-        compile::compile, config::Config, deploy::deploy_contract, compile_project::compile_project::{fields_vec_to_fields_map, load_compile_project}, project::Project, state::state, test::test_contract
+        compile::compile, compile_project::compile_project::{fields_vec_to_fields_map, load_compile_project, FieldsTypesMap}, config::Config, deploy::deploy_contract, project::Project, state::state, test::test_contract
     }, network::health::is_network_alive, utils::fs::read_file
 };
 
@@ -196,7 +196,11 @@ impl ContractsSubcommands {
                             .get(compiled_index)
                             .context("Invalid compiled index")?;
 
-                        let initial_fields = fields_vec_to_fields_map(initial_fields, &contract.fields_types)?;
+                        let fields_map = contract.fields_types
+                            .iter()
+                            .map(|(name, (type_name, _))| (name.clone(), type_name.clone()))
+                            .collect::<FieldsTypesMap>();
+                        let initial_fields = fields_vec_to_fields_map(initial_fields, &fields_map)?;
 
                         let private_key = if let Some(path) = private_key {
                             let private_key: Box<dyn PrivateKey> =

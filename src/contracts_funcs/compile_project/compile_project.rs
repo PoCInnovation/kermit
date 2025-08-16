@@ -9,17 +9,88 @@ use crate::contracts_funcs::compile_project::compile_project_values::{RalphValue
 use crate::utils::crypto::is_hex_string;
 use crate::utils::fs::read_file;
 
-pub type FieldsTypesMap = HashMap<String, (TypeName, bool)>;
+pub type FieldsTypesMap = HashMap<String, TypeName>;
+pub type FieldsTypesMapMut = HashMap<String, (TypeName, bool)>;
 pub type FieldsMap = HashMap<String, (RalphValue, bool)>;
 pub type InputFieldsMap = HashMap<String, RalphValue>;
+
+fn resolve_rec_type(
+    name: &str,
+    value: String,
+    types: &FieldsTypesMap,
+    override_type: Option<&TypeName>,
+) -> Result<RalphValue> {
+    let mut parts = name.splitn(2, '.');
+    let name = parts.next().context("Field name cannot be empty")?;
+    let rest = parts.next();
+
+    let type_name = if let Some(a) = override_type {
+        a
+    } else {
+        types.get(name).context(anyhow!(
+            "Type for field '{}' not found in provided types map",
+            name
+        ))?
+    };
+
+    match type_name {
+        TypeName::Array(array_type) => {
+            if !value.starts_with('[') || !value.ends_with(']') {
+                return Err(anyhow!(
+                    "Array value for field '{}' must begin and end with []",
+                    name
+                ));
+            }
+
+            let array_values = value
+                .trim_matches(|c| c == '[' || c == ']')
+                .split(',')
+                .map(|v| v.trim())
+                .filter(|v| !v.is_empty())
+                .map(|v| resolve_rec_type("", v.to_string(), types, Some(&*array_type)))
+                .collect::<Result<Vec<_>>>()?;
+            Ok(RalphValue::Array(array_values))
+        },
+        TypeName::Structure(struct_content) => {
+            let rest = rest.context(format!(
+                "Structure field name cannot be empty for field '{}', type '{:?}'",
+                name, type_name
+            ))?;
+            let mut sub_parts = rest.splitn(2, '.');
+
+            if let Some(remaining_dots) = sub_parts.next() {
+                // there are nested structure(s)
+                return resolve_rec_type(remaining_dots, value, struct_content, None);
+            }
+
+            resolve_rec_type(rest, value, struct_content, None)
+        },
+        _ => {
+            let ralph_value = if type_name.clone() == TypeName::ByteVec && !is_hex_string(&value) {
+                value.as_str().try_into()?
+            } else {
+                RalphValue::from_typename_and_value(type_name, &Value::String(value))?
+            };
+
+            Ok(ralph_value)
+        },
+    }
+}
+
+pub fn fields_types_map_len(map: &FieldsTypesMap) -> usize {
+    map.iter()
+        .map(|(_, type_name)| match type_name {
+            TypeName::Structure(struct_fields) => fields_types_map_len(struct_fields),
+            _ => 1,
+        })
+        .sum()
+}
 
 pub fn fields_vec_to_fields_map(
     ralph_input: Vec<(String, String)>,
     types: &FieldsTypesMap,
 ) -> Result<InputFieldsMap> {
-    // TODO: handle structure  and array types of inputs 
-
-    if ralph_input.len() != types.len() {
+    if ralph_input.len() != fields_types_map_len(types) {
         return Err(anyhow!(
             "Fields count mismatch with initial fields: expected {}, found {}",
             types.len(),
@@ -27,20 +98,10 @@ pub fn fields_vec_to_fields_map(
         ));
     }
 
-    let result = ralph_input.into_iter().map(|(name, value)| {
-        let (type_name, _) = types.get(&name).context(anyhow!(
-            "Type for field '{}' not found in provided types map",
-            name
-        ))?;
-
-        let ralph_value = if type_name.clone() == TypeName::ByteVec && !is_hex_string(&value) {
-            value.as_str().try_into()?
-        } else {
-            RalphValue::from_typename_and_value(type_name, &Value::String(value))?
-        };
-
-        Ok((name, ralph_value))
-    }).collect::<Result<HashMap<_, _>>>()?;
+    let result = ralph_input
+        .into_iter()
+        .map(|(name, value)| Ok((name.clone(), resolve_rec_type(&name, value, types, None)?)))
+        .collect::<Result<InputFieldsMap>>()?;
     Ok(result)
 }
 
@@ -60,7 +121,7 @@ pub struct Contract {
     pub bytecode_debug_patch: String,
     pub code_hash: String,
     pub code_hash_debug: String,
-    pub fields_types: FieldsTypesMap,
+    pub fields_types: FieldsTypesMapMut,
 }
 
 impl Contract {
@@ -99,7 +160,7 @@ pub struct Script {
     pub name: String,
     pub bytecode_template: String,
     pub bytecode_debug_patch: String,
-    pub fields: FieldsTypesMap,
+    pub fields: FieldsTypesMapMut,
 }
 
 pub struct CompileProject {
