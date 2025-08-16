@@ -1,12 +1,13 @@
 use anyhow::{Context, Error, Result, anyhow};
 use i256::{I256, U256};
-use serde::{de, Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize, Serializer, de, ser};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
 
 use crate::contracts_funcs::compile_project::compile_project::Struct;
+use crate::contracts_funcs::compile_project::compile_project_deserialize::FieldValueHelper;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RalphValue {
@@ -18,6 +19,68 @@ pub enum RalphValue {
     Array(Vec<RalphValue>),
     Map(HashMap<RalphValue, RalphValue>),
     Structure(HashMap<String, RalphValue>),
+}
+
+impl Serialize for RalphValue {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let (type_name, value) = match self {
+            RalphValue::Bool(b) => ("Bool", serde_json::to_value(b).map_err(ser::Error::custom)?),
+            RalphValue::U256(u) => (
+                "U256",
+                serde_json::to_value(&u.to_string()).map_err(ser::Error::custom)?,
+            ),
+            RalphValue::I256(i) => (
+                "I256",
+                serde_json::to_value(&i.to_string()).map_err(ser::Error::custom)?,
+            ),
+            RalphValue::ByteVec(bytes) => (
+                "ByteVec",
+                serde_json::to_value(&hex::encode(bytes)).map_err(ser::Error::custom)?,
+            ),
+            RalphValue::Address(addr) => (
+                "Address",
+                serde_json::to_value(addr).map_err(ser::Error::custom)?,
+            ),
+            RalphValue::Array(arr) => (
+                "Array",
+                serde_json::to_value(arr).map_err(ser::Error::custom)?,
+            ),
+            _ => return Err(ser::Error::custom("Unsupported RalphValue type (including Map and Structure)")),
+        };
+
+        let mut obj = serde_json::Map::new();
+        obj.insert(
+            "type".to_string(),
+            serde_json::Value::String(type_name.to_string()),
+        );
+        obj.insert("value".to_string(), value);
+        obj.serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for RalphValue {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let value = Value::deserialize(deserializer)?;
+        let obj = value.as_object().ok_or_else(|| de::Error::custom("Expected object for RalphValue"))?;
+
+        let type_str = obj.get("type")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| de::Error::custom("Missing or invalid 'type' field in RalphValue"))?;
+
+        let type_name: TypeName = type_str.try_into().map_err(de::Error::custom)?;
+
+        let value_field = obj.get("value")
+            .ok_or_else(|| de::Error::custom("Missing 'value' field in RalphValue"))?;
+
+        RalphValue::from_typename_and_value(&type_name, value_field)
+            .map_err(de::Error::custom)
+    }
 }
 
 impl Hash for RalphValue {
@@ -149,6 +212,7 @@ impl RalphValue {
             TypeName::Other(name) => {
                 if let Some(s) = value.as_str() {
                     // If the value is a string, treat it as a contract reference
+                    // (the value must be the contract ID)
                     return Ok(Self::ByteVec(s.try_into()?));
                 }
 
@@ -210,7 +274,9 @@ impl TypeName {
             s if s.starts_with("Array[") && s.ends_with(']') => {
                 // Example: Array[U256]
                 let inner = &s[6..s.len() - 1];
-                Ok(Self::Array(Box::new(Self::from_name_and_structures(inner, structures)?)))
+                Ok(Self::Array(Box::new(Self::from_name_and_structures(
+                    inner, structures,
+                )?)))
             },
             s if structures.contains_key(s) => {
                 let fields = structures
@@ -223,7 +289,10 @@ impl TypeName {
                     .field_types
                     .iter()
                     .map(|struct_name| {
-                        Ok((struct_name.clone(), Self::from_name_and_structures(struct_name, structures)?))
+                        Ok((
+                            struct_name.clone(),
+                            Self::from_name_and_structures(struct_name, structures)?,
+                        ))
                     })
                     .collect::<Result<HashMap<_, _>>>()?;
                 Ok(Self::Structure(fields))
@@ -245,17 +314,31 @@ impl<'de> Deserialize<'de> for FieldValue {
     where
         D: Deserializer<'de>,
     {
-        #[derive(Debug, Deserialize)]
-        struct Helper {
-            #[serde(rename = "type")]
-            type_name: String,
-            value: serde_json::Value,
-        }
-
-        let helper = Helper::deserialize(deserializer)?;
-        let type_name = helper.type_name.as_str().try_into().map_err(de::Error::custom)?;
+        let helper = FieldValueHelper::deserialize(deserializer)?;
+        let type_name = helper
+            .type_name
+            .as_str()
+            .try_into()
+            .map_err(de::Error::custom)?;
         let value = RalphValue::from_typename_and_value(&type_name, &helper.value)
             .map_err(de::Error::custom)?;
+        Ok(FieldValue { type_name, value })
+    }
+}
+
+
+
+impl TryFrom<Value> for FieldValue {
+    type Error = anyhow::Error;
+
+    fn try_from(value: Value) -> Result<Self> {
+        let type_name = value
+            .get("type")
+            .and_then(Value::as_str)
+            .context("Missing 'type' field in FieldValue")?
+            .try_into()?;
+        let value = RalphValue::from_typename_and_value(&type_name, &value)
+            .context("Failed to convert Value to RalphValue")?;
         Ok(FieldValue { type_name, value })
     }
 }

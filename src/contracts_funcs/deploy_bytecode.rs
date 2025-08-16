@@ -9,7 +9,7 @@ use crate::contracts_funcs::{
         encode_vmbyte_vec,
     },
     compile_project::{
-        compile_project::{Contract, FieldsMap, InputFieldsMap},
+        compile_project::{CompiledContract, FieldsMap, InputFieldsMap},
         compile_project_values::RalphValue,
     },
 };
@@ -49,7 +49,7 @@ fn get_debug_bytecode(bytecode: &str, bytecode_patch: &str) -> Result<String> {
     Ok(result)
 }
 
-fn encode_fields_by_type(fields: FieldsMap, is_mutable: bool) -> Result<Vec<u8>> {
+fn encode_fields_by_type(fields: &FieldsMap, is_mutable: bool) -> Result<Vec<u8>> {
     let size_buffer = encode_i32(fields.keys().len() as i32);
     let bytecode = fields
         .iter()
@@ -64,7 +64,7 @@ fn encode_fields_by_type(fields: FieldsMap, is_mutable: bool) -> Result<Vec<u8>>
                     let mut encoded: Vec<u8> = Vec::new();
                     for item in arr {
                         encoded.extend_from_slice(&encode_fields_by_type(
-                            vec![(name.clone(), (item.clone(), is_mutable))]
+                            &vec![(name.clone(), (item.clone(), is_mutable))]
                                 .into_iter()
                                 .collect(),
                             is_mutable,
@@ -77,7 +77,7 @@ fn encode_fields_by_type(fields: FieldsMap, is_mutable: bool) -> Result<Vec<u8>>
                     let mut encoded: Vec<u8> = Vec::new();
                     for (field_name, field_value) in fields {
                         encoded.extend_from_slice(&encode_fields_by_type(
-                            vec![(field_name.clone(), (field_value.clone(), is_mutable))]
+                            &vec![(field_name.clone(), (field_value.clone(), is_mutable))]
                                 .into_iter()
                                 .collect(),
                             is_mutable,
@@ -93,17 +93,7 @@ fn encode_fields_by_type(fields: FieldsMap, is_mutable: bool) -> Result<Vec<u8>>
     Ok(bytecode)
 }
 
-pub fn build_bytecode_contract(
-    contract: &Contract,
-    init_fields: InputFieldsMap,
-    is_devnet: bool,
-) -> Result<String> {
-    let main_bytecode = if is_devnet {
-        get_debug_bytecode(&contract.bytecode, &contract.bytecode_debug_patch)?
-    } else {
-        contract.bytecode.clone()
-    };
-
+pub fn get_fields(contract: &CompiledContract, init_fields: InputFieldsMap) -> Result<FieldsMap> {
     let mut fields: FieldsMap = contract
         .fields_types
         .clone()
@@ -130,12 +120,33 @@ pub fn build_bytecode_contract(
         fields.insert("__stdInterfaceId".to_string(), (final_value, false));
     }
 
+    Ok(fields)
+}
+
+pub fn get_fields_bytecode(contract: &CompiledContract, fields: FieldsMap) -> Result<(String, FieldsMap, FieldsMap)> {
     let (mutables, immutables): (HashMap<_, _>, HashMap<_, _>) = fields
         .into_iter()
         .partition(|(_, (_, is_mutable))| *is_mutable);
 
-    let imm_bytecode = encode_fields_by_type(immutables, false)?;
-    let mut_bytecode = encode_fields_by_type(mutables, true)?;
+    let imm_bytecode = encode_fields_by_type(&immutables, false)?;
+    let mut_bytecode = encode_fields_by_type(&mutables, true)?;
 
-    Ok(main_bytecode + &hex::encode(imm_bytecode) + &hex::encode(mut_bytecode))
+    Ok((hex::encode(imm_bytecode) + &hex::encode(mut_bytecode), immutables, mutables))
+}
+
+pub fn build_bytecode_contract(
+    contract: &CompiledContract,
+    init_fields: InputFieldsMap,
+    is_devnet: bool,
+) -> Result<String> {
+    let main_bytecode = if is_devnet {
+        get_debug_bytecode(&contract.bytecode, &contract.bytecode_debug_patch)?
+    } else {
+        contract.bytecode.clone()
+    };
+
+    let fields = get_fields(contract, init_fields)?;
+    let (fields_bytecode, _, _) = get_fields_bytecode(contract, fields)?;
+
+    Ok(main_bytecode + &fields_bytecode)
 }

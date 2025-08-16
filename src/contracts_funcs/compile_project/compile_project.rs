@@ -3,9 +3,11 @@ use serde_json::Value;
 use std::collections::HashMap;
 
 use crate::contracts_funcs::compile_project::compile_project_deserialize::{
-    RawCompileProject, RawContract,
+    RawCompileProject, RawContract, RawFunction,
 };
-use crate::contracts_funcs::compile_project::compile_project_values::{RalphValue, TypeName};
+use crate::contracts_funcs::compile_project::compile_project_values::{
+    FieldValue, RalphValue, TypeName,
+};
 use crate::utils::crypto::is_hex_string;
 use crate::utils::fs::read_file;
 
@@ -77,7 +79,7 @@ fn resolve_rec_type(
     }
 }
 
-pub fn fields_types_map_len(map: &FieldsTypesMap) -> usize {
+fn fields_types_map_len(map: &FieldsTypesMap) -> usize {
     map.iter()
         .map(|(_, type_name)| match type_name {
             TypeName::Structure(struct_fields) => fields_types_map_len(struct_fields),
@@ -113,7 +115,18 @@ pub struct Struct {
 }
 
 #[derive(Debug, Clone)]
-pub struct Contract {
+pub struct Function {
+    pub use_preapproved_assets: bool,
+    pub use_assets_in_contract: bool,
+    pub is_public: bool,
+    pub param_names: Vec<String>,
+    pub param_types: Vec<FieldValue>,
+    pub param_is_mutable: Vec<bool>,
+    pub return_types: Vec<FieldValue>,
+}
+
+#[derive(Debug, Clone)]
+pub struct CompiledContract {
     pub version: String,
     pub std_interface_id: Option<String>,
     pub name: String,
@@ -122,9 +135,10 @@ pub struct Contract {
     pub code_hash: String,
     pub code_hash_debug: String,
     pub fields_types: FieldsTypesMapMut,
+    pub functions: HashMap<String, Function>,
 }
 
-impl Contract {
+impl CompiledContract {
     pub fn try_from(contract: RawContract, structs: &HashMap<String, Struct>) -> Result<Self> {
         let fields_iter = contract.fields.names.iter().zip(
             contract
@@ -142,6 +156,16 @@ impl Contract {
             })
             .collect::<Result<HashMap<_, _>>>()?;
 
+        let functions = contract
+            .functions
+            .into_iter()
+            .map(|f| {
+                let name = f.name.clone();
+                let function = f.try_into()?;
+                Ok((name, function))
+            })
+            .collect::<Result<HashMap<_, _>>>()?;
+
         Ok(Self {
             version: contract.version,
             std_interface_id: contract.std_interface_id,
@@ -151,7 +175,24 @@ impl Contract {
             code_hash: contract.code_hash,
             code_hash_debug: contract.code_hash_debug,
             fields_types,
+            functions,
         })
+    }
+
+    pub fn get_method_index(&self, function_name: &str, method_name: &str) -> Result<usize> {
+        let function = self.functions.get(function_name).context(format!(
+            "Function '{}' not found in contract '{}'",
+            function_name, self.name
+        ))?;
+
+        function
+            .param_names
+            .iter()
+            .position(|name| name == method_name)
+            .context(format!(
+                "Method '{}' not found in function '{}'",
+                method_name, function_name
+            ))
     }
 }
 
@@ -164,7 +205,7 @@ pub struct Script {
 }
 
 pub struct CompileProject {
-    pub contracts: Vec<Contract>,
+    pub contracts: Vec<CompiledContract>,
     pub scripts: Vec<Script>,
 }
 
@@ -194,7 +235,7 @@ impl TryFrom<RawCompileProject> for CompileProject {
         let contracts = raw
             .contracts
             .into_iter()
-            .map(|contract| Contract::try_from(contract, &structs))
+            .map(|contract| CompiledContract::try_from(contract, &structs))
             .collect::<Result<Vec<_>>>()?;
 
         let scripts = raw
@@ -212,6 +253,34 @@ impl TryFrom<RawCompileProject> for CompileProject {
             .collect::<Result<Vec<_>>>()?;
 
         Ok(CompileProject { contracts, scripts })
+    }
+}
+
+impl TryFrom<RawFunction> for Function {
+    type Error = anyhow::Error;
+
+    fn try_from(raw: RawFunction) -> Result<Self, Self::Error> {
+        let param_types = raw
+            .param_types
+            .into_iter()
+            .map(FieldValue::try_from)
+            .collect::<Result<Vec<_>>>()?;
+
+        let return_types = raw
+            .return_types
+            .into_iter()
+            .map(FieldValue::try_from)
+            .collect::<Result<Vec<_>>>()?;
+
+        Ok(Self {
+            use_preapproved_assets: raw.use_preapproved_assets,
+            use_assets_in_contract: raw.use_assets_in_contract,
+            is_public: raw.is_public,
+            param_names: raw.param_names,
+            param_types,
+            param_is_mutable: raw.param_is_mutable,
+            return_types,
+        })
     }
 }
 

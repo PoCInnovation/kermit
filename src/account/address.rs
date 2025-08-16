@@ -5,6 +5,7 @@ use blake2::digest::{Update, VariableOutput};
 use bs58;
 
 use crate::utils::crypto::{djb2, xor_byte};
+use serde::{Deserialize, Serialize, Serializer};
 
 const TOTAL_NUMBER_OF_GROUPS: u8 = 4;
 
@@ -18,10 +19,30 @@ pub enum AddressType {
     P2HMPK = 0x05,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Address {
     pub key: String,
     pub full_bytes: Vec<u8>,
     pub bytes: Vec<u8>
+}
+
+impl Serialize for Address {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.key)
+    }
+}
+
+impl<'de> Deserialize<'de> for Address {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let key = String::deserialize(deserializer)?;
+        Address::new(&key).map_err(serde::de::Error::custom)
+    }
 }
 
 impl Address {

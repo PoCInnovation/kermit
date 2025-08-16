@@ -10,7 +10,7 @@ use crate::{
     },
     contracts::NetworkType,
     contracts_funcs::{
-        compile_project::compile_project::{Contract, InputFieldsMap},
+        compile_project::compile_project::{CompiledContract, InputFieldsMap},
         config::Config,
         deploy_bytecode::build_bytecode_contract,
     },
@@ -144,7 +144,7 @@ pub async fn deploy_contract(
     private_key: Option<Box<dyn PrivateKey>>,
     network_id: NetworkType,
     config: Config,
-    contract: &Contract,
+    contract: &CompiledContract,
     init_fields: InputFieldsMap,
 ) -> Result<Value> {
     let network = match &network_id {

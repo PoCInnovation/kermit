@@ -24,7 +24,7 @@ pub struct RawContract {
     pub code_hash: String,
     pub code_hash_debug: String,
     pub fields: Fields,
-    pub functions: Vec<Function>,
+    pub functions: Vec<RawFunction>,
     pub constants: Vec<Constant>,
     pub enums: Vec<EnumDef>,
     pub events: Vec<Event>,
@@ -41,7 +41,7 @@ pub struct RawScript {
     pub bytecode_template: String,
     pub bytecode_debug_patch: String,
     pub fields: Fields,
-    pub functions: Vec<Function>,
+    pub functions: Vec<RawFunction>,
     pub warnings: Vec<String>,
 }
 
@@ -64,7 +64,7 @@ pub struct Fields {
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Function {
+pub struct RawFunction {
     pub name: String,
     pub use_preapproved_assets: bool,
     pub use_assets_in_contract: bool,
@@ -86,7 +86,7 @@ pub struct Constant {
 #[serde(rename_all = "camelCase")]
 pub struct ConstantValue {
     pub type_name: Value,
-    pub value: FieldValue,
+    pub value: FieldValueHelper,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -100,7 +100,7 @@ pub struct EnumDef {
 #[serde(rename_all = "camelCase")]
 pub struct EnumField {
     pub name: String,
-    pub value: FieldValue,
+    pub value: FieldValueHelper,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -119,7 +119,8 @@ pub struct Maps {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct FieldValue {
-    pub type_name: Value,
+pub struct FieldValueHelper {
+    #[serde(rename = "type")]
+    pub type_name: String,
     pub value: Value,
 }
