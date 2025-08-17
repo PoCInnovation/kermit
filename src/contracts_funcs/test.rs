@@ -4,10 +4,11 @@ use serde_json::{Value, json};
 
 use crate::{
     account::address::Address,
+    config::config_contracts::Asset,
     contracts_funcs::{
         compile_project::compile_project::{CompiledContract, InputFieldsMap},
         deploy_bytecode::{get_fields, get_fields_bytecode},
-        state::{Asset, ContractState, state},
+        state::{ContractState, state},
     },
     utils::post,
 };

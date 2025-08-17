@@ -6,7 +6,8 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
 
-use crate::contracts_funcs::compile_project::compile_project::Struct;
+use crate::config::config_contracts::{ConfigContract, HelperFieldType};
+use crate::contracts_funcs::compile_project::compile_project::{FieldsTypesMapMut, Struct};
 use crate::contracts_funcs::compile_project::compile_project_deserialize::FieldValueHelper;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -48,7 +49,11 @@ impl Serialize for RalphValue {
                 "Array",
                 serde_json::to_value(arr).map_err(ser::Error::custom)?,
             ),
-            _ => return Err(ser::Error::custom("Unsupported RalphValue type (including Map and Structure)")),
+            _ => {
+                return Err(ser::Error::custom(
+                    "Unsupported RalphValue type (including Map and Structure)",
+                ));
+            },
         };
 
         let mut obj = serde_json::Map::new();
@@ -67,19 +72,116 @@ impl<'de> Deserialize<'de> for RalphValue {
         D: Deserializer<'de>,
     {
         let value = Value::deserialize(deserializer)?;
-        let obj = value.as_object().ok_or_else(|| de::Error::custom("Expected object for RalphValue"))?;
+        let obj = value
+            .as_object()
+            .ok_or_else(|| de::Error::custom("Expected object for RalphValue"))?;
 
-        let type_str = obj.get("type")
+        let type_str = obj
+            .get("type")
             .and_then(|v| v.as_str())
             .ok_or_else(|| de::Error::custom("Missing or invalid 'type' field in RalphValue"))?;
 
         let type_name: TypeName = type_str.try_into().map_err(de::Error::custom)?;
 
-        let value_field = obj.get("value")
+        let value_field = obj
+            .get("value")
             .ok_or_else(|| de::Error::custom("Missing 'value' field in RalphValue"))?;
 
-        RalphValue::from_typename_and_value(&type_name, value_field)
-            .map_err(de::Error::custom)
+        RalphValue::from_typename_and_value(&type_name, value_field).map_err(de::Error::custom)
+    }
+}
+
+impl ConfigContract {
+    fn try_into_field(
+        initial_field_name: &str,
+        initial_field: HelperFieldType,
+        fields_types: &FieldsTypesMapMut,
+        override_type: Option<&(TypeName, bool)>,
+    ) -> Result<Vec<(RalphValue, bool)>> {
+        let (type_name, is_mutable) = if let Some(override_type) = override_type {
+            override_type
+        } else {
+            fields_types.get(initial_field_name).context(format!(
+                "Type for field '{}' not found in provided types map",
+                initial_field_name
+            ))?
+        };
+
+        let value = match initial_field {
+            HelperFieldType::String(s) => {
+                vec![(
+                    RalphValue::from_typename_and_value(type_name, &Value::String(s))?,
+                    is_mutable.clone(),
+                )]
+            },
+            HelperFieldType::Array(arr) => {
+                if let TypeName::Array(elem_ty) = type_name {
+                    let values = arr
+                        .into_iter()
+                        .map(|v| {
+                            ConfigContract::try_into_field(
+                                "",
+                                v,
+                                fields_types,
+                                Some(&(*elem_ty.clone(), is_mutable.clone())),
+                            )
+                        })
+                        .collect::<Result<Vec<_>>>()?;
+
+                    values.into_iter().flatten().collect()
+                } else {
+                    return Err(anyhow!(
+                        "Type mismatch: expected Array type for field '{}', got {:?}",
+                        initial_field_name,
+                        type_name
+                    ));
+                }
+            },
+            HelperFieldType::Structure(helper_fields) => {
+                if let TypeName::Structure(struct_fields) = type_name {
+                    let zipped = helper_fields
+                        .into_iter()
+                        .filter_map(|(k, v1)| struct_fields.get(&k).map(|v2| (k, (v1, v2))))
+                        .collect::<Vec<(String, (HelperFieldType, &(TypeName, bool)))>>();
+
+                    zipped
+                        .into_iter()
+                        .map(|(field_name, (value, type_name))| {
+                            ConfigContract::try_into_field(
+                                &field_name,
+                                value,
+                                struct_fields,
+                                Some(type_name),
+                            )
+                        })
+                        .collect::<Result<Vec<_>>>()?
+                        .into_iter()
+                        .flatten()
+                        .collect()
+                } else {
+                    return Err(anyhow!(
+                        "Type mismatch: expected Structure type for field '{}', got {:?}",
+                        initial_field_name,
+                        type_name
+                    ));
+                }
+            },
+        };
+        Ok(value)
+    }
+
+    pub fn try_into_fields(
+        initial_fields: HashMap<String, HelperFieldType>,
+        fields_types: &FieldsTypesMapMut,
+    ) -> Result<Vec<(RalphValue, bool)>> {
+        let values = initial_fields
+            .into_iter()
+            .map(|(name, helper_field)| {
+                let val = ConfigContract::try_into_field(&name, helper_field, fields_types, None)?;
+                Ok(val)
+            })
+            .collect::<Result<Vec<Vec<_>>>>()?;
+        Ok(values.into_iter().flatten().collect())
     }
 }
 
@@ -200,7 +302,7 @@ impl RalphValue {
                 let obj = value.as_object().context("Expected Structure as object")?;
 
                 let mut structure = HashMap::new();
-                for (field_name, field_ty) in fields {
+                for (field_name, (field_ty, _)) in fields {
                     let field_value = obj
                         .get(field_name)
                         .with_context(|| format!("Missing field '{}' in structure", field_name))?;
@@ -237,7 +339,7 @@ pub enum TypeName {
     Address,
     Map(Box<TypeName>, Box<TypeName>),
     Array(Box<TypeName>),
-    Structure(HashMap<String, TypeName>),
+    Structure(HashMap<String, (TypeName, bool)>),
     Other(String),
 }
 
@@ -288,10 +390,20 @@ impl TypeName {
                     ))?
                     .field_types
                     .iter()
-                    .map(|struct_name| {
+                    .zip(
+                        structures
+                            .get(s)
+                            .context(format!("Structure named '{}' isn't found", s))?
+                            .is_mutable
+                            .iter(),
+                    )
+                    .map(|(struct_name, is_mutable)| {
                         Ok((
                             struct_name.clone(),
-                            Self::from_name_and_structures(struct_name, structures)?,
+                            (
+                                Self::from_name_and_structures(struct_name, structures)?,
+                                is_mutable.clone(),
+                            ),
                         ))
                     })
                     .collect::<Result<HashMap<_, _>>>()?;
@@ -325,8 +437,6 @@ impl<'de> Deserialize<'de> for FieldValue {
         Ok(FieldValue { type_name, value })
     }
 }
-
-
 
 impl TryFrom<Value> for FieldValue {
     type Error = anyhow::Error;

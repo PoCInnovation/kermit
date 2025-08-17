@@ -1,7 +1,9 @@
+use std::collections::HashMap;
+
 use anyhow::{Result, anyhow};
 use serde::Deserialize;
 
-use crate::utils::fs::read_file;
+use crate::{config::config_contracts::ConfigContract, utils::fs::read_file};
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -35,6 +37,7 @@ pub struct Configuration {
 #[serde(rename_all = "camelCase")]
 pub struct Config {
     pub configuration: Configuration,
+    pub contracts: Vec<HashMap<String, ConfigContract>>, 
 }
 
 impl Config {
@@ -52,6 +55,7 @@ impl Config {
 
         let mut config = config?;
         config.apply_merge()?;
+
         let config = serde_yaml::from_value::<Config>(config);
         if config.is_err() {
             return Err(anyhow!(

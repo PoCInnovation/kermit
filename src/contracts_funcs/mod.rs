@@ -5,7 +5,6 @@ mod source_info;
 
 pub mod compile;
 pub mod compile_project;
-pub mod config;
 pub mod deploy;
 pub mod project;
 pub mod state;

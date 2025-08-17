@@ -4,11 +4,9 @@ use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
 
 use crate::{
+    config::config::{Config, Network},
     contracts::CompilerOptions,
-    contracts_funcs::{
-        config::{Config, Network},
-        source_info::{SourceInfo, SourceKind},
-    },
+    contracts_funcs::source_info::{SourceInfo, SourceKind},
     utils::{fs::read_file, post},
 };
 use once_cell::sync::Lazy;

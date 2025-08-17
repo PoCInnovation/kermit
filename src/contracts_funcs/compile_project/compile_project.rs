@@ -19,7 +19,7 @@ pub type InputFieldsMap = HashMap<String, RalphValue>;
 fn resolve_rec_type(
     name: &str,
     value: String,
-    types: &FieldsTypesMap,
+    types: &FieldsTypesMapMut,
     override_type: Option<&TypeName>,
 ) -> Result<RalphValue> {
     let mut parts = name.splitn(2, '.');
@@ -29,10 +29,11 @@ fn resolve_rec_type(
     let type_name = if let Some(a) = override_type {
         a
     } else {
-        types.get(name).context(anyhow!(
+        let (a, b) = types.get(name).context(anyhow!(
             "Type for field '{}' not found in provided types map",
             name
-        ))?
+        ))?;
+        a
     };
 
     match type_name {
@@ -79,9 +80,9 @@ fn resolve_rec_type(
     }
 }
 
-fn fields_types_map_len(map: &FieldsTypesMap) -> usize {
+fn fields_types_map_len(map: &FieldsTypesMapMut) -> usize {
     map.iter()
-        .map(|(_, type_name)| match type_name {
+        .map(|(_, (type_name, _))| match type_name {
             TypeName::Structure(struct_fields) => fields_types_map_len(struct_fields),
             _ => 1,
         })
@@ -90,7 +91,7 @@ fn fields_types_map_len(map: &FieldsTypesMap) -> usize {
 
 pub fn fields_vec_to_fields_map(
     ralph_input: Vec<(String, String)>,
-    types: &FieldsTypesMap,
+    types: &FieldsTypesMapMut,
 ) -> Result<InputFieldsMap> {
     if ralph_input.len() != fields_types_map_len(types) {
         return Err(anyhow!(
@@ -180,12 +181,7 @@ impl CompiledContract {
         self.functions
             .iter()
             .position(|f| f.name == method_name)
-            .ok_or_else(|| {
-                anyhow!(
-                    "Method '{}' not found",
-                    method_name,
-                )
-            })
+            .ok_or_else(|| anyhow!("Method '{}' not found", method_name,))
     }
 }
 

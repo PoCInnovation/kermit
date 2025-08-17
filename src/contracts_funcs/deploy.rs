@@ -8,14 +8,14 @@ use crate::{
         address::Address,
         signature::{GLSecp256k1PrivateKey, PrivateKey},
     },
+    config::config::{Config, Network},
     contracts::NetworkType,
     contracts_funcs::{
         compile_project::compile_project::{CompiledContract, InputFieldsMap},
-        config::{Config, Network},
         deploy_bytecode::build_bytecode_contract,
     },
     transactions::submit,
-    utils::{get, post, HttpResponse},
+    utils::{HttpResponse, get, post},
 };
 
 #[derive(Debug, Deserialize)]
@@ -28,11 +28,11 @@ struct ChainParams {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all="camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct DeployedContract {
     pub contract_id: String,
     pub from_group: i32,
-    pub to_group: i32
+    pub to_group: i32,
 }
 
 async fn validate_chain_params(

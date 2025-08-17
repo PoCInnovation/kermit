@@ -1,6 +1,7 @@
-mod address;
 mod account;
+mod address;
 mod args;
+mod config;
 mod contracts;
 mod contracts_funcs;
 mod events;
@@ -10,11 +11,11 @@ mod transactions;
 mod utils;
 mod wallet;
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use args::{Kermit, KermitSubcommand};
 use clap::Parser;
 
-use crate::{contracts::NetworkType, contracts_funcs::config::Config, network::health::is_network_alive};
+use crate::{config::config::Config, contracts::NetworkType, network::health::is_network_alive};
 
 #[tokio::main]
 async fn main() {
@@ -40,7 +41,11 @@ async fn run() -> Result<()> {
 
     match kermit.cmd {
         KermitSubcommand::Address { command } => command.run(kermit.url).await?,
-        KermitSubcommand::Contracts { command } => command.run(&kermit.url, &config, network, kermit.network).await?,
+        KermitSubcommand::Contracts { command } => {
+            command
+                .run(&kermit.url, &config, network, kermit.network)
+                .await?
+        },
         KermitSubcommand::Events { command } => command.run(&kermit.url).await?,
         KermitSubcommand::Infos { command } => command.run(&kermit.url).await?,
         KermitSubcommand::Transactions { command } => command.run(&kermit.url).await?,
