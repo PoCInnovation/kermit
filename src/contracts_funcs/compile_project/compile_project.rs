@@ -3,11 +3,9 @@ use serde_json::Value;
 use std::collections::HashMap;
 
 use crate::contracts_funcs::compile_project::compile_project_deserialize::{
-    RawCompileProject, RawContract, RawFunction,
+    RawCompileProject, RawContract, RawFunction, StructDef,
 };
-use crate::contracts_funcs::compile_project::compile_project_values::{
-    FieldValue, RalphValue, TypeName,
-};
+use crate::contracts_funcs::compile_project::compile_project_values::{RalphValue, TypeName};
 use crate::utils::crypto::is_hex_string;
 use crate::utils::fs::read_file;
 
@@ -15,6 +13,7 @@ pub type FieldsTypesMap = HashMap<String, TypeName>;
 pub type FieldsTypesMapMut = HashMap<String, (TypeName, bool)>;
 pub type FieldsMap = HashMap<String, (RalphValue, bool)>;
 pub type InputFieldsMap = HashMap<String, RalphValue>;
+pub type FieldsVec = Vec<(RalphValue, bool)>;
 
 fn resolve_rec_type(
     name: &str,
@@ -30,8 +29,9 @@ fn resolve_rec_type(
         a
     } else {
         let (a, b) = types.get(name).context(anyhow!(
-            "Type for field '{}' not found in provided types map",
-            name
+            "Type for field '{}' not found in provided types map: {:?}",
+            name,
+            types
         ))?;
         a
     };
@@ -54,12 +54,16 @@ fn resolve_rec_type(
                 .collect::<Result<Vec<_>>>()?;
             Ok(RalphValue::Array(array_values))
         },
-        TypeName::Structure(struct_content) => {
+        TypeName::Structure((_, struct_content)) => {
             let rest = rest.context(format!(
                 "Structure field name cannot be empty for field '{}', type '{:?}'",
                 name, type_name
             ))?;
             let mut sub_parts = rest.splitn(2, '.');
+            let _ = sub_parts.next().context(format!(
+                "Structure field name cannot be empty for field '{}', type '{:?}'",
+                name, type_name
+            ))?;
 
             if let Some(remaining_dots) = sub_parts.next() {
                 // there are nested structure(s)
@@ -69,7 +73,8 @@ fn resolve_rec_type(
             resolve_rec_type(rest, value, struct_content, None)
         },
         _ => {
-            let ralph_value = if type_name.clone() == TypeName::ByteVec && !is_hex_string(&value) {
+            let ralph_value = if type_name.to_owned() == TypeName::ByteVec && !is_hex_string(&value)
+            {
                 value.as_str().try_into()?
             } else {
                 RalphValue::from_typename_and_value(type_name, &Value::String(value))?
@@ -83,28 +88,28 @@ fn resolve_rec_type(
 fn fields_types_map_len(map: &FieldsTypesMapMut) -> usize {
     map.iter()
         .map(|(_, (type_name, _))| match type_name {
-            TypeName::Structure(struct_fields) => fields_types_map_len(struct_fields),
+            TypeName::Structure((_, struct_fields)) => fields_types_map_len(struct_fields),
             _ => 1,
         })
         .sum()
 }
 
-pub fn fields_vec_to_fields_map(
-    ralph_input: Vec<(String, String)>,
+pub fn args_to_fields_vec(
+    ralph_vec_input: Vec<(String, String)>,
     types: &FieldsTypesMapMut,
-) -> Result<InputFieldsMap> {
-    if ralph_input.len() != fields_types_map_len(types) {
+) -> Result<Vec<RalphValue>> {
+    if ralph_vec_input.len() != fields_types_map_len(types) {
         return Err(anyhow!(
             "Fields count mismatch with initial fields: expected {}, found {}",
             types.len(),
-            ralph_input.len()
+            ralph_vec_input.len()
         ));
     }
 
-    let result = ralph_input
+    let result = ralph_vec_input
         .into_iter()
-        .map(|(name, value)| Ok((name.clone(), resolve_rec_type(&name, value, types, None)?)))
-        .collect::<Result<InputFieldsMap>>()?;
+        .map(|(name, value)| Ok(resolve_rec_type(&name, value, types, None)?))
+        .collect::<Result<Vec<_>>>()?;
     Ok(result)
 }
 
@@ -121,10 +126,8 @@ pub struct Function {
     pub use_preapproved_assets: bool,
     pub use_assets_in_contract: bool,
     pub is_public: bool,
-    pub param_names: Vec<String>,
-    pub param_types: Vec<FieldValue>,
-    pub param_is_mutable: Vec<bool>,
-    pub return_types: Vec<FieldValue>,
+    pub params_types: FieldsTypesMapMut,
+    pub return_types: Vec<TypeName>,
 }
 
 #[derive(Debug, Clone)]
@@ -161,7 +164,7 @@ impl CompiledContract {
         let functions = contract
             .functions
             .into_iter()
-            .map(Function::try_from)
+            .map(|raw| Function::from_raw_and_structures(raw, &structs))
             .collect::<Result<Vec<_>>>()?;
 
         Ok(Self {
@@ -177,11 +180,14 @@ impl CompiledContract {
         })
     }
 
-    pub fn get_method_index(&self, method_name: &str) -> Result<usize> {
-        self.functions
+    pub fn get_method(&self, method_name: &str) -> Result<(&Function, usize)> {
+        let method_index = self
+            .functions
             .iter()
             .position(|f| f.name == method_name)
-            .ok_or_else(|| anyhow!("Method '{}' not found", method_name,))
+            .context(format!("Method '{}' not found in contract '{}'", method_name, self.name))?;
+        let method = &self.functions[method_index];
+        Ok((method, method_index))
     }
 }
 
@@ -198,6 +204,18 @@ pub struct CompileProject {
     pub scripts: Vec<Script>,
 }
 
+impl CompileProject {
+    pub fn get_contract_by_name(&self, contract_name: &str) -> Result<&CompiledContract> {
+        self.contracts
+            .iter()
+            .find(|c| c.name == contract_name)
+            .context(format!(
+                "Contract '{}' not found in compiled project",
+                contract_name
+            ))
+    }
+}
+
 impl TryFrom<RawCompileProject> for CompileProject {
     type Error = anyhow::Error;
 
@@ -206,9 +224,19 @@ impl TryFrom<RawCompileProject> for CompileProject {
             .structs
             .unwrap_or_default()
             .into_iter()
-            .map(|s| {
+            .map(|s: StructDef| {
                 let field_names = s.field_names;
-                let field_types = s.field_types.iter().map(|t| t.to_string()).collect();
+                let field_types = s
+                    .field_types
+                    .iter()
+                    .map(|t| {
+                        let t = t
+                            .as_str()
+                            .context(format!("Struct field type is not a string: {:?}", t))?;
+
+                        Ok(t.to_string())
+                    })
+                    .collect::<Result<Vec<_>>>()?;
                 let is_mutable = s.is_mutable;
                 Ok((
                     s.name,
@@ -245,20 +273,41 @@ impl TryFrom<RawCompileProject> for CompileProject {
     }
 }
 
-impl TryFrom<RawFunction> for Function {
-    type Error = anyhow::Error;
-
-    fn try_from(raw: RawFunction) -> Result<Self, Self::Error> {
-        let param_types = raw
+impl Function {
+    fn from_raw_and_structures(
+        raw: RawFunction,
+        structures: &HashMap<String, Struct>,
+    ) -> Result<Self> {
+        let params_types = raw
             .param_types
             .into_iter()
-            .map(FieldValue::try_from)
-            .collect::<Result<Vec<_>>>()?;
+            .zip(raw.param_is_mutable.iter())
+            .zip(raw.param_names.iter())
+            .map(|((v,is_mutable), name)| {
+                let ty = TypeName::from_name_and_structures(
+                    v.as_str().context(format!(
+                        "Function parameter should be a correct type. Found {}",
+                        v
+                    ))?,
+                    structures,
+                )?;
+
+                Ok((name.clone(), (ty, is_mutable.clone())))
+            })
+            .collect::<Result<FieldsTypesMapMut>>()?;
 
         let return_types = raw
             .return_types
             .into_iter()
-            .map(FieldValue::try_from)
+            .map(|x| {
+                TypeName::from_name_and_structures(
+                    x.as_str().context(format!(
+                        "Function return type should be a correct type. Found {}",
+                        x
+                    ))?,
+                    structures,
+                )
+            })
             .collect::<Result<Vec<_>>>()?;
 
         Ok(Self {
@@ -266,9 +315,7 @@ impl TryFrom<RawFunction> for Function {
             use_preapproved_assets: raw.use_preapproved_assets,
             use_assets_in_contract: raw.use_assets_in_contract,
             is_public: raw.is_public,
-            param_names: raw.param_names,
-            param_types,
-            param_is_mutable: raw.param_is_mutable,
+            params_types,
             return_types,
         })
     }

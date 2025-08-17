@@ -1,6 +1,6 @@
 use i256::{I256, U256};
 
-const ONE_BYTE_BOUND: i32 = 0x40;
+const ONE_BYTE_BOUND: i32 = 0x20;
 const TWO_BYTE_BOUND: i32 = ONE_BYTE_BOUND << 8;
 const FOUR_BYTE_BOUND: i32 = ONE_BYTE_BOUND << (8 * 3);
 

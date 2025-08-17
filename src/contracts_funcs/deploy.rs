@@ -1,17 +1,13 @@
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Result, anyhow};
 use serde::{Deserialize, de::DeserializeOwned};
 use serde_json::{Value, json};
 
 use crate::{
-    account::{
-        account::Account,
-        address::Address,
-        signature::{GLSecp256k1PrivateKey, PrivateKey},
-    },
-    config::config::{Config, Network},
+    account::{account::Account, address::Address, signature::PrivateKey},
+    config::config::Network,
     contracts::NetworkType,
     contracts_funcs::{
-        compile_project::compile_project::{CompiledContract, InputFieldsMap},
+        compile_project::compile_project::{CompiledContract, FieldsVec},
         deploy_bytecode::build_bytecode_contract,
     },
     transactions::submit,
@@ -115,14 +111,18 @@ async fn send_contract_tx(
     issue_token_amount: u64,
 ) -> Result<Value> {
     let public_key = private_key.get_public_key()?;
+    let build_result = build(url, &public_key, &address.key, bytecode, issue_token_amount).await;
     let BuildTransactionResponse {
         contract_id,
         tx_id,
         unsigned_tx,
         gas_price,
-    } = build(url, &public_key, &address.key, bytecode, issue_token_amount)
-        .await?
-        .data;
+    } = match build_result {
+        Ok(response) => response.data,
+        Err(e) => {
+            return Err(anyhow!("Error building contract transaction: {:?}", e));
+        }
+    };
 
     let signature = private_key.sign(&tx_id)?;
     let mut tx_res = submit(url, &unsigned_tx, &signature, Some(gas_price))
@@ -140,28 +140,12 @@ async fn send_contract_tx(
 
 pub async fn deploy_contract(
     url: &str,
-    private_key: Option<Box<dyn PrivateKey>>,
+    private_key: Box<dyn PrivateKey>,
     network: &Network,
     network_id: NetworkType,
-    config: &Config,
     contract: &CompiledContract,
-    init_fields: InputFieldsMap,
+    init_fields: FieldsVec,
 ) -> Result<Value> {
-    let private_key = if let Some(private_key) = private_key {
-        private_key
-    } else {
-        let private_keys = network
-            .private_keys
-            .as_ref()
-            .ok_or_else(|| anyhow!("No private keys found in devnet configuration"))?;
-
-        let private_key = private_keys
-            .get(0)
-            .context("No private keys found in devnet configuration")?;
-
-        Box::new(GLSecp256k1PrivateKey::new(private_key)?)
-    };
-
     let account = Account::new(private_key)?;
     let chain_params = get::<ChainParams>(url, "/infos/chain-params").await?.data;
 

@@ -1,18 +1,22 @@
 use std::collections::HashMap;
 
-use serde::de::{self, Error, MapAccess, SeqAccess, Visitor};
+use serde::de::{self, Error};
 use serde::{Deserialize, Deserializer, Serialize};
-use std::fmt;
 
-use crate::account::address::Address;
 use serde_yaml::Value;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Asset {
-    pub address: Option<String>,
     pub atto_alph_amount: String,
     pub tokens: Option<Vec<Token>>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InputAsset {
+    pub address: String,
+    pub asset: Asset,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -69,5 +73,6 @@ impl<'de> Deserialize<'de> for HelperFieldType {
 #[serde(rename_all = "camelCase")]
 pub struct ConfigContract {
     pub initial_fields: HashMap<String, HelperFieldType>, // can be anything
-    pub input_assets: Vec<Asset>,
+    pub initial_asset: Asset,
+    pub input_assets: Vec<InputAsset>,
 }

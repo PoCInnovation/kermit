@@ -37,7 +37,7 @@ pub struct Configuration {
 #[serde(rename_all = "camelCase")]
 pub struct Config {
     pub configuration: Configuration,
-    pub contracts: Vec<HashMap<String, ConfigContract>>, 
+    pub contracts: Option<HashMap<String, ConfigContract>>, 
 }
 
 impl Config {
