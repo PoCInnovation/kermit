@@ -116,6 +116,7 @@ pub struct Struct {
 
 #[derive(Debug, Clone)]
 pub struct Function {
+    pub name: String,
     pub use_preapproved_assets: bool,
     pub use_assets_in_contract: bool,
     pub is_public: bool,
@@ -135,7 +136,7 @@ pub struct CompiledContract {
     pub code_hash: String,
     pub code_hash_debug: String,
     pub fields_types: FieldsTypesMapMut,
-    pub functions: HashMap<String, Function>,
+    pub functions: Vec<Function>,
 }
 
 impl CompiledContract {
@@ -159,12 +160,8 @@ impl CompiledContract {
         let functions = contract
             .functions
             .into_iter()
-            .map(|f| {
-                let name = f.name.clone();
-                let function = f.try_into()?;
-                Ok((name, function))
-            })
-            .collect::<Result<HashMap<_, _>>>()?;
+            .map(Function::try_from)
+            .collect::<Result<Vec<_>>>()?;
 
         Ok(Self {
             version: contract.version,
@@ -179,20 +176,16 @@ impl CompiledContract {
         })
     }
 
-    pub fn get_method_index(&self, function_name: &str, method_name: &str) -> Result<usize> {
-        let function = self.functions.get(function_name).context(format!(
-            "Function '{}' not found in contract '{}'",
-            function_name, self.name
-        ))?;
-
-        function
-            .param_names
+    pub fn get_method_index(&self, method_name: &str) -> Result<usize> {
+        self.functions
             .iter()
-            .position(|name| name == method_name)
-            .context(format!(
-                "Method '{}' not found in function '{}'",
-                method_name, function_name
-            ))
+            .position(|f| f.name == method_name)
+            .ok_or_else(|| {
+                anyhow!(
+                    "Method '{}' not found",
+                    method_name,
+                )
+            })
     }
 }
 
@@ -273,6 +266,7 @@ impl TryFrom<RawFunction> for Function {
             .collect::<Result<Vec<_>>>()?;
 
         Ok(Self {
+            name: raw.name,
             use_preapproved_assets: raw.use_preapproved_assets,
             use_assets_in_contract: raw.use_assets_in_contract,
             is_public: raw.is_public,

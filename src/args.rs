@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand, ValueHint};
 
 use crate::{
-    address::AddressSubcommands, contracts::ContractsSubcommands, events::EventsSubcommands,
+    address::AddressSubcommands, contracts::{ContractsSubcommands, NetworkType}, events::EventsSubcommands,
     infos::InfosSubcommands, transactions::TransactionsSubcommands, wallet::WalletsSubcommands,
 };
 
@@ -11,6 +11,12 @@ pub struct Kermit {
     #[clap(long, short, env, value_hint = ValueHint::Url,
     default_value = "https://node.mainnet.alephium.org")]
     pub url: String,
+
+    #[arg(long, short, help = "Path to the config YAML file", default_value_t=String::from("./alephium.config.yaml"))]
+    pub config_file_path: String,
+
+    #[arg(long, default_value_t = NetworkType::Main)]
+    pub network: NetworkType,
 
     #[clap(subcommand)]
     pub cmd: KermitSubcommand,

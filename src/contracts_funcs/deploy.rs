@@ -11,10 +11,9 @@ use crate::{
     contracts::NetworkType,
     contracts_funcs::{
         compile_project::compile_project::{CompiledContract, InputFieldsMap},
-        config::Config,
+        config::{Config, Network},
         deploy_bytecode::build_bytecode_contract,
     },
-    network::health::is_network_alive,
     transactions::submit,
     utils::{get, post, HttpResponse},
 };
@@ -142,21 +141,12 @@ async fn send_contract_tx(
 pub async fn deploy_contract(
     url: &str,
     private_key: Option<Box<dyn PrivateKey>>,
+    network: &Network,
     network_id: NetworkType,
-    config: Config,
+    config: &Config,
     contract: &CompiledContract,
     init_fields: InputFieldsMap,
 ) -> Result<Value> {
-    let network = match &network_id {
-        NetworkType::Dev => &config.configuration.networks.devnet,
-        NetworkType::Test => &config.configuration.networks.testnet,
-        NetworkType::Main => &config.configuration.networks.mainnet,
-    };
-
-    if !is_network_alive(&network.node_url).await? {
-        return Err(anyhow!("Network is not reachable: {}", network.node_url));
-    }
-
     let private_key = if let Some(private_key) = private_key {
         private_key
     } else {

@@ -4,12 +4,11 @@ use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
 
 use crate::{
-    contracts::{CompilerOptions, NetworkType},
+    contracts::CompilerOptions,
     contracts_funcs::{
-        config::Config,
+        config::{Config, Network},
         source_info::{SourceInfo, SourceKind},
     },
-    network::health::is_network_alive,
     utils::{fs::read_file, post},
 };
 use once_cell::sync::Lazy;
@@ -192,24 +191,13 @@ fn load_file(
 pub async fn compile(
     url: &str,
     file_path: &str,
-    network: NetworkType,
-    config_path: &str,
+    network: &Network,
+    config: &Config,
     compiler_options: CompilerOptions,
     skip_generate: bool,
     debug: bool,
     force: bool,
 ) -> Result<Value> {
-    let config = Config::new(config_path)?;
-    let network_url = match network {
-        NetworkType::Dev => &config.configuration.networks.devnet.node_url,
-        NetworkType::Test => &config.configuration.networks.testnet.node_url,
-        NetworkType::Main => &config.configuration.networks.mainnet.node_url,
-    };
-
-    if !is_network_alive(&network_url).await? {
-        return Err(anyhow::anyhow!("Network is not reachable: {}", network_url));
-    }
-
     let source_file_paths = load_ral_files(file_path)?;
     let mut all_source_infos = Vec::new();
     let mut import_file_paths_cache = HashSet::new();

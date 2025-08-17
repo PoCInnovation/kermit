@@ -34,7 +34,6 @@ pub struct Configuration {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Config {
-    pub default_settings: DefaultSettings,
     pub configuration: Configuration,
 }
 

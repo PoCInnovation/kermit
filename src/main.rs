@@ -10,9 +10,11 @@ mod transactions;
 mod utils;
 mod wallet;
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use args::{Kermit, KermitSubcommand};
 use clap::Parser;
+
+use crate::{contracts::NetworkType, contracts_funcs::config::Config, network::health::is_network_alive};
 
 #[tokio::main]
 async fn main() {
@@ -25,9 +27,20 @@ async fn main() {
 async fn run() -> Result<()> {
     let kermit = Kermit::parse();
 
+    let config = Config::new(&kermit.config_file_path)?;
+    let network = match &kermit.network {
+        NetworkType::Dev => &config.configuration.networks.devnet,
+        NetworkType::Test => &config.configuration.networks.testnet,
+        NetworkType::Main => &config.configuration.networks.mainnet,
+    };
+
+    if !is_network_alive(&network.node_url).await? {
+        return Err(anyhow!("Network is not reachable: {}", network.node_url));
+    }
+
     match kermit.cmd {
         KermitSubcommand::Address { command } => command.run(kermit.url).await?,
-        KermitSubcommand::Contracts { command } => command.run(&kermit.url).await?,
+        KermitSubcommand::Contracts { command } => command.run(&kermit.url, &config, network, kermit.network).await?,
         KermitSubcommand::Events { command } => command.run(&kermit.url).await?,
         KermitSubcommand::Infos { command } => command.run(&kermit.url).await?,
         KermitSubcommand::Transactions { command } => command.run(&kermit.url).await?,

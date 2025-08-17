@@ -21,3 +21,4 @@ sha2 = "0.10.9"
 blake2 = "0.10.6"
 bs58 = "0.5.1"
 i256 = "0.2.2"
+futures = {version = "0.3.31", default-features = false }
