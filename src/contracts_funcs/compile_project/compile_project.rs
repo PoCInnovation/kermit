@@ -185,7 +185,10 @@ impl CompiledContract {
             .functions
             .iter()
             .position(|f| f.name == method_name)
-            .context(format!("Method '{}' not found in contract '{}'", method_name, self.name))?;
+            .context(format!(
+                "Method '{}' not found in contract '{}'",
+                method_name, self.name
+            ))?;
         let method = &self.functions[method_index];
         Ok((method, method_index))
     }
@@ -283,7 +286,7 @@ impl Function {
             .into_iter()
             .zip(raw.param_is_mutable.iter())
             .zip(raw.param_names.iter())
-            .map(|((v,is_mutable), name)| {
+            .map(|((v, is_mutable), name)| {
                 let ty = TypeName::from_name_and_structures(
                     v.as_str().context(format!(
                         "Function parameter should be a correct type. Found {}",

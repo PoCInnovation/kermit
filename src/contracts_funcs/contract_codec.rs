@@ -79,7 +79,6 @@ pub struct BigIntCodec;
 
 impl BigIntCodec {
     pub fn encode(value: I256) -> Vec<u8> {
-        // Special case for zero.
         if value == I256::from(0) {
             return vec![0];
         }
@@ -95,12 +94,10 @@ impl BigIntCodec {
             abs_value = abs_value >> 8;
         }
 
-        // If positive and MSB has high bit set, prefix with zero byte.
         if !is_negative && !bytes.is_empty() && (bytes[bytes.len() - 1] & 0x80) != 0 {
             bytes.push(0);
         }
 
-        // If negative, compute two's complement.
         if is_negative {
             let mut carry = true;
             for b in &mut bytes {
@@ -114,7 +111,6 @@ impl BigIntCodec {
                     }
                 }
             }
-            // If carry remains or MSB does not have sign bit, append 0xff.
             if carry || bytes.is_empty() || (bytes[bytes.len() - 1] & 0x80) == 0 {
                 bytes.push(0xff);
             }
@@ -137,8 +133,6 @@ pub fn encode_i256(value: I256) -> Vec<u8> {
 }
 
 pub fn encode_u256(value: U256) -> Vec<u8> {
-    // let zero = U256::from(0u32);
-    // let upper_bound = U256::from(1u32) << 256;
     let four_byte_bound = U256::from(FOUR_BYTE_BOUND as u32);
 
     if value < four_byte_bound {

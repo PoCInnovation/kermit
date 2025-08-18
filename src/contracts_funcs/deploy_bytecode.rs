@@ -134,10 +134,7 @@ pub fn get_fields_vec(contract: &CompiledContract, init_fields: FieldsVec) -> Re
     Ok(init_fields)
 }
 
-pub fn get_fields_bytecode(
-    contract: &CompiledContract,
-    fields: FieldsVec,
-) -> Result<(String, FieldsVec, FieldsVec)> {
+pub fn get_fields_bytecode(fields: FieldsVec) -> Result<(String, FieldsVec, FieldsVec)> {
     let (mutables, immutables): (Vec<_>, Vec<_>) =
         fields.into_iter().partition(|(_, is_mutable)| *is_mutable);
 
@@ -163,7 +160,7 @@ pub fn build_bytecode_contract(
     };
 
     let fields = get_fields_vec(contract, init_fields)?;
-    let (fields_bytecode, _, _) = get_fields_bytecode(contract, fields)?;
+    let (fields_bytecode, _, _) = get_fields_bytecode(fields)?;
 
     Ok(main_bytecode + &fields_bytecode)
 }

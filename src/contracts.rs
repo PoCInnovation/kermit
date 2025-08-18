@@ -5,9 +5,13 @@ use serde_json::Value;
 use strum::Display;
 
 use crate::{
-    account::signature::{GLSecp256k1PrivateKey, PrivateKey},
+    account::{
+        address::Address,
+        signature::{GLSecp256k1PrivateKey, PrivateKey},
+    },
     config::config::{Config, Network},
     contracts_funcs::{
+        call::call_contract,
         compile::compile,
         compile_project::{
             compile_project::{FieldsTypesMapMut, FieldsVec, load_compile_project},
@@ -140,8 +144,20 @@ pub enum ContractsSubcommands {
         args: Vec<(String, String)>,
         #[arg(long = "existing-contracts", value_name = "CONTRACT_ID", num_args = 0.., help = "List of existing contracts to include in the test")]
         exiting_contracts: Vec<String>,
+    },
+    Call {
+        contract_name: String,
+        contract_id: String,
+        compile_output_path: String, // It assumes the user has the source code
+        method_name: String,
+        #[arg(long = "args", value_parser = parse_key_val, num_args = 1..)]
+        args: Vec<(String, String)>,
         #[arg(long, env)]
         private_key: Option<String>,
+        #[arg(long = "interested-contracts", value_name = "CONTRACT_ADDRESS", num_args = 0.., help = "List of existing contracts to include in the test")]
+        exiting_contracts: Vec<String>,
+        #[arg(long, help = "Block hash to use for the call")]
+        block_hash: Option<String>,
     },
 }
 
@@ -258,7 +274,6 @@ impl ContractsSubcommands {
                 contract_name,
                 contract_id,
                 compile_output_path,
-                private_key,
                 args,
                 exiting_contracts,
             } => {
@@ -292,6 +307,44 @@ impl ContractsSubcommands {
                     &config_contract.input_assets,
                     args,
                     exiting_contracts,
+                )
+                .await?
+            },
+            Self::Call {
+                contract_name,
+                contract_id,
+                compile_output_path,
+                method_name,
+                args,
+                private_key,
+                exiting_contracts,
+                block_hash,
+            } => {
+                let compiled_project = load_compile_project(&compile_output_path)?;
+                let contract = compiled_project.get_contract_by_name(&contract_name)?;
+
+                let contracts_map = config
+                    .contracts
+                    .to_owned()
+                    .context("No 'contracts' field in config")?;
+                let config_contract = contracts_map
+                    .get(&contract.name)
+                    .context(format!("Contract '{}' not found in config", contract_name))?
+                    .to_owned();
+
+                let private_key = load_private_key(&private_key, network)?;
+                let address = Address::new(&private_key.get_public_key()?)?;
+
+                call_contract(
+                    url,
+                    &method_name,
+                    &contract_id,
+                    contract,
+                    &address,
+                    &config_contract.input_assets,
+                    args,
+                    exiting_contracts,
+                    block_hash,
                 )
                 .await?
             },

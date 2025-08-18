@@ -37,34 +37,21 @@ pub struct Configuration {
 #[serde(rename_all = "camelCase")]
 pub struct Config {
     pub configuration: Configuration,
-    pub contracts: Option<HashMap<String, ConfigContract>>, 
+    pub contracts: Option<HashMap<String, ConfigContract>>,
 }
 
 impl Config {
     pub fn new(config_path: &str) -> Result<Self> {
         let config_content = read_file(config_path)?;
 
-        let config = serde_yaml::from_str::<serde_yaml::Value>(&config_content);
-        if config.is_err() {
-            return Err(anyhow!(
-                "Failed to parse config file: {} : {}",
-                config_path,
-                config.unwrap_err()
-            ));
-        }
+        let mut config = serde_yaml::from_str::<serde_yaml::Value>(&config_content)
+            .map_err(|e| anyhow!("Failed to parse config file: {} : {}", config_path, e))?;
 
-        let mut config = config?;
         config.apply_merge()?;
 
-        let config = serde_yaml::from_value::<Config>(config);
-        if config.is_err() {
-            return Err(anyhow!(
-                "Failed to parse config file: {} : {}",
-                config_path,
-                config.as_ref().unwrap_err()
-            ));
-        }
+        let config = serde_yaml::from_value::<Config>(config)
+            .map_err(|e| anyhow!("Failed to parse config file: {} : {}", config_path, e))?;
 
-        Ok(config?)
+        Ok(config)
     }
 }

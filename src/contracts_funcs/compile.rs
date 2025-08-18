@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, anyhow};
 use regex::{Error, Regex, RegexBuilder};
 use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
@@ -72,7 +72,7 @@ fn get_source_info(
     let mut source_infos = Vec::new();
     let source_kind_regex = SOURCE_KIND_REGEX
         .as_ref()
-        .map_err(|e| anyhow::anyhow!("Failed to compile regex: {}", e))?;
+        .map_err(|e| anyhow!("Failed to compile regex: {}", e))?;
 
     for (kind, regex) in source_kind_regex.iter() {
         for cap in regex.captures_iter(&source_code) {
@@ -153,10 +153,7 @@ fn load_file(
 
     // these are incomplete import statements
     if Regex::new(r#"^import ""#)?.find(&source_content).is_some() {
-        return Err(anyhow::anyhow!(
-            "Invalid import statements, source: {}",
-            path
-        ));
+        return Err(anyhow!("Invalid import statements, source: {}", path));
     }
 
     let mut new_import_file_paths_cache = import_file_paths_cache.clone();
@@ -226,7 +223,6 @@ pub async fn compile(
     all_source_infos.sort_by_key(|info| info.code_info.source_code_hash.clone());
     all_source_infos.dedup_by_key(|info| info.code_info.source_code_hash.clone());
 
-    // The sorting will be used to concat the sources to compile the contract
     all_source_infos.sort_by_key(|info| info.kind);
 
     let concatenated_code = all_source_infos

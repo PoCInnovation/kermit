@@ -15,7 +15,6 @@ use crate::{
 async fn get_contract_states(
     url: &str,
     existing_contracts: Vec<&str>,
-    contract: &CompiledContract,
 ) -> Result<Vec<ContractState>> {
     let futures = existing_contracts.iter().map(|id| async move {
         let state = state(url, id).await?;
@@ -42,10 +41,10 @@ pub async fn test_contract(
 
     let args = args_to_fields_vec(args, &method.params_types)?;
 
-    let existing_contracts = get_contract_states(url, existing_contracts, contract).await?;
+    let existing_contracts = get_contract_states(url, existing_contracts).await?;
 
     let fields = get_fields_vec(contract, init_fields)?;
-    let (_, immutables, mutables) = get_fields_bytecode(contract, fields)?;
+    let (_, immutables, mutables) = get_fields_bytecode(fields)?;
 
     let body = json!({
         "address": contract_id,

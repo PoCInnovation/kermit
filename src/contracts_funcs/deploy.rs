@@ -121,7 +121,7 @@ async fn send_contract_tx(
         Ok(response) => response.data,
         Err(e) => {
             return Err(anyhow!("Error building contract transaction: {:?}", e));
-        }
+        },
     };
 
     let signature = private_key.sign(&tx_id)?;

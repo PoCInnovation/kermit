@@ -47,12 +47,12 @@ impl<'de> Deserialize<'de> for HelperFieldType {
                 let map: Result<HashMap<_, _>, _> = s
                     .into_iter()
                     .map(|(k, v)| {
-                        let keye = k
+                        let k = k
                             .as_str()
                             .ok_or_else(|| Error::custom("Key is not a string"))?;
-                        let zabi = HelperFieldType::deserialize(v)
+                        let v = HelperFieldType::deserialize(v)
                             .map_err(|_| Error::custom("Failed to deserialize value"))?;
-                        Ok((keye.to_string(), zabi))
+                        Ok((k.to_string(), v))
                     })
                     .collect();
                 HelperFieldType::Structure(map?)
