@@ -1,8 +1,7 @@
 use anyhow::Result;
 use clap::Parser;
-use serde_json::Value;
 
-use crate::utils::get;
+use crate::utils::{get, print_output};
 
 /// CLI arguments for `kermit events`.
 #[derive(Parser)]
@@ -34,7 +33,7 @@ pub enum EventsSubcommands {
 
 impl EventsSubcommands {
     pub async fn run(self, url: &str) -> Result<()> {
-        let value: Value = match self {
+        let output = match self {
             Self::ContractEvents {
                 contract_address,
                 start,
@@ -70,8 +69,7 @@ impl EventsSubcommands {
             },
         };
 
-        serde_json::to_writer_pretty(std::io::stdout(), &value)?;
-        println!();
+        print_output(output)?;
 
         Ok(())
     }

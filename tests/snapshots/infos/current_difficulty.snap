@@ -1,0 +1,17 @@
+---
+source: tests/utils.rs
+assertion_line: 13
+info:
+  program: kermit
+  args:
+    - infos
+    - current-difficulty
+---
+success: true
+exit_code: 0
+----- stdout -----
+{
+  "difficulty": "1"
+}
+
+----- stderr -----

@@ -2,7 +2,7 @@ use anyhow::{Result, anyhow};
 use clap::Parser;
 use serde_json::{Value, json};
 
-use crate::utils::{delete, get, post, put};
+use crate::utils::{delete, get, post, print_output, put};
 
 /// CLI arguments for `kermit wallets`.
 #[derive(Parser)]
@@ -114,7 +114,7 @@ impl WalletsSubcommands {
                 "Invalid URL: Mainnet node is not allowed for wallet operations."
             ));
         }
-        let value: Value = match self {
+        let output = match self {
             Self::List => get(url, "/wallets").await?,
             Self::Restore { mnemonic } => {
                 put(url, "/wallets", json!({ "mnemonic": mnemonic })).await?
@@ -142,13 +142,10 @@ impl WalletsSubcommands {
                     url,
                     &format!("/wallets/{}?password={}", wallet_name, password),
                 )
-                .await?;
-                json!("wallet remove")
+                .await?
             },
             Self::Lock { wallet_name } => {
-                post::<(), Value>(url, &format!("/wallets/{}/lock", wallet_name), Value::Null)
-                    .await?;
-                json!("wallet lock")
+                post(url, &format!("/wallets/{}/lock", wallet_name), Value::Null).await?
             },
             Self::Unlock {
                 wallet_name,
@@ -258,8 +255,7 @@ impl WalletsSubcommands {
             },
         };
 
-        serde_json::to_writer_pretty(std::io::stdout(), &value)?;
-        println!();
+        print_output(output)?;
 
         Ok(())
     }

@@ -1,10 +1,10 @@
-use anyhow::{Result, anyhow};
+use anyhow::{Result, anyhow, bail};
 use clap::Parser;
 use secp256k1::{Message, Secp256k1, SecretKey};
 use serde::{Deserialize, de::DeserializeOwned};
 use serde_json::{Value, json};
 
-use crate::utils::{get, post};
+use crate::utils::{get, post, print_output};
 
 /// CLI arguments for `kermit transactions`.
 #[derive(Parser)]
@@ -79,7 +79,7 @@ async fn build<T: DeserializeOwned>(
     amount: String,
     gas_amount: Option<u64>,
     gas_price: Option<String>,
-) -> Result<T> {
+) -> Result<Option<T>> {
     post(
         url,
         "/transactions/build",
@@ -115,7 +115,7 @@ fn sign(tx_id: &str, private_key: &str) -> Result<String> {
     Ok(signature)
 }
 
-async fn submit(url: &str, unsigned_tx: &str, signature: &str) -> Result<Value> {
+async fn submit(url: &str, unsigned_tx: &str, signature: &str) -> Result<Option<Value>> {
     post(
         url,
         "/transactions/submit",
@@ -129,7 +129,7 @@ async fn submit(url: &str, unsigned_tx: &str, signature: &str) -> Result<Value> 
 
 impl TransactionsSubcommands {
     pub async fn run(self, url: &str) -> Result<()> {
-        let value: Value = match self {
+        let output = match self {
             Self::Build {
                 public_key,
                 to_addr,
@@ -153,8 +153,11 @@ impl TransactionsSubcommands {
                 gas_price,
                 private_key,
             } => {
-                let BuildTransactionResponse { tx_id, unsigned_tx } =
-                    build(url, public_key, to_addr, amount, gas_amount, gas_price).await?;
+                let Some(BuildTransactionResponse { tx_id, unsigned_tx }) =
+                    build(url, public_key, to_addr, amount, gas_amount, gas_price).await?
+                else {
+                    bail!("Failed to build transaction");
+                };
 
                 let signature = sign(&tx_id, &private_key)?;
                 submit(url, &unsigned_tx, &signature).await?
@@ -172,8 +175,7 @@ impl TransactionsSubcommands {
             },
         };
 
-        serde_json::to_writer_pretty(std::io::stdout(), &value)?;
-        println!();
+        print_output(output)?;
 
         Ok(())
     }

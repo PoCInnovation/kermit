@@ -1,0 +1,18 @@
+---
+source: tests/utils.rs
+assertion_line: 18
+info:
+  program: kermit
+  args:
+    - infos
+    - current-hashrate
+    - "100"
+---
+success: true
+exit_code: 0
+----- stdout -----
+{
+  "hashrate": "0 MH/s"
+}
+
+----- stderr -----

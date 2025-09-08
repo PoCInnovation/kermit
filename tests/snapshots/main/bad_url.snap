@@ -1,0 +1,17 @@
+---
+source: tests/utils.rs
+assertion_line: 13
+info:
+  program: kermit
+  args:
+    - "--url"
+    - "http://invalid-url"
+    - infos
+    - version
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: error sending request for url (http://invalid-url/infos/version)
