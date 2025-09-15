@@ -1,13 +1,12 @@
 mod address;
 mod args;
+mod contract_encoding;
 mod contracts;
 mod events;
 mod infos;
 mod transactions;
 mod utils;
 mod wallet;
-
-mod contract_encoding;
 
 use anyhow::Result;
 use args::{Kermit, KermitSubcommand};

@@ -8,13 +8,13 @@ struct Error {
 }
 
 /// Perform a GET request to the given URL
-pub async fn get<T: DeserializeOwned>(url: &str, endpoint: &str) -> Result<T> {
+pub async fn get<T: DeserializeOwned>(url: &str, endpoint: &str) -> Result<Option<T>> {
     let client = Client::new();
 
-    let url = format!("{}{}", url, endpoint);
+    let url = format!("{url}{endpoint}");
 
     let res = client
-        .get(&url)
+        .get(url)
         .header("Content-Type", "application/json")
         .send()
         .await?;
@@ -24,7 +24,11 @@ pub async fn get<T: DeserializeOwned>(url: &str, endpoint: &str) -> Result<T> {
         bail!(err.detail);
     }
 
-    let data = res.json().await?;
+    let data = if res.content_length() > Some(0) {
+        Some(res.json().await?)
+    } else {
+        None
+    };
 
     Ok(data)
 }
@@ -34,13 +38,13 @@ pub async fn post<T: DeserializeOwned, U: Serialize>(
     url: &str,
     endpoint: &str,
     body: U,
-) -> Result<T> {
+) -> Result<Option<T>> {
     let client = Client::new();
 
-    let url = format!("{}{}", url, endpoint);
+    let url = format!("{url}{endpoint}");
 
     let res = client
-        .post(&url)
+        .post(url)
         .header("Content-Type", "application/json")
         .json(&body)
         .send()
@@ -51,7 +55,11 @@ pub async fn post<T: DeserializeOwned, U: Serialize>(
         bail!(err.detail);
     }
 
-    let data = res.json().await?;
+    let data = if res.content_length() > Some(0) {
+        Some(res.json().await?)
+    } else {
+        None
+    };
 
     Ok(data)
 }
@@ -61,13 +69,13 @@ pub async fn put<T: DeserializeOwned, U: Serialize>(
     url: &str,
     endpoint: &str,
     body: U,
-) -> Result<T> {
+) -> Result<Option<T>> {
     let client = Client::new();
 
-    let url = format!("{}{}", url, endpoint);
+    let url = format!("{url}{endpoint}");
 
     let res = client
-        .put(&url)
+        .put(url)
         .header("Content-Type", "application/json")
         .json(&body)
         .send()
@@ -78,19 +86,23 @@ pub async fn put<T: DeserializeOwned, U: Serialize>(
         bail!(err.detail);
     }
 
-    let data = res.json().await?;
+    let data = if res.content_length() > Some(0) {
+        Some(res.json().await?)
+    } else {
+        None
+    };
 
     Ok(data)
 }
 
 /// Perform a DELETE request to the given URL
-pub async fn delete(url: &str, endpoint: &str) -> Result<()> {
+pub async fn delete<T: DeserializeOwned>(url: &str, endpoint: &str) -> Result<Option<T>> {
     let client = Client::new();
 
-    let url = format!("{}{}", url, endpoint);
+    let url = format!("{url}{endpoint}");
 
     let res = client
-        .delete(&url)
+        .delete(url)
         .header("Content-Type", "application/json")
         .send()
         .await?;
@@ -100,5 +112,11 @@ pub async fn delete(url: &str, endpoint: &str) -> Result<()> {
         bail!(err.detail);
     }
 
-    Ok(())
+    let data = if res.content_length() > Some(0) {
+        Some(res.json().await?)
+    } else {
+        None
+    };
+
+    Ok(data)
 }

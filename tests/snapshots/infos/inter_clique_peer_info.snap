@@ -1,0 +1,15 @@
+---
+source: tests/utils.rs
+assertion_line: 13
+info:
+  program: kermit
+  args:
+    - infos
+    - inter-clique-peer-info
+---
+success: true
+exit_code: 0
+----- stdout -----
+[]
+
+----- stderr -----

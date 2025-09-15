@@ -1,0 +1,27 @@
+---
+source: tests/utils.rs
+assertion_line: 14
+info:
+  program: kermit
+  args:
+    - infos
+    - self-clique
+---
+success: true
+exit_code: 0
+----- stdout -----
+{
+  "cliqueId": "<CLIQUE_ID>",
+  "nodes": [
+    {
+      "address": "127.0.0.1",
+      "minerApiPort": 20973,
+      "restPort": 22973,
+      "wsPort": 21973
+    }
+  ],
+  "selfReady": true,
+  "synced": true
+}
+
+----- stderr -----
