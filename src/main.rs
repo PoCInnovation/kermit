@@ -36,21 +36,22 @@ async fn run() -> Result<()> {
         NetworkType::Main => &config.configuration.networks.mainnet,
     };
 
-    if !is_network_alive(&network.node_url).await? {
-        bail!("Network is not reachable: {}", network.node_url);
+    let node_url = kermit.url.unwrap_or(network.node_url.to_owned());
+    if !is_network_alive(&node_url).await? {
+        bail!("Network is not reachable: {}", node_url);
     }
 
     match kermit.cmd {
-        KermitSubcommand::Address { command } => command.run(kermit.url).await?,
+        KermitSubcommand::Address { command } => command.run(&node_url).await?,
         KermitSubcommand::Contracts { command } => {
             command
-                .run(&kermit.url, &config, network, kermit.network)
+                .run(&node_url, &config, network, kermit.network)
                 .await?
         },
-        KermitSubcommand::Events { command } => command.run(&kermit.url).await?,
-        KermitSubcommand::Infos { command } => command.run(&kermit.url).await?,
-        KermitSubcommand::Transactions { command } => command.run(&kermit.url).await?,
-        KermitSubcommand::Wallets { command } => command.run(&kermit.url).await?,
+        KermitSubcommand::Events { command } => command.run(&node_url).await?,
+        KermitSubcommand::Infos { command } => command.run(&node_url).await?,
+        KermitSubcommand::Transactions { command } => command.run(&node_url).await?,
+        KermitSubcommand::Wallets { command } => command.run(&node_url).await?,
     }
 
     Ok(())

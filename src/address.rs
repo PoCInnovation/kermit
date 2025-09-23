@@ -18,7 +18,7 @@ pub enum AddressSubcommands {
 }
 
 impl AddressSubcommands {
-    pub async fn run(self, url: String) -> Result<()> {
+    pub async fn run(self, url: &str) -> Result<()> {
         let endpoint = match self {
             Self::Balance { address, mem_pool } => {
                 format!("/addresses/{address}/balance?mempool={mem_pool}")

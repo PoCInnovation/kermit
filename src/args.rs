@@ -1,21 +1,24 @@
 use clap::{Parser, Subcommand, ValueHint};
 
 use crate::{
-    address::AddressSubcommands, contracts::{ContractsSubcommands, NetworkType}, events::EventsSubcommands,
-    infos::InfosSubcommands, transactions::TransactionsSubcommands, wallet::WalletsSubcommands,
+    address::AddressSubcommands,
+    contracts::{ContractsSubcommands, NetworkType},
+    events::EventsSubcommands,
+    infos::InfosSubcommands,
+    transactions::TransactionsSubcommands,
+    wallet::WalletsSubcommands,
 };
 
 #[derive(Parser)]
 #[command(version)]
 pub struct Kermit {
-    #[clap(long, short, env, value_hint = ValueHint::Url,
-    default_value = "http://localhost:22973")]
-    pub url: String,
+    #[clap(long, short, env, value_hint = ValueHint::Url, help = "Node address; use this only if you want to override the URL from the selected network type")]
+    pub url: Option<String>,
 
     #[arg(long, short, help = "Path to the config YAML file", default_value_t=String::from("./alephium.config.yaml"))]
     pub config_file_path: String,
 
-    #[arg(long, default_value_t = NetworkType::Main)]
+    #[arg(long, short, value_enum, default_value_t = NetworkType::Dev)]
     pub network: NetworkType,
 
     #[clap(subcommand)]

@@ -123,7 +123,7 @@ pub enum ContractsSubcommands {
     },
     #[command(visible_alias = "d")]
     Deploy {
-        #[arg(long, default_value_t = CompiledType::Contract)]
+        #[arg(long, value_enum, default_value_t = CompiledType::Contract)]
         compiled_type: CompiledType,
         contract_name: String,
         compile_output_path: String,
