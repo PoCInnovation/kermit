@@ -37,6 +37,10 @@ async fn run() -> Result<()> {
     };
 
     let node_url = kermit.url.unwrap_or(network.node_url.to_owned());
+    if reqwest::Url::parse(&node_url).is_err() {
+        bail!("Invalid node URL: {}", node_url);
+    }
+
     if !is_network_alive(&node_url).await? {
         bail!("Network is not reachable: {}", node_url);
     }

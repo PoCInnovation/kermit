@@ -1,0 +1,17 @@
+---
+source: tests/utils.rs
+assertion_line: 18
+info:
+  program: kermit
+  args:
+    - "--url"
+    - invalid-url
+    - infos
+    - version
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: Invalid node URL: invalid-url
