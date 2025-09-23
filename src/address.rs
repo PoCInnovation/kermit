@@ -1,7 +1,7 @@
 use anyhow::Result;
 use clap::Parser;
 
-use crate::utils::{get, HttpResponse, print_output};
+use crate::utils::{get, print_output};
 
 #[derive(Parser)]
 pub enum AddressSubcommands {

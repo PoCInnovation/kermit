@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Result, bail};
 use serde_json::Value;
 
 use crate::{
@@ -80,10 +80,10 @@ fn fetch_dependencies(
     cache: &mut HashSet<String>,
 ) -> Result<()> {
     if cache.contains(&contract.code_info.name) {
-        return Err(anyhow::anyhow!(
+        bail!(
             "Circular dependency detected for contract: {}",
             contract.code_info.name
-        ));
+        );
     }
     cache.insert(contract.code_info.name.clone());
     let mut all_parents = HashSet::new();

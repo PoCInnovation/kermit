@@ -1,4 +1,4 @@
-use anyhow::{Result, anyhow};
+use anyhow::{Result, bail};
 use clap::Parser;
 use serde_json::{Value, json};
 
@@ -110,9 +110,7 @@ impl WalletsSubcommands {
     pub async fn run(self, url: &str) -> Result<()> {
         if url == "https://node.mainnet.alephium.org" {
             eprintln!("You need to use a devnet adress (-u [ADDRESS]) to use Wallet commands");
-            return Err(anyhow!(
-                "Invalid URL: Mainnet node is not allowed for wallet operations."
-            ));
+            bail!("Invalid URL: Mainnet node is not allowed for wallet operations.");
         }
         let output = match self {
             Self::List => get(url, "/wallets").await?,

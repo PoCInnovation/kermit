@@ -91,7 +91,7 @@ pub struct CompilerOptions {
     pub skip_tests: bool,
 }
 
-fn parse_key_val(s: &str) -> anyhow::Result<(String, String), String> {
+fn parse_key_val(s: &str) -> Result<(String, String), String> {
     let parts: Vec<&str> = s.splitn(2, '=').collect();
     if parts.len() != 2 {
         return Err(format!("Invalid KEY=VALUE: '{}'", s));

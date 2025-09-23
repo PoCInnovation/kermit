@@ -1,4 +1,4 @@
-use anyhow::{Result, Context, anyhow};
+use anyhow::{Context, Result, bail};
 use serde::{Deserialize, de::DeserializeOwned};
 use serde_json::{Value, json};
 
@@ -37,33 +37,33 @@ async fn validate_chain_params(
     chain_params: ChainParams,
 ) -> Result<()> {
     if chain_params.network_id != network_id {
-        return Err(anyhow!(
+        bail!(
             "The node chain id {} is different from configured chain id {}",
             chain_params.network_id,
             network_id
-        ));
+        );
     }
 
     let mut seen = std::collections::HashSet::new();
     if groups.iter().any(|group| !seen.insert(group)) {
-        return Err(anyhow!("Found duplicated groups in: {:?}", groups));
+        bail!("Found duplicated groups in: {:?}", groups);
     }
 
     if groups.len() > chain_params.groups as usize {
-        return Err(anyhow!(
+        bail!(
             "The number of group cannot larger than {}",
             chain_params.groups
-        ));
+        );
     }
 
     if groups
         .iter()
         .any(|&group| group >= chain_params.groups as u8)
     {
-        return Err(anyhow!(
+        bail!(
             "Group indexes should be subset of {:?}",
             (0..chain_params.groups).collect::<Vec<_>>()
-        ));
+        );
     }
 
     Ok(())
@@ -120,7 +120,7 @@ async fn send_contract_tx(
     } = match build_result {
         Ok(response) => response.context("Empty reply")?.data,
         Err(e) => {
-            return Err(anyhow!("Error building contract transaction: {:?}", e));
+            bail!("Error building contract transaction: {:?}", e);
         },
     };
 
@@ -148,7 +148,10 @@ pub async fn deploy_contract(
     init_fields: FieldsVec,
 ) -> Result<Value> {
     let account = Account::new(private_key)?;
-    let chain_params = get::<ChainParams>(url, "/infos/chain-params").await?.context("Empty reply")?.data;
+    let chain_params = get::<ChainParams>(url, "/infos/chain-params")
+        .await?
+        .context("Empty reply")?
+        .data;
 
     validate_chain_params(network_id as u8, &vec![account.group], chain_params).await?;
 

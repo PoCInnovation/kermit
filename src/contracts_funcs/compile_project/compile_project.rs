@@ -1,4 +1,4 @@
-use anyhow::{Context, Result, anyhow};
+use anyhow::{anyhow, bail, Context, Result};
 use serde_json::Value;
 use std::collections::HashMap;
 
@@ -39,10 +39,10 @@ fn resolve_rec_type(
     match type_name {
         TypeName::Array(array_type) => {
             if !value.starts_with('[') || !value.ends_with(']') {
-                return Err(anyhow!(
+                bail!(
                     "Array value for field '{}' must begin and end with []",
                     name
-                ));
+                );
             }
 
             let array_values = value
@@ -99,11 +99,11 @@ pub fn args_to_fields_vec(
     types: &FieldsTypesMapMut,
 ) -> Result<Vec<RalphValue>> {
     if ralph_vec_input.len() != fields_types_map_len(types) {
-        return Err(anyhow!(
+        bail!(
             "Fields count mismatch with initial fields: expected {}, found {}",
             types.len(),
             ralph_vec_input.len()
-        ));
+        );
     }
 
     let result = ralph_vec_input
@@ -330,7 +330,7 @@ pub fn load_compile_project(path: &str) -> Result<CompileProject> {
     let compiled_project = match compiled_project_result {
         Ok(project) => project,
         Err(e) => {
-            return Err(anyhow!("Error parsing compile output: {}", e));
+            bail!("Error parsing compile output: {}", e);
         },
     };
 

@@ -11,7 +11,7 @@ mod transactions;
 mod utils;
 mod wallet;
 
-use anyhow::{Result, anyhow};
+use anyhow::{Result, bail};
 use args::{Kermit, KermitSubcommand};
 use clap::Parser;
 
@@ -37,7 +37,7 @@ async fn run() -> Result<()> {
     };
 
     if !is_network_alive(&network.node_url).await? {
-        return Err(anyhow!("Network is not reachable: {}", network.node_url));
+        bail!("Network is not reachable: {}", network.node_url);
     }
 
     match kermit.cmd {

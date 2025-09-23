@@ -1,4 +1,4 @@
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Context, Result, anyhow, bail};
 use regex::Regex;
 
 use crate::contracts_funcs::{
@@ -41,7 +41,7 @@ fn get_debug_bytecode(bytecode: &str, bytecode_patch: &str) -> Result<String> {
                     .context("Failed to parse length for '-' patch")?;
                 index += length;
             },
-            _ => return Err(anyhow!("Unknown diff type: {}", diff_type)),
+            _ => bail!("Unknown diff type: {}", diff_type),
         }
     }
 
@@ -80,7 +80,7 @@ fn encode_fields_by_type(fields: &FieldsVec, is_mutable: bool) -> Result<Vec<u8>
                 }
                 Ok(encoded)
             },
-            _ => return Err(anyhow!("Unsupported value type for field '{:?}'", value)),
+            _ => bail!("Unsupported value type for field '{:?}'", value),
         }?;
         acc.extend_from_slice(&encoded_value);
         Ok(acc)
@@ -91,7 +91,7 @@ fn encode_fields_by_type(fields: &FieldsVec, is_mutable: bool) -> Result<Vec<u8>
 fn get_contract_prefix(contract_prefix_str: &str) -> Result<RalphValue> {
     let std_bytes = match "ALPH".try_into()? {
         RalphValue::ByteVec(bytes) => bytes,
-        _ => return Err(anyhow!("Unsupported RalphValue type for std_value")),
+        _ => bail!("Unsupported RalphValue type for std_value"),
     };
 
     let contract_prefix_bytes = hex::decode(contract_prefix_str)?;

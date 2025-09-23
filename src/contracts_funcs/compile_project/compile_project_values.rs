@@ -1,4 +1,4 @@
-use anyhow::{Context, Error, Result, anyhow};
+use anyhow::{Context, Error, Result, anyhow, bail};
 use i256::{I256, U256};
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de, ser};
 use serde_json::Value;
@@ -132,11 +132,11 @@ fn try_into_field(
 
                 values.into_iter().flatten().collect()
             } else {
-                return Err(anyhow!(
+                bail!(
                     "Type mismatch: expected Array type for field '{}', got {:?}",
                     initial_field_name,
                     type_name
-                ));
+                );
             }
         },
         HelperFieldType::Structure(helper_fields) => {
@@ -147,11 +147,11 @@ fn try_into_field(
                     .collect::<Vec<(String, (HelperFieldType, &(TypeName, bool)))>>();
 
                 if zipped.is_empty() {
-                    return Err(anyhow!(
+                    bail!(
                         "No matching fields found in structure for '{}' in '{:?}'",
                         initial_field_name,
                         struct_fields
-                    ));
+                    );
                 }
 
                 zipped
@@ -164,11 +164,11 @@ fn try_into_field(
                     .flatten()
                     .collect()
             } else {
-                return Err(anyhow!(
+                bail!(
                     "Type mismatch: expected Structure type for field '{}', got {:?}",
                     initial_field_name,
                     type_name
-                ));
+                );
             }
         },
     };

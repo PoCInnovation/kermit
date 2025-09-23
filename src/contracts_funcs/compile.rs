@@ -1,4 +1,4 @@
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Context, Result, anyhow, bail};
 use regex::{Error, Regex, RegexBuilder};
 use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
@@ -153,7 +153,7 @@ fn load_file(
 
     // these are incomplete import statements
     if Regex::new(r#"^import ""#)?.find(&source_content).is_some() {
-        return Err(anyhow!("Invalid import statements, source: {}", path));
+        bail!("Invalid import statements, source: {}", path);
     }
 
     let mut new_import_file_paths_cache = import_file_paths_cache.clone();
@@ -204,9 +204,7 @@ pub async fn compile(
     }
 
     if all_source_infos.is_empty() {
-        return Err(anyhow::anyhow!(
-            "No valid source information found in the provided files."
-        ));
+        bail!("No valid source information found in the provided files.");
     }
 
     // Ensure there is at least one Contract or Script
@@ -214,9 +212,7 @@ pub async fn compile(
         .iter()
         .any(|info| matches!(info.kind, SourceKind::Contract | SourceKind::Script))
     {
-        return Err(anyhow::anyhow!(
-            "No Contract or Script found in the provided project files."
-        ));
+        bail!("No Contract or Script found in the provided project files.");
     }
 
     // Remove duplicate code
