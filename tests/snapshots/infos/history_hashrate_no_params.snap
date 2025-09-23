@@ -1,0 +1,20 @@
+---
+source: tests/utils.rs
+assertion_line: 18
+info:
+  program: kermit
+  args:
+    - infos
+    - history-hashrate
+---
+success: false
+exit_code: 2
+----- stdout -----
+
+----- stderr -----
+error: the following required arguments were not provided:
+  <FROM_TS>
+
+Usage: kermit infos history-hashrate <FROM_TS> [TO_TS]
+
+For more information, try '--help'.

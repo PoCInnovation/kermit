@@ -1,0 +1,28 @@
+---
+source: tests/utils.rs
+assertion_line: 13
+info:
+  program: kermit
+  args:
+    - "--help"
+---
+success: true
+exit_code: 0
+----- stdout -----
+Usage: kermit [OPTIONS] <COMMAND>
+
+Commands:
+  events        Event for contract, block and hash [aliases: e]
+  infos         Infos about node and hashrate [aliases: i]
+  transactions  Transactions management utilities [aliases: tx]
+  wallets       Wallet management utilities [aliases: w]
+  address       Address management utilities [aliases: a]
+  contracts     Contract management utilities [aliases: c]
+  help          Print this message or the help of the given subcommand(s)
+
+Options:
+  -u, --url <URL>  [env: URL=] [default: http://localhost:22973]
+  -h, --help       Print help
+  -V, --version    Print version
+
+----- stderr -----

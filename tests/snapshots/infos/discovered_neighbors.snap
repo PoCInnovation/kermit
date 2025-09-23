@@ -1,0 +1,15 @@
+---
+source: tests/utils.rs
+assertion_line: 13
+info:
+  program: kermit
+  args:
+    - infos
+    - discovered-neighbors
+---
+success: true
+exit_code: 0
+----- stdout -----
+[]
+
+----- stderr -----

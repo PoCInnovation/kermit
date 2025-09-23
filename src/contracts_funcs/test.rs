@@ -1,5 +1,5 @@
 use ::futures::future::try_join_all;
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, anyhow};
 use serde_json::{Value, json};
 
 use crate::{
@@ -58,5 +58,8 @@ pub async fn test_contract(
         "existingContracts": existing_contracts
     });
 
-    Ok(post(url, "/contracts/test-contract", body).await?.data)
+    Ok(post(url, "/contracts/test-contract", body)
+        .await?
+        .context("Empty reply")?
+        .data)
 }

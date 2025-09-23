@@ -1,0 +1,20 @@
+---
+source: tests/utils.rs
+assertion_line: 13
+info:
+  program: kermit
+  args:
+    - infos
+    - chain-params
+---
+success: true
+exit_code: 0
+----- stdout -----
+{
+  "groupNumPerBroker": 4,
+  "groups": 4,
+  "networkId": 4,
+  "numZerosAtLeastInHash": 0
+}
+
+----- stderr -----

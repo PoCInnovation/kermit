@@ -9,7 +9,7 @@ use crate::{
 #[command(version)]
 pub struct Kermit {
     #[clap(long, short, env, value_hint = ValueHint::Url,
-    default_value = "https://node.mainnet.alephium.org")]
+    default_value = "http://localhost:22973")]
     pub url: String,
 
     #[arg(long, short, help = "Path to the config YAML file", default_value_t=String::from("./alephium.config.yaml"))]

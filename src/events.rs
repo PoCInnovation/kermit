@@ -1,8 +1,7 @@
 use anyhow::Result;
 use clap::Parser;
-use serde_json::Value;
 
-use crate::utils::get;
+use crate::utils::{get, print_output};
 
 /// CLI arguments for `kermit events`.
 #[derive(Parser)]
@@ -34,7 +33,7 @@ pub enum EventsSubcommands {
 
 impl EventsSubcommands {
     pub async fn run(self, url: &str) -> Result<()> {
-        let value: Value = match self {
+        let output = match self {
             Self::ContractEvents {
                 contract_address,
                 start,
@@ -48,30 +47,29 @@ impl EventsSubcommands {
                 if let Some(group) = group {
                     endpoint.push_str(&format!("&group={}", group));
                 }
-                get(url, &endpoint).await?.data
+                get(url, &endpoint).await?
             },
             Self::ContractCurrentCount { contract_address } => {
                 let endpoint = format!("/events/contract/{}/current-count", contract_address);
-                get(url, &endpoint).await?.data
+                get(url, &endpoint).await?
             },
             Self::TxContractEvents { tx_id, group } => {
                 let mut endpoint = format!("/events/tx-id/{}", tx_id);
                 if let Some(group) = group {
                     endpoint.push_str(&format!("&group={}", group));
                 }
-                get(url, &endpoint).await?.data
+                get(url, &endpoint).await?
             },
             Self::BlockContractEvents { block_hash, group } => {
                 let mut endpoint = format!("/events/block-hash/{}", block_hash);
                 if let Some(group) = group {
                     endpoint.push_str(&format!("&group={}", group));
                 }
-                get(url, &endpoint).await?.data
+                get(url, &endpoint).await?
             },
         };
 
-        serde_json::to_writer_pretty(std::io::stdout(), &value)?;
-        println!();
+        print_output(output)?;
 
         Ok(())
     }

@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Result, Context};
 use serde_json::{Value, json};
 
 use crate::{
@@ -33,5 +33,8 @@ pub async fn call_contract(
         "worldStateBlockHash": block_hash
     });
 
-    Ok(post(url, "/contracts/call-contract", body).await?.data)
+    Ok(post(url, "/contracts/call-contract", body)
+        .await?
+        .context("Empty reply")?
+        .data)
 }

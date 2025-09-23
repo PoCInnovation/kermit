@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Result, Context};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -21,5 +21,5 @@ pub struct ContractState {
 
 pub async fn state(url: &str, contract_id: &str) -> Result<Value> {
     let endpoint = format!("/contracts/{}/state", contract_id);
-    Ok(get::<Value>(url, endpoint.as_str()).await?.data)
+    Ok(get::<Value>(url, endpoint.as_str()).await?.context("Empty reply")?.data)
 }

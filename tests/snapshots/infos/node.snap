@@ -1,0 +1,22 @@
+---
+source: tests/utils.rs
+assertion_line: 13
+info:
+  program: kermit
+  args:
+    - infos
+    - node
+---
+success: true
+exit_code: 0
+----- stdout -----
+{
+  "buildInfo": {
+    "commit": "c5f05274997464fdef3dc3bdc9a81d67a6225927",
+    "releaseVersion": "4.2.4"
+  },
+  "externalAddress": null,
+  "upnp": true
+}
+
+----- stderr -----

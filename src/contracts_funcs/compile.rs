@@ -240,5 +240,6 @@ pub async fn compile(
         }),
     )
     .await?
+    .context("Empty reply")?
     .data)
 }

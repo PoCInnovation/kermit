@@ -1,4 +1,4 @@
-use anyhow::{Result, anyhow};
+use anyhow::{Result, Context, anyhow};
 use serde::{Deserialize, de::DeserializeOwned};
 use serde_json::{Value, json};
 
@@ -87,7 +87,7 @@ async fn build<T: DeserializeOwned>(
     address: &str,
     bytecode: &str,
     issue_token_amount: u64,
-) -> Result<HttpResponse<T>> {
+) -> Result<Option<HttpResponse<T>>> {
     post(
         url,
         "/contracts/unsigned-tx/deploy-contract",
@@ -118,15 +118,16 @@ async fn send_contract_tx(
         unsigned_tx,
         gas_price,
     } = match build_result {
-        Ok(response) => response.data,
+        Ok(response) => response.context("Empty reply")?.data,
         Err(e) => {
             return Err(anyhow!("Error building contract transaction: {:?}", e));
         },
     };
 
     let signature = private_key.sign(&tx_id)?;
-    let mut tx_res = submit(url, &unsigned_tx, &signature, Some(gas_price))
+    let mut tx_res = submit(url, &unsigned_tx, &signature)
         .await?
+        .context("Empty reply")?
         .data;
 
     // represents the DeployedContract structure
@@ -147,7 +148,7 @@ pub async fn deploy_contract(
     init_fields: FieldsVec,
 ) -> Result<Value> {
     let account = Account::new(private_key)?;
-    let chain_params = get::<ChainParams>(url, "/infos/chain-params").await?.data;
+    let chain_params = get::<ChainParams>(url, "/infos/chain-params").await?.context("Empty reply")?.data;
 
     validate_chain_params(network_id as u8, &vec![account.group], chain_params).await?;
 

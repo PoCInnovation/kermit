@@ -2,7 +2,7 @@ use anyhow::{Result, anyhow};
 use clap::Parser;
 use serde_json::{Value, json};
 
-use crate::utils::{delete, get, post, put};
+use crate::utils::{delete, get, post, print_output, put};
 
 /// CLI arguments for `kermit wallets`.
 #[derive(Parser)]
@@ -114,10 +114,10 @@ impl WalletsSubcommands {
                 "Invalid URL: Mainnet node is not allowed for wallet operations."
             ));
         }
-        let value: Value = match self {
-            Self::List => get(url, "/wallets").await?.data,
+        let output = match self {
+            Self::List => get(url, "/wallets").await?,
             Self::Restore { mnemonic } => {
-                put(url, "/wallets", json!({ "mnemonic": mnemonic })).await?.data
+                put(url, "/wallets", json!({ "mnemonic": mnemonic })).await?
             },
             Self::Create {
                 wallet_name,
@@ -131,9 +131,9 @@ impl WalletsSubcommands {
                         "walletName": wallet_name
                     }),
                 )
-                .await?.data
+                .await?
             },
-            Self::Status { wallet_name } => get(url, &format!("/wallets/{}", wallet_name)).await?.data,
+            Self::Status { wallet_name } => get(url, &format!("/wallets/{}", wallet_name)).await?,
             Self::Delete {
                 wallet_name,
                 password,
@@ -142,13 +142,10 @@ impl WalletsSubcommands {
                     url,
                     &format!("/wallets/{}?password={}", wallet_name, password),
                 )
-                .await?;
-                json!("wallet remove")
+                .await?
             },
             Self::Lock { wallet_name } => {
-                post::<(), Value>(url, &format!("/wallets/{}/lock", wallet_name), Value::Null)
-                    .await?;
-                json!("wallet lock")
+                post(url, &format!("/wallets/{}/lock", wallet_name), Value::Null).await?
             },
             Self::Unlock {
                 wallet_name,
@@ -159,10 +156,10 @@ impl WalletsSubcommands {
                     &format!("/wallets/{}/unlock", wallet_name),
                     json!({ "password": password }),
                 )
-                .await?.data
+                .await?
             },
             Self::Balances { wallet_name } => {
-                get(url, &format!("/wallets/{}/balances", wallet_name)).await?.data
+                get(url, &format!("/wallets/{}/balances", wallet_name)).await?
             },
             Self::RevealMnemonic {
                 wallet_name,
@@ -173,7 +170,7 @@ impl WalletsSubcommands {
                     &format!("/wallets/{}/reveal-mnemonic", wallet_name),
                     json!({ "password": password }),
                 )
-                .await?.data
+                .await?
             },
             Self::Transfer {
                 wallet_name,
@@ -193,7 +190,7 @@ impl WalletsSubcommands {
 
                     }),
                 )
-                .await?.data
+                .await?
             },
             Self::SweepActiveAddress {
                 wallet_name,
@@ -204,7 +201,7 @@ impl WalletsSubcommands {
                     &format!("/wallets/{}/sweep-active-address", wallet_name),
                     json!({ "toAddress": to_address }),
                 )
-                .await?.data
+                .await?
             },
             Self::SweepAllAddresses {
                 wallet_name,
@@ -215,7 +212,7 @@ impl WalletsSubcommands {
                     &format!("/wallets/{}/sweep-all-addresses", wallet_name),
                     json!({ "toAddress": to_address }),
                 )
-                .await?.data
+                .await?
             },
             Self::Sign { wallet_name, data } => {
                 post(
@@ -223,10 +220,10 @@ impl WalletsSubcommands {
                     &format!("/wallets/{}/sign", wallet_name),
                     json!({ "data": data }),
                 )
-                .await?.data
+                .await?
             },
             Self::Addresses { wallet_name } => {
-                get(url, &format!("/wallets/{}/addresses", wallet_name)).await?.data
+                get(url, &format!("/wallets/{}/addresses", wallet_name)).await?
             },
             Self::AddressInfo {
                 wallet_name,
@@ -236,14 +233,14 @@ impl WalletsSubcommands {
                     url,
                     &format!("/wallets/{}/addresses/{}", wallet_name, address),
                 )
-                .await?.data
+                .await?
             },
             Self::DeriveNextAddress { wallet_name, group } => {
                 let mut endpoint = format!("/wallets/{}/derive-next-address", wallet_name);
                 if let Some(group) = group {
                     endpoint.push_str(&format!("&toTs={}", group));
                 }
-                post(url, &endpoint, json!({})).await?.data
+                post(url, &endpoint, json!({})).await?
             },
             Self::ChangeActiveAddress {
                 wallet_name,
@@ -254,12 +251,11 @@ impl WalletsSubcommands {
                     &format!("/wallets/{}/change-active-address", wallet_name),
                     json!({ "address": address }),
                 )
-                .await?.data
+                .await?
             },
         };
 
-        serde_json::to_writer_pretty(std::io::stdout(), &value)?;
-        println!();
+        print_output(output)?;
 
         Ok(())
     }
