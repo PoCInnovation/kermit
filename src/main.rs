@@ -28,7 +28,6 @@ async fn main() {
 async fn run() -> Result<()> {
     let kermit = Kermit::parse();
 
-    // TODO: Generate a template Config if doesn't exist
     let config = Config::new(&kermit.config_file_path)?;
     let network = match &kermit.network {
         NetworkType::Dev => &config.configuration.networks.devnet,

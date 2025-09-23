@@ -26,7 +26,7 @@ pub struct Token {
     pub amount: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub enum HelperFieldType {
     String(String),
     Array(Vec<HelperFieldType>),
@@ -69,7 +69,7 @@ impl<'de> Deserialize<'de> for HelperFieldType {
     }
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ConfigContract {
     pub initial_fields: HashMap<String, HelperFieldType>, // can be anything
