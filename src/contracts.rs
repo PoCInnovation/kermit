@@ -14,11 +14,11 @@ use crate::{
         call::call_contract,
         compile::compile,
         compile_project::{
-            compile_project::{FieldsTypesMapMut, FieldsVec, load_compile_project},
+            compile_project::{load_compile_project, FieldsTypesMapMut, FieldsVec},
             compile_project_values::config_fields_to_vec,
         },
         deploy::deploy_contract,
-        state::state,
+        state::{code, state, parent, sub_contracts, sub_contracts_current_count},
         test::test_contract,
     },
 };
@@ -101,7 +101,7 @@ fn parse_key_val(s: &str) -> Result<(String, String), String> {
 
 #[derive(Parser)]
 pub enum ContractsSubcommands {
-    #[command(visible_alias = "c")]
+    #[command(visible_alias = "comp")]
     Compile {
         file_path: String,
         #[command(flatten)]
@@ -131,7 +131,9 @@ pub enum ContractsSubcommands {
         private_key: Option<String>,
     },
     #[command(visible_alias = "s")]
-    State { contract_id: String },
+    State {
+        contract_id: String,
+    },
     #[command(visible_alias = "t")]
     Test {
         contract_name: String,
@@ -143,6 +145,7 @@ pub enum ContractsSubcommands {
         #[arg(long = "existing-contracts", value_name = "CONTRACT_ID", num_args = 0.., help = "List of existing contracts to include in the test")]
         exiting_contracts: Vec<String>,
     },
+    #[command(visible_alias = "c")]
     Call {
         contract_name: String,
         contract_id: String,
@@ -157,6 +160,22 @@ pub enum ContractsSubcommands {
         #[arg(long, help = "Block hash to use for the call")]
         block_hash: Option<String>,
     },
+    Code {
+        code_hash: String,
+    },
+    Parent {
+        address: String,
+    },
+    SubContracts {
+        address: String,
+        #[arg(long, default_value_t = 0, help = "Start index for pagination")]
+        start: i32,
+        #[arg(long, help = "Number of results to return")]
+        limit: Option<i32>,
+    },
+    SubContractsCurrentCount {
+        address: String,
+    }
 }
 
 fn get_contract_initial_fields(
@@ -342,6 +361,21 @@ impl ContractsSubcommands {
                     block_hash,
                 )
                 .await?
+            },
+            Self::Code { code_hash } => {
+                code(url, &code_hash).await?
+            },
+            Self::Parent { address } => {
+                let address = Address::new(&address)?;
+                parent(url, &address).await?
+            },
+            Self::SubContracts { address, start, limit } => {
+                let address = Address::new(&address)?;
+                sub_contracts(url, &address, start, limit).await?
+            },
+            Self::SubContractsCurrentCount { address } => {
+                let address = Address::new(&address)?;
+                sub_contracts_current_count(url, &address).await?
             },
         };
 
