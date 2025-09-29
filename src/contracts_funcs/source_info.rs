@@ -28,6 +28,7 @@ pub struct CodeInfo {
     pub contract_relative_path: String,
 }
 
+#[allow(dead_code)]
 pub struct SourceInfo {
     pub kind: SourceKind,
     pub from_index: Option<usize>,
@@ -35,6 +36,7 @@ pub struct SourceInfo {
     pub code_info: CodeInfo,
 }
 
+#[allow(dead_code)]
 impl SourceInfo {
     pub fn new(
         kind: SourceKind,

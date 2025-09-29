@@ -164,6 +164,7 @@ pub struct Project {
     pub infos: HashMap<String, CodeInfo>,
 }
 
+#[allow(dead_code)]
 impl Project {
     // Return the names of the sources who there content has changed, to trigger a recompilation
     pub fn get_changed_sources(&self, source_infos: &Vec<SourceInfo>) -> Result<Vec<String>> {

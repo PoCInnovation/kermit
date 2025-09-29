@@ -4,7 +4,6 @@ use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
 
 use crate::{
-    config::config::{Config, Network},
     contracts::CompilerOptions,
     contracts_funcs::source_info::{SourceInfo, SourceKind},
     utils::{fs::read_file, post},
@@ -186,12 +185,10 @@ fn load_file(
 pub async fn compile(
     url: &str,
     file_path: &str,
-    network: &Network,
-    config: &Config,
     compiler_options: CompilerOptions,
-    skip_generate: bool,
-    debug: bool,
-    force: bool,
+    _skip_generate: bool,
+    _debug: bool,
+    _force: bool,
 ) -> Result<Value> {
     let source_file_paths = load_ral_files(file_path)?;
     let mut all_source_infos = Vec::new();

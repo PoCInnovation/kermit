@@ -16,6 +16,7 @@ use crate::{
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 struct ChainParams {
     network_id: u8,
     num_zeros_at_least_in_hash: u32,
@@ -25,6 +26,7 @@ struct ChainParams {
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 pub struct DeployedContract {
     pub contract_id: String,
     pub from_group: i32,
@@ -116,7 +118,7 @@ async fn send_contract_tx(
         contract_id,
         tx_id,
         unsigned_tx,
-        gas_price,
+        gas_price: _gas_price,
     } = match build_result {
         Ok(response) => response.context("Empty reply")?.data,
         Err(e) => {

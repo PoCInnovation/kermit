@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize, Serializer};
 const TOTAL_NUMBER_OF_GROUPS: u8 = 4;
 
 #[repr(u8)]
+#[allow(dead_code)]
 pub enum AddressType {
     P2PKH = 0x00,
     P2MPKH = 0x01,

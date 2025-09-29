@@ -1,6 +1,5 @@
-use anyhow::{Result, anyhow, bail};
+use anyhow::{Result, bail};
 use clap::Parser;
-use secp256k1::{Message, Secp256k1, SecretKey};
 use serde::{Deserialize, de::DeserializeOwned};
 use serde_json::{Value, json};
 
@@ -96,25 +95,6 @@ async fn build<T: DeserializeOwned>(
     .await
 }
 
-fn sign(tx_id: &str, private_key: &str) -> Result<String> {
-    let secp = Secp256k1::new();
-    let private_key_bytes = hex::decode(private_key)?;
-    let secret_key = SecretKey::from_slice(&private_key_bytes)?;
-
-    let tx_id_bytes = hex::decode(tx_id)?;
-    let message = Message::from_digest(
-        tx_id_bytes
-            .try_into()
-            .map_err(|_| anyhow!("Invalid hash length"))?,
-    );
-
-    let signature = secp.sign_ecdsa(&message, &secret_key);
-    let serialized = signature.serialize_compact();
-    let signature = hex::encode(serialized);
-
-    Ok(signature)
-}
-
 pub async fn submit(
     url: &str,
     unsigned_tx: &str,
@@ -160,7 +140,7 @@ impl TransactionsSubcommands {
                 let private_key = GLSecp256k1PrivateKey::new(&private_key)?;
                 let public_key = private_key.get_public_key()?;
                 let Some(HttpResponse {
-                    status,
+                    status: _status,
                     data: BuildTransactionResponse { tx_id, unsigned_tx },
                 }) = build(url, public_key, to_addr, amount, gas_amount, gas_price).await?
                 else {

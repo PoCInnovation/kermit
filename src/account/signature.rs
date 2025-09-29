@@ -1,6 +1,7 @@
 use anyhow::{Context, Result, anyhow};
 use secp256k1::{Message, PublicKey, Secp256k1, SecretKey};
 
+#[allow(dead_code)]
 pub trait PrivateKey: Send + Sync {
     fn is_valid(hex_key: &str) -> bool
     where
@@ -10,6 +11,7 @@ pub trait PrivateKey: Send + Sync {
     fn sign(&self, tx_id: &str) -> Result<String>;
 }
 
+#[allow(dead_code)]
 pub struct GLSecp256k1PrivateKey {
     pub hex_key: String,
     pub key: SecretKey,

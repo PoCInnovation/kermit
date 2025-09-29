@@ -140,7 +140,7 @@ fn try_into_field(
             }
         },
         HelperFieldType::Structure(helper_fields) => {
-            if let TypeName::Structure((struct_name, struct_fields)) = type_name {
+            if let TypeName::Structure((_struct_name, struct_fields)) = type_name {
                 let zipped = helper_fields
                     .into_iter()
                     .filter_map(|(k, v1)| struct_fields.get(&k).map(|v2| (k, (v1, v2))))
@@ -419,6 +419,7 @@ impl TypeName {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct FieldValue {
     pub type_name: TypeName,
     pub value: RalphValue,

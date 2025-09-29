@@ -70,7 +70,7 @@ fn encode_fields_by_type(fields: &FieldsVec, is_mutable: bool) -> Result<Vec<u8>
             // Normally, if the structure is mutable, then at least one of the attributes is
             RalphValue::Structure(fields) => {
                 let mut encoded: Vec<u8> = Vec::new();
-                for (field_name, field_value) in fields {
+                for (_field_name, field_value) in fields {
                     encoded.extend_from_slice(&encode_fields_by_type(
                         &vec![((field_value.clone(), is_mutable))]
                             .into_iter()
@@ -100,6 +100,7 @@ fn get_contract_prefix(contract_prefix_str: &str) -> Result<RalphValue> {
     ))
 }
 
+#[allow(dead_code)]
 pub fn get_fields(contract: &CompiledContract, init_fields: InputFieldsMap) -> Result<FieldsMap> {
     let mut fields: FieldsMap = contract
         .fields_types

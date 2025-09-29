@@ -3,6 +3,7 @@ use serde_json::Value;
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 pub struct RawCompileProject {
     pub contracts: Vec<RawContract>,
     pub scripts: Vec<RawScript>,
@@ -14,6 +15,7 @@ pub struct RawCompileProject {
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 pub struct RawContract {
     pub version: String,
     pub name: String,
@@ -33,6 +35,7 @@ pub struct RawContract {
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 pub struct RawScript {
     pub version: String,
     pub name: String,
@@ -75,6 +78,7 @@ pub struct RawFunction {
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 pub struct Constant {
     pub name: String,
     pub value: ConstantValue,
@@ -82,6 +86,7 @@ pub struct Constant {
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 pub struct ConstantValue {
     pub type_name: Value,
     pub value: FieldValueHelper,
@@ -89,6 +94,7 @@ pub struct ConstantValue {
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 pub struct EnumDef {
     pub name: String,
     pub fields: Vec<EnumField>,
@@ -96,6 +102,7 @@ pub struct EnumDef {
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 pub struct EnumField {
     pub name: String,
     pub value: FieldValueHelper,
@@ -103,6 +110,7 @@ pub struct EnumField {
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 pub struct Event {
     pub name: String,
     pub field_names: Vec<String>,
@@ -111,12 +119,14 @@ pub struct Event {
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 pub struct Maps {
     pub names: Vec<String>,
     pub types: Vec<Value>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[allow(dead_code)]
 pub struct FieldValueHelper {
     #[serde(rename = "type")]
     pub type_name: String,

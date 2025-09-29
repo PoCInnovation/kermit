@@ -1,4 +1,4 @@
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{Context, Result, anyhow, bail};
 use serde_json::Value;
 use std::collections::HashMap;
 
@@ -9,11 +9,15 @@ use crate::contracts_funcs::compile_project::compile_project_values::{RalphValue
 use crate::utils::crypto::is_hex_string;
 use crate::utils::fs::read_file;
 
-pub type FieldsTypesMap = HashMap<String, TypeName>;
 pub type FieldsTypesMapMut = HashMap<String, (TypeName, bool)>;
-pub type FieldsMap = HashMap<String, (RalphValue, bool)>;
-pub type InputFieldsMap = HashMap<String, RalphValue>;
 pub type FieldsVec = Vec<(RalphValue, bool)>;
+
+#[allow(dead_code)]
+pub type FieldsTypesMap = HashMap<String, TypeName>;
+#[allow(dead_code)]
+pub type FieldsMap = HashMap<String, (RalphValue, bool)>;
+#[allow(dead_code)]
+pub type InputFieldsMap = HashMap<String, RalphValue>;
 
 fn resolve_rec_type(
     name: &str,
@@ -28,7 +32,7 @@ fn resolve_rec_type(
     let type_name = if let Some(a) = override_type {
         a
     } else {
-        let (a, b) = types.get(name).context(anyhow!(
+        let (a, _) = types.get(name).context(anyhow!(
             "Type for field '{}' not found in provided types map: {:?}",
             name,
             types
@@ -121,6 +125,7 @@ pub struct Struct {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct Function {
     pub name: String,
     pub use_preapproved_assets: bool,
@@ -131,6 +136,7 @@ pub struct Function {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct CompiledContract {
     pub version: String,
     pub std_interface_id: Option<String>,
@@ -194,6 +200,7 @@ impl CompiledContract {
     }
 }
 
+#[allow(dead_code)]
 pub struct Script {
     pub version: String,
     pub name: String,
@@ -202,6 +209,7 @@ pub struct Script {
     pub fields: FieldsTypesMapMut,
 }
 
+#[allow(dead_code)]
 pub struct CompileProject {
     pub contracts: Vec<CompiledContract>,
     pub scripts: Vec<Script>,
