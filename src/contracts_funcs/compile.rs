@@ -11,8 +11,17 @@ use crate::{
 use once_cell::sync::Lazy;
 use std::collections::{HashMap, HashSet};
 
-fn load_ral_files(file_path: &str) -> Result<Vec<String>> {
-    let dir = Path::new(file_path);
+fn load_ral_files(compile_path: &str) -> Result<(Vec<String>, String)> {
+    let path = Path::new(compile_path);
+    if path.is_file() {
+        let dir = path
+            .parent()
+            .map(|p| p.to_string_lossy().to_string())
+            .context("Failed to get parent directory")?;
+        return Ok((vec![compile_path.to_string()], dir));
+    }
+
+    let dir = Path::new(compile_path);
 
     let mut ral_files_path = Vec::new();
     for entry in walkdir::WalkDir::new(dir)
@@ -25,7 +34,7 @@ fn load_ral_files(file_path: &str) -> Result<Vec<String>> {
             ral_files_path.push(entry.path().to_string_lossy().to_string());
         }
     }
-    Ok(ral_files_path)
+    Ok((ral_files_path, compile_path.to_string()))
 }
 
 static SOURCE_KIND_REGEX: Lazy<Result<HashMap<SourceKind, Regex>, Error>> = Lazy::new(|| {
@@ -111,7 +120,7 @@ fn get_source_info(
     Ok(source_infos)
 }
 
-fn get_import_path(import_path: &str) -> Result<String> {
+fn get_import_path(cwd_path: &str, import_path: &str) -> Result<String> {
     let parts: Vec<&str> = import_path.split('/').collect();
     if parts.len() > 1 && parts[0] == "std" {
         let current_dir = std::env::current_dir().context("Failed to get current directory")?;
@@ -121,7 +130,11 @@ fn get_import_path(import_path: &str) -> Result<String> {
             .to_string());
     }
 
-    Ok(import_path.to_string())
+    Ok(format!(
+        "{}/{}",
+        cwd_path.trim_end_matches('/'),
+        import_path.trim_start_matches('/')
+    ))
 }
 
 fn load_file(
@@ -132,11 +145,12 @@ fn load_file(
 ) -> Result<(Vec<SourceInfo>, HashSet<String>)> {
     let file_content = read_file(path)?;
 
-    let re = Regex::new(r#"^import "[^"./]+/[^"]*[a-z][a-z_0-9]*(\.ral)?""#)
+    let re = Regex::new(r#"import "[^"./]+/[^"]*[a-z][a-z_0-9]*(\.ral)?""#)
         .context("Failed to compile regex")?;
 
     let mut source_content = file_content.clone();
-    let mut import_file_paths = Vec::new();
+    let mut import_file_paths = vec![];
+    let mut import_statements_range = vec![];
 
     for mat in re.find_iter(&file_content) {
         let mut import_path = mat.as_str()[8..mat.as_str().len() - 1].to_string(); // get rid of the "import ..." chunk, as well as the final quote
@@ -146,12 +160,15 @@ fn load_file(
         if !import_file_paths_cache.contains(&import_path) {
             import_file_paths.push(import_path);
         }
-        // remove the import string
-        source_content.replace_range(mat.start()..mat.end(), "");
+        import_statements_range.push(mat.start()..mat.end());
     }
 
-    // these are incomplete import statements
-    if Regex::new(r#"^import ""#)?.find(&source_content).is_some() {
+    // remove from the end to avoid messing up the indices
+    for mat in import_statements_range.iter().rev() {
+        source_content.replace_range(mat.to_owned(), "");
+    }
+
+    if Regex::new(r#"import ""#)?.find(&source_content).is_some() {
         bail!("Invalid import statements, source: {}", path);
     }
 
@@ -159,7 +176,7 @@ fn load_file(
     let mut imported_source_infos = Vec::new();
 
     for import_path in &import_file_paths {
-        let import_path = get_import_path(&import_path)?;
+        let import_path = get_import_path(contracts_relative_path, &import_path)?;
         if new_import_file_paths_cache.contains(&import_path) {
             continue;
         }
@@ -184,18 +201,19 @@ fn load_file(
 
 pub async fn compile(
     url: &str,
-    file_path: &str,
+    compile_path: &str,
     compiler_options: CompilerOptions,
     _skip_generate: bool,
     _debug: bool,
     _force: bool,
 ) -> Result<Value> {
-    let source_file_paths = load_ral_files(file_path)?;
+    let (source_file_paths, compile_path) = load_ral_files(compile_path)?;
     let mut all_source_infos = Vec::new();
     let mut import_file_paths_cache = HashSet::new();
 
     for path in &source_file_paths {
-        let (source_infos, new_cache) = load_file(path, path, &import_file_paths_cache, false)?;
+        let (source_infos, new_cache) =
+            load_file(path, &compile_path, &import_file_paths_cache, false)?;
         all_source_infos.extend(source_infos);
         import_file_paths_cache = new_cache;
     }
