@@ -145,22 +145,30 @@ fn load_file(
 ) -> Result<(Vec<SourceInfo>, HashSet<String>)> {
     let file_content = read_file(path)?;
 
-    let re = Regex::new(r#"import "[^"./]+/[^"]*[a-z][a-z_0-9]*(\.ral)?""#)
+    let re = Regex::new(r#"^import "[^"./]+/[^"]*[a-z][a-z_0-9]*(\.ral)?""#)
         .context("Failed to compile regex")?;
 
     let mut source_content = file_content.clone();
     let mut import_file_paths = vec![];
     let mut import_statements_range = vec![];
 
-    for mat in re.find_iter(&file_content) {
-        let mut import_path = mat.as_str()[8..mat.as_str().len() - 1].to_string(); // get rid of the "import ..." chunk, as well as the final quote
-        if !import_path.ends_with(".ral") {
-            import_path.push_str(".ral");
+    let mut character_index: usize = 0;
+    for line in file_content.lines() {
+        if let Some(mat) = re.find(line) {
+            let import_stmt = mat.as_str();
+            let mut import_path = import_stmt[8..import_stmt.len() - 1].to_string();
+            if !import_path.ends_with(".ral") {
+                import_path.push_str(".ral");
+            }
+            if !import_file_paths_cache.contains(&import_path) {
+                import_file_paths.push(import_path);
+            }
+
+            let start = character_index + mat.start();
+            let end = character_index + mat.end();
+            import_statements_range.push(start..end);
         }
-        if !import_file_paths_cache.contains(&import_path) {
-            import_file_paths.push(import_path);
-        }
-        import_statements_range.push(mat.start()..mat.end());
+        character_index += line.len() + 1; // +1 for the newline character
     }
 
     // remove from the end to avoid messing up the indices
@@ -168,8 +176,10 @@ fn load_file(
         source_content.replace_range(mat.to_owned(), "");
     }
 
-    if Regex::new(r#"import ""#)?.find(&source_content).is_some() {
-        bail!("Invalid import statements, source: {}", path);
+    for (i, line) in source_content.lines().enumerate() {
+        if Regex::new(r#"^import ""#)?.find(line).is_some() {
+            bail!("Invalid import statements, source: {} (line {})", path, i + 1);
+        }
     }
 
     let mut new_import_file_paths_cache = import_file_paths_cache.clone();

@@ -1,0 +1,21 @@
+---
+source: tests/utils.rs
+assertion_line: 31
+info:
+  program: kermit
+  args:
+    - "-n"
+    - dev
+    - contracts
+    - compile
+    - tests/contracts/fail/sub_contract_no_import.ral
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: -- error (4:27): Compilation error
+4 |Contract Sub(mut result : UnknownType) {
+  |                          ^^^^^^^^^^^
+  |                          Contract UnknownType does not exist
