@@ -1,11 +1,13 @@
 ---
 source: tests/utils.rs
-assertion_line: 31
+assertion_line: 67
 info:
   program: kermit
   args:
     - "-n"
     - dev
+    - "-c"
+    - "./alephium.config.yaml"
     - contracts
     - compile
     - tests/contracts
@@ -124,6 +126,153 @@ exit_code: 0
       "name": "Sub",
       "version": "v4.2.4",
       "warnings": []
+    },
+    {
+      "bytecode": "070609121b402440324054010000000102ce0002010000000102ce0102010000000102ce0302010000000102ce0402010000000103d323f4ce6aa00002010201010012d30fb898ce16000e320c7bb4b11600aba00016002ba10005b416005f",
+      "bytecodeDebugPatch": "=20-1+d=112-1+8=9+ea0007e02175468652063757272656e742062616c616e63652069732000a0007e0240225468652063757272656e742062616c616e63652069732042414c414e434941474120007e011a6e6f20636f6e66657373696f6e2c206e6f2072656c6967696f6e7e011a6e6f20636f6e66657373696f6e2c206e6f2072656c6967696f6=47",
+      "codeHash": "6c4c381340b11cdd01a82c79318f40e8eb254bc6eef1de5f67a13f1b33c50dec",
+      "codeHashDebug": "634794b09b1210fb895ab05ef9afdc1ce324e3dabb6b84f2bb0dde07d9a101d8",
+      "constants": [],
+      "enums": [
+        {
+          "fields": [
+            {
+              "name": "InvalidWithdrawAmount",
+              "value": {
+                "type": "U256",
+                "value": "0"
+              }
+            }
+          ],
+          "name": "ErrorCodes"
+        }
+      ],
+      "events": [
+        {
+          "fieldNames": [
+            "to",
+            "amount"
+          ],
+          "fieldTypes": [
+            "Address",
+            "U256"
+          ],
+          "name": "Withdraw"
+        }
+      ],
+      "fields": {
+        "isMutable": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          true,
+          false
+        ],
+        "names": [
+          "symbol",
+          "name",
+          "encoded_test_value",
+          "decimals",
+          "supply",
+          "balance",
+          "__stdInterfaceId"
+        ],
+        "types": [
+          "ByteVec",
+          "ByteVec",
+          "ByteVec",
+          "U256",
+          "U256",
+          "U256",
+          "ByteVec"
+        ]
+      },
+      "functions": [
+        {
+          "isPublic": true,
+          "name": "getSymbol",
+          "paramIsMutable": [],
+          "paramNames": [],
+          "paramTypes": [],
+          "returnTypes": [
+            "ByteVec"
+          ],
+          "useAssetsInContract": false,
+          "usePreapprovedAssets": false
+        },
+        {
+          "isPublic": true,
+          "name": "getName",
+          "paramIsMutable": [],
+          "paramNames": [],
+          "paramTypes": [],
+          "returnTypes": [
+            "ByteVec"
+          ],
+          "useAssetsInContract": false,
+          "usePreapprovedAssets": false
+        },
+        {
+          "isPublic": true,
+          "name": "getDecimals",
+          "paramIsMutable": [],
+          "paramNames": [],
+          "paramTypes": [],
+          "returnTypes": [
+            "U256"
+          ],
+          "useAssetsInContract": false,
+          "usePreapprovedAssets": false
+        },
+        {
+          "isPublic": true,
+          "name": "getTotalSupply",
+          "paramIsMutable": [],
+          "paramNames": [],
+          "paramTypes": [],
+          "returnTypes": [
+            "U256"
+          ],
+          "useAssetsInContract": false,
+          "usePreapprovedAssets": false
+        },
+        {
+          "isPublic": true,
+          "name": "balance",
+          "paramIsMutable": [],
+          "paramNames": [],
+          "paramTypes": [],
+          "returnTypes": [
+            "U256"
+          ],
+          "useAssetsInContract": false,
+          "usePreapprovedAssets": false
+        },
+        {
+          "isPublic": true,
+          "name": "withdraw",
+          "paramIsMutable": [
+            false
+          ],
+          "paramNames": [
+            "amount"
+          ],
+          "paramTypes": [
+            "U256"
+          ],
+          "returnTypes": [],
+          "useAssetsInContract": true,
+          "usePreapprovedAssets": false
+        }
+      ],
+      "name": "TokenFaucet",
+      "stdInterfaceId": "0001",
+      "version": "v4.2.4",
+      "warnings": [
+        "Found unused field in TokenFaucet: encoded_test_value"
+      ]
     }
   ],
   "scripts": []

@@ -2,6 +2,14 @@ mod utils;
 
 use crate::utils::{perform_cmd_dev, perform_cmd_test_dev};
 
+const CONTRACT_FILTERS: [(&str, &str); 2] = [
+    (
+        r#""contractId":\s*"[A-Za-z0-9]+""#,
+        r#""contractId": <contractID>"#,
+    ),
+    (r#""txId":\s*"[0-9a-f]+""#, r#""txId": <txId>"#),
+];
+
 ///////////
 ///
 /// Compile
@@ -87,14 +95,7 @@ fn test_deploy_contract() {
         "deploy_sub_contract",
         &["contracts", "deploy", "Sub", &path],
         config,
-        vec![
-            (
-                r#""contractId":\s*"[A-Za-z0-9]+""#,
-                r#""contractId": <contractID>"#,
-            ),
-            (r#""txId":\s*"[0-9a-f]+""#, r#""txId": <txId>"#),
-        ]
-        .into(),
+        CONTRACT_FILTERS.to_vec().into(),
     );
 }
 
@@ -112,13 +113,6 @@ fn test_deploy_contract_debug() {
         "deploy_sub_contract_debug",
         &["contracts", "deploy", "TokenFaucet", &path],
         config,
-        vec![
-            (
-                r#""contractId":\s*"[A-Za-z0-9]+""#,
-                r#""contractId": <contractID>"#,
-            ),
-            (r#""txId":\s*"[0-9a-f]+""#, r#""txId": <txId>"#),
-        ]
-        .into(),
+        CONTRACT_FILTERS.to_vec().into(),
     );
 }
