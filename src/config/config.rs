@@ -25,7 +25,12 @@ impl Network {
                 NetworkType::Test => "https://node.testnet.alephium.org".to_string(),
                 NetworkType::Main => "https://node.mainnet.alephium.org".to_string(),
             },
-            private_keys: None,
+            private_keys: match network_type {
+                NetworkType::Dev => Some(vec![
+                    "a642942e67258589cd2b1822c631506632db5a12aabcf413604e785300d762a5".to_string(),
+                ]),
+                _ => None,
+            },
             settings: DefaultSettings::default(),
         }
     }

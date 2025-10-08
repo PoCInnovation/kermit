@@ -11,7 +11,7 @@ use crate::contracts_funcs::compile_project::compile_project::{
     FieldsTypesMapMut, FieldsVec, Struct,
 };
 use crate::contracts_funcs::compile_project::compile_project_deserialize::FieldValueHelper;
-use crate::utils::crypto::is_b58;
+use crate::utils::crypto::{is_b58, is_hex_string};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RalphValue {
@@ -111,6 +111,22 @@ fn try_into_field(
 
     let value = match initial_field {
         HelperFieldType::String(s) => {
+            // Bool, Numbers and String will be parsed using the default RalphValue parser
+            // However, we need to make an exception for ByteVec which may be human readable strings.
+            // This is because the blockchain automatically encodes strings in hex, and since we use the default parser, we need to convert it before calling the function
+            // So we need to check if the input is a hex string (which always begin with 0x) to seperate the true hex strings inputs from human readable ones
+            let s = if *type_name == TypeName::ByteVec {
+                if is_hex_string(&s) {
+                    s.strip_prefix("0x")
+                        .context("Expected hex string with '0x' or '0X' prefix")?
+                        .to_string()
+                } else {
+                    hex::encode(s.as_bytes())
+                }
+            } else {
+                s
+            };
+
             vec![(
                 RalphValue::from_typename_and_value(type_name, &Value::String(s))?,
                 is_mutable.clone(),
@@ -272,10 +288,10 @@ impl RalphValue {
                                 .map(|b| b as u8)
                                 .context("Expected u8 in ByteVec array")
                         })
-                        .collect::<Result<Vec<u8>>>();
-                    Ok(Self::ByteVec(bytes?))
+                        .collect::<Result<Vec<u8>>>()?;
+                    Ok(Self::ByteVec(bytes))
                 } else if let Some(s) = value.as_str() {
-                    Ok(Self::try_into_hexified_str(s)?)
+                    Self::try_into_hexified_str(s)
                 } else {
                     Err(anyhow!("Expected ByteVec as array or string"))
                 }

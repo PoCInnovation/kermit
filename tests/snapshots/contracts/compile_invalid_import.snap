@@ -1,0 +1,18 @@
+---
+source: tests/utils.rs
+assertion_line: 31
+info:
+  program: kermit
+  args:
+    - "-n"
+    - dev
+    - contracts
+    - compile
+    - tests/fail_contracts/wrong_import.ral
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: Invalid import statements, source: tests/fail_contracts/wrong_import.ral (line 1)

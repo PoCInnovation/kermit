@@ -1,0 +1,26 @@
+---
+source: tests/utils.rs
+assertion_line: 67
+info:
+  program: kermit
+  args:
+    - "-n"
+    - dev
+    - "-c"
+    - tests/contracts/test.config.yaml
+    - contracts
+    - deploy
+    - TokenFaucet
+    - /tmp/deploy_sub_contract_debug
+---
+success: true
+exit_code: 0
+----- stdout -----
+{
+  "contractId": <contractID>,
+  "fromGroup": 0,
+  "toGroup": 0,
+  "txId": <txId>
+}
+
+----- stderr -----
