@@ -1,2 +1,2 @@
-import "wrong_import.ral"
+import "inexistant.ral"
 

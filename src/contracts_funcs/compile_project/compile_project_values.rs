@@ -20,8 +20,8 @@ pub enum RalphValue {
     I256(I256),
     ByteVec(Vec<u8>),
     Address(String),
-    Array(Vec<RalphValue>),
-    Map(HashMap<RalphValue, RalphValue>),
+    Array(Vec<RalphValue>), // Same Type
+    Tuple(Vec<RalphValue>), // Different type
     Structure(HashMap<String, RalphValue>),
 }
 
@@ -50,6 +50,10 @@ impl Serialize for RalphValue {
             ),
             RalphValue::Array(arr) => (
                 "Array",
+                serde_json::to_value(arr).map_err(ser::Error::custom)?,
+            ),
+            RalphValue::Tuple(arr) => (
+                "Tuple",
                 serde_json::to_value(arr).map_err(ser::Error::custom)?,
             ),
             _ => {
@@ -133,7 +137,16 @@ fn try_into_field(
             )]
         },
         HelperFieldType::Array(arr) => {
-            if let TypeName::Array(elem_ty) = type_name {
+            if let TypeName::Array((elem_type, elem_size)) = type_name {
+                if arr.len() != *elem_size {
+                    bail!(
+                        "Array length mismatch for field '{}': expected {}, got {}",
+                        initial_field_name,
+                        elem_size,
+                        arr.len()
+                    )
+                }
+
                 let values = arr
                     .into_iter()
                     .map(|v| {
@@ -141,8 +154,27 @@ fn try_into_field(
                             "",
                             v,
                             fields_types,
-                            Some(&(*elem_ty.clone(), is_mutable.clone())),
+                            Some(&(*elem_type.clone(), is_mutable.clone())),
                         )
+                    })
+                    .collect::<Result<Vec<_>>>()?;
+
+                values.into_iter().flatten().collect()
+            } else if let TypeName::Tuple(elem_types) = type_name {
+                if arr.len() != elem_types.len() {
+                    bail!(
+                        "Tuple length mismatch for field '{}': expected {}, got {}",
+                        initial_field_name,
+                        elem_types.len(),
+                        arr.len()
+                    )
+                }
+
+                let values = arr
+                    .into_iter()
+                    .zip(elem_types.iter())
+                    .map(|(v, ty)| {
+                        try_into_field("", v, fields_types, Some(&(ty.clone(), is_mutable.clone())))
                     })
                     .collect::<Result<Vec<_>>>()?;
 
@@ -157,12 +189,12 @@ fn try_into_field(
         },
         HelperFieldType::Structure(helper_fields) => {
             if let TypeName::Structure((_struct_name, struct_fields)) = type_name {
-                let zipped = helper_fields
+                let zipped_fields = helper_fields
                     .into_iter()
                     .filter_map(|(k, v1)| struct_fields.get(&k).map(|v2| (k, (v1, v2))))
                     .collect::<Vec<(String, (HelperFieldType, &(TypeName, bool)))>>();
 
-                if zipped.is_empty() {
+                if zipped_fields.is_empty() {
                     bail!(
                         "No matching fields found in structure for '{}' in '{:?}'",
                         initial_field_name,
@@ -170,7 +202,7 @@ fn try_into_field(
                     );
                 }
 
-                zipped
+                zipped_fields
                     .into_iter()
                     .map(|(field_name, (value, type_name))| {
                         try_into_field(&field_name, value, struct_fields, Some(type_name))
@@ -216,15 +248,14 @@ impl Hash for RalphValue {
             RalphValue::I256(i) => i.hash(state),
             RalphValue::ByteVec(bytes) => bytes.hash(state),
             RalphValue::Address(addr) => addr.hash(state),
-            RalphValue::Map(map) => {
-                for (key, value) in map {
+            RalphValue::Structure(structure) => {
+                for (key, value) in structure {
                     key.hash(state);
                     value.hash(state);
                 }
             },
-            RalphValue::Structure(structure) => {
-                for (key, value) in structure {
-                    key.hash(state);
+            RalphValue::Tuple(arr) => {
+                for value in arr {
                     value.hash(state);
                 }
             },
@@ -300,27 +331,24 @@ impl RalphValue {
                 let addr = value.as_str().context("Expected Address as string")?;
                 Ok(Self::Address(addr.to_string()))
             },
-            TypeName::Map(key_ty, val_ty) => Ok(Self::Map(
-                value
-                    .as_object()
-                    .context("Expected Map as object")?
-                    .iter()
-                    .map(|(k, v)| {
-                        Ok((
-                            Self::from_typename_and_value(key_ty, &Value::String(k.clone()))?,
-                            Self::from_typename_and_value(val_ty, v)?,
-                        ))
-                    })
-                    .collect::<Result<HashMap<_, _>>>()?,
-            )),
-            TypeName::Array(elem_ty) => Ok(Self::Array(
-                value
-                    .as_array()
-                    .context("Expected Array as array")?
-                    .iter()
-                    .map(|elem| Self::from_typename_and_value(elem_ty, elem))
-                    .collect::<Result<Vec<_>>>()?,
-            )),
+            TypeName::Array((elem_type, elem_size)) => {
+                let array = value.as_array().context("Expected Array as array")?;
+
+                if array.len() != *elem_size {
+                    bail!(
+                        "Array length mismatch: expected {}, got {}",
+                        elem_size,
+                        array.len()
+                    )
+                }
+
+                Ok(Self::Array(
+                    array
+                        .iter()
+                        .map(|elem| Self::from_typename_and_value(elem_type, elem))
+                        .collect::<Result<Vec<_>>>()?,
+                ))
+            },
             TypeName::Structure((_, fields)) => {
                 let obj = value.as_object().context("Expected Structure as object")?;
 
@@ -333,6 +361,22 @@ impl RalphValue {
                     structure.insert(field_name.clone(), parsed_value);
                 }
                 Ok(Self::Structure(structure))
+            },
+            TypeName::Tuple(elems) => {
+                let arr = value.as_array().context("Expected Tuple as array")?;
+                if arr.len() != elems.len() {
+                    return Err(anyhow!(
+                        "Tuple length mismatch: expected {}, got {}",
+                        elems.len(),
+                        arr.len()
+                    ));
+                }
+                let values = arr
+                    .iter()
+                    .zip(elems.iter())
+                    .map(|(v, ty)| Self::from_typename_and_value(ty, v))
+                    .collect::<Result<Vec<_>>>()?;
+                Ok(Self::Tuple(values))
             },
             TypeName::Other(name) => {
                 if let Some(s) = value.as_str() {
@@ -364,8 +408,8 @@ pub enum TypeName {
     I256,
     ByteVec,
     Address,
-    Map(Box<TypeName>, Box<TypeName>),
-    Array(Box<TypeName>),
+    Array((Box<TypeName>, usize)),
+    Tuple(Vec<TypeName>),
     Structure((String, HashMap<String, (TypeName, bool)>)),
     Other(String),
 }
@@ -389,23 +433,35 @@ impl TypeName {
             "I256" => Ok(Self::I256),
             "ByteVec" => Ok(Self::ByteVec),
             "Address" => Ok(Self::Address),
-            s if s.starts_with("Map[") && s.ends_with(']') => {
-                // Example: Map[U256,U256]
-                let inner = &s[4..s.len() - 1];
-                let mut parts = inner.split(',');
-                let key = parts.next().context("Missing key type in Map")?;
-                let value = parts.next().context("Missing value type in Map")?;
-                Ok(Self::Map(
-                    Box::new(Self::from_name_and_structures(key, structures)?),
-                    Box::new(Self::from_name_and_structures(value, structures)?),
-                ))
+            s if s.starts_with("[") && s.ends_with(']') => {
+                // Example: [U256; 2]
+                let inner = &s[1..s.len() - 1];
+                let (elem_type_str, elem_size) = if inner.contains(';') {
+                    let mut parts = inner.splitn(2, ';');
+                    let elem = parts.next().context("Missing first array elem")?.trim();
+                    let size_part = parts
+                        .next()
+                        .context("Missing second array elem")?
+                        .trim()
+                        .parse::<usize>()
+                        .context("Invalid array size in type annotation")?;
+                    (elem, size_part)
+                } else {
+                    bail!("Dynamic-size arrays are not supported in this context")
+                };
+                Ok(Self::Array((
+                    Box::new(Self::from_name_and_structures(elem_type_str, structures)?),
+                    elem_size,
+                )))
             },
-            s if s.starts_with("Array[") && s.ends_with(']') => {
-                // Example: Array[U256]
-                let inner = &s[6..s.len() - 1];
-                Ok(Self::Array(Box::new(Self::from_name_and_structures(
-                    inner, structures,
-                )?)))
+            s if s.starts_with("(") && s.ends_with(')') => {
+                // Example: (U256,ByteVec,Bool)
+                let inner = &s[1..s.len() - 1];
+                let elems = inner
+                    .split(',')
+                    .map(|part| Self::from_name_and_structures(part, structures))
+                    .collect::<Result<Vec<_>>>()?;
+                Ok(Self::Tuple(elems))
             },
             s if structures.contains_key(s) => {
                 let target_struct = structures

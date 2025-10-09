@@ -145,8 +145,7 @@ fn load_file(
 ) -> Result<(Vec<SourceInfo>, HashSet<String>)> {
     let file_content = read_file(path)?;
 
-    let re = Regex::new(r#"^import "[^"./]+/[^"]*[a-z][a-z_0-9]*(\.ral)?""#)
-        .context("Failed to compile regex")?;
+    let re = Regex::new(r#"^import\s+"[^"]+"$"#).context("Failed to compile regex")?;
 
     let mut source_content = file_content.clone();
     let mut import_file_paths = vec![];
@@ -178,7 +177,11 @@ fn load_file(
 
     for (i, line) in source_content.lines().enumerate() {
         if Regex::new(r#"^import ""#)?.find(line).is_some() {
-            bail!("Invalid import statements, source: {} (line {})", path, i + 1);
+            bail!(
+                "Invalid import statements, source: {} (line {})",
+                path,
+                i + 1
+            );
         }
     }
 
@@ -194,7 +197,7 @@ fn load_file(
         new_import_file_paths_cache.insert(import_path.clone());
         let (imported_source_info, loaded_file_import_cache) = load_file(
             &import_path,
-            &import_path,
+            contracts_relative_path,
             &new_import_file_paths_cache,
             true,
         )?;

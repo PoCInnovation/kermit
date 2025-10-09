@@ -26,3 +26,4 @@ futures = {version = "0.3.31", default-features = false }
 [dev-dependencies]
 insta = { version = "1", features = ["filters"] }
 insta-cmd = "0.6.0"
+serial_test = "3.2.0"

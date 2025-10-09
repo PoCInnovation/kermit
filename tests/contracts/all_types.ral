@@ -1,0 +1,41 @@
+struct TestStruture {
+    counter: U256,
+    secret_counter: U256
+}
+
+struct TestStrutureMut {
+    mut counter: U256,
+    secret_counter: U256
+}
+
+enum TestEnum {
+  FIRST_ENUM = 0
+  SECOND_ENUM = 1
+}
+
+Contract TestTypes(
+    init_tuple: (U256, ByteVec, Bool),
+    mut init_structure: TestStrutureMut,
+    init_vec: ByteVec,
+    init_addr: Address, 
+    init_i256: I256,
+    init_u256: U256,
+    init_bool: Bool,
+    init_array: [U256; 2]) {
+
+    @using(checkExternalCaller = false, updateFields = true)
+    pub fn test() -> () {
+        emit Debug(`init_structure: ${init_structure.counter}, ${init_structure.secret_counter}`)
+
+        let (first, second, third) = init_tuple
+        emit Debug(`init_tuple: ${first}, ${second}, ${third}`)
+        emit Debug(`init_vec: ${init_vec}`)
+        emit Debug(`init_addr: ${init_addr}`)
+        emit Debug(`init_i256: ${init_i256}`)
+        emit Debug(`init_u256: ${init_u256}`)
+        emit Debug(`init_bool: ${init_bool}`)
+        emit Debug(`init_array: 2 elems ${init_array[0]}, ${init_array[1]}`)
+
+        init_structure.counter += 1
+    }
+}

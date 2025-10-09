@@ -41,23 +41,6 @@ fn resolve_rec_type(
     };
 
     match type_name {
-        TypeName::Array(array_type) => {
-            if !value.starts_with('[') || !value.ends_with(']') {
-                bail!(
-                    "Array value for field '{}' must begin and end with []",
-                    name
-                );
-            }
-
-            let array_values = value
-                .trim_matches(|c| c == '[' || c == ']')
-                .split(',')
-                .map(|v| v.trim())
-                .filter(|v| !v.is_empty())
-                .map(|v| resolve_rec_type("", v.to_string(), types, Some(&*array_type)))
-                .collect::<Result<Vec<_>>>()?;
-            Ok(RalphValue::Array(array_values))
-        },
         TypeName::Structure((_, struct_content)) => {
             let rest = rest.context(format!(
                 "Structure field name cannot be empty for field '{}', type '{:?}'",

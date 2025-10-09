@@ -1,5 +1,7 @@
 mod utils;
 
+use serial_test::serial;
+
 use crate::utils::{perform_cmd_dev, perform_cmd_test_dev};
 
 const CONTRACT_FILTERS: [(&str, &str); 2] = [
@@ -9,6 +11,8 @@ const CONTRACT_FILTERS: [(&str, &str); 2] = [
     ),
     (r#""txId":\s*"[0-9a-f]+""#, r#""txId": <txId>"#),
 ];
+
+const TEST_CONFIG: &str = "./tests/contracts/test.config.yaml";
 
 ///////////
 ///
@@ -20,7 +24,11 @@ const CONTRACT_FILTERS: [(&str, &str); 2] = [
 fn test_compile_simple() {
     perform_cmd_test_dev(
         "compile",
-        &["contracts", "compile", "tests/contracts/sub_contract.ral"],
+        &[
+            "contracts",
+            "compile",
+            "tests/contracts/test_dir/sub_contract.ral",
+        ],
         None,
         None,
     );
@@ -30,7 +38,7 @@ fn test_compile_simple() {
 fn test_compile_folder() {
     perform_cmd_test_dev(
         "compile_folder",
-        &["contracts", "compile", "tests/contracts"],
+        &["contracts", "compile", "tests/contracts/test_dir"],
         None,
         None,
     );
@@ -83,11 +91,16 @@ fn test_compile_no_import() {
 ///////////
 
 #[test]
+#[serial]
 fn test_deploy_contract() {
-    let config = Some("tests/contracts/test.config.yaml");
+    let config = TEST_CONFIG.into();
     let path = perform_cmd_dev(
         "deploy_sub_contract",
-        &["contracts", "compile", "tests/contracts/sub_contract.ral"],
+        &[
+            "contracts",
+            "compile",
+            "tests/contracts/test_dir/sub_contract.ral",
+        ],
         config,
     );
 
@@ -100,18 +113,42 @@ fn test_deploy_contract() {
 }
 
 #[test]
+#[serial]
 fn test_deploy_contract_debug() {
-    let config = Some("tests/contracts/test.config.yaml");
+    let config = TEST_CONFIG.into();
 
     let path = perform_cmd_dev(
         "deploy_sub_contract_debug",
-        &["contracts", "compile", "tests/contracts/token_faucet.ral"],
+        &[
+            "contracts",
+            "compile",
+            "tests/contracts/test_dir/token_faucet.ral",
+        ],
         config,
     );
 
     perform_cmd_test_dev(
         "deploy_sub_contract_debug",
         &["contracts", "deploy", "TokenFaucet", &path],
+        config,
+        CONTRACT_FILTERS.to_vec().into(),
+    );
+}
+
+#[test]
+#[serial]
+fn test_deploy_contract_debug_types() {
+    let config = TEST_CONFIG.into();
+
+    let path = perform_cmd_dev(
+        "deploy_sub_contract_debug_types",
+        &["contracts", "compile", "tests/contracts/all_types.ral"],
+        config,
+    );
+
+    perform_cmd_test_dev(
+        "deploy_sub_contract_debug_types",
+        &["contracts", "deploy", "TestTypes", &path],
         config,
         CONTRACT_FILTERS.to_vec().into(),
     );
