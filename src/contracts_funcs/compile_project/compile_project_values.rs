@@ -225,16 +225,19 @@ pub fn config_fields_to_vec(
 ) -> Result<FieldsVec> {
     let values = fields_types
         .into_iter()
-        .map(|(name, _)| {
-            let helper_field = initial_fields
-                .get(name)
-                .context(format!(
-                    "Field '{}' not found in provided initial fields",
-                    name
-                ))?
-                .to_owned();
+        .map(|(name, _)| match name.as_str() {
+            "__stdInterfaceId" => Ok(vec![]), // Skip this field, it's automatically added
+            _ => {
+                let helper_field = initial_fields
+                    .get(name)
+                    .context(format!(
+                        "Field '{}' not found in provided initial fields",
+                        name
+                    ))?
+                    .to_owned();
 
-            try_into_field(&name, helper_field, fields_types, None)
+                try_into_field(&name, helper_field, fields_types, None)
+            },
         })
         .collect::<Result<Vec<Vec<_>>>>()?;
     Ok(values.into_iter().flatten().collect())

@@ -281,3 +281,46 @@ fn test_call_contract_debug_all_args() {
         CONTRACT_ASSERT_CALL_FILTER.to_vec().into(),
     );
 }
+
+#[test]
+#[serial]
+fn test_call_contract_debug_all_args_unordered() {
+    let config = TEST_CONFIG.into();
+
+    let compile_path = perform_cmd_dev(
+        "call_debug_types_all_args_unordered",
+        &["contracts", "compile", "tests/contracts/all_types.ral"],
+        config,
+    );
+
+    let deploy_path = perform_cmd_dev(
+        "call_debug_types_all_args_unordered_deploy",
+        &["contracts", "deploy", "TestTypes", &compile_path],
+        config,
+    );
+
+    let contract_id = get_json_str_field_from_file(&deploy_path, "contractId");
+
+    perform_cmd_test_dev(
+        "call_debug_types_all_args_unordered",
+        &[
+            "contracts",
+            "call",
+            "TestTypes",
+            &contract_id,
+            &compile_path,
+            "test_args",
+            "--args",
+            "arg_addr=1DrDyTr9RpRsQnDnXo2YRiPzPW4ooHX5LLoqXrqfMrpQH",
+            "arg_array=[[0,1], [2,3]]",
+            "arg_u256=78678576576",
+            "arg_vec=Coucou",
+            "arg_struct.nested_struct.val=10000",
+            "arg_bool=false",
+            "arg_i256=-898",
+            "arg_struct.counter=98",
+        ],
+        config,
+        CONTRACT_ASSERT_CALL_FILTER.to_vec().into(),
+    );
+}

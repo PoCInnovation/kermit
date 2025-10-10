@@ -20,25 +20,27 @@ pub type FieldsMap = HashMap<String, (RalphValue, bool)>;
 #[allow(dead_code)]
 pub type InputFieldsMap = HashMap<String, RalphValue>;
 
+// Return the position of the parameter for the call with the parsed value
+// TODO: new system with json like parsing of structures, since currently arrays of structure is impossible
 fn resolve_rec_type(
     name: &str,
     value: String,
     types: &FieldsTypesMapMut,
     override_type: Option<&TypeName>,
-) -> Result<RalphValue> {
+) -> Result<(usize, RalphValue)> {
     let mut parts = name.splitn(2, '.');
     let name = parts.next().context("Field name cannot be empty")?;
     let rest = parts.next();
 
-    let type_name = if let Some(a) = override_type {
-        a
+    let (type_name, param_index) = if let Some(typename) = override_type {
+        (typename, 0) // 0 magic value since the index is skipped
     } else {
-        let (a, _) = types.get(name).context(anyhow!(
+        let (param_index, _, (typename, _)) = types.get_full(name).context(anyhow!(
             "Type for field '{}' not found in provided args types map: {:?}",
             name,
             types
         ))?;
-        a
+        (typename, param_index)
     };
 
     match type_name {
@@ -55,12 +57,13 @@ fn resolve_rec_type(
 
             if let Some(remaining_dots) = sub_parts.next() {
                 // there are nested structure(s)
-                if let (TypeName::Structure((_, nested_struct_types)), _) =
-                    struct_types.get(nested_struct_name).context(format!(
+                if let (sub_index, _, (TypeName::Structure((_, nested_struct_types)), _)) =
+                    struct_types.get_full(nested_struct_name).context(format!(
                         "Unknown nested structure name in {name}: {nested_struct_name}"
                     ))?
                 {
-                    return resolve_rec_type(remaining_dots, value, nested_struct_types, None);
+                    let (sub_nested_index, value) = resolve_rec_type(remaining_dots, value, nested_struct_types, None)?;
+                    return Ok((param_index + sub_index + sub_nested_index, value))
                 } else {
                     bail!(
                         "Field '{}' in structure '{:?}' is not a structure",
@@ -70,7 +73,8 @@ fn resolve_rec_type(
                 }
             }
 
-            resolve_rec_type(rest, value, struct_types, None)
+            let (sub_index, value) = resolve_rec_type(rest, value, struct_types, None)?;
+            Ok((param_index + sub_index, value))
         },
         TypeName::Array((arr_type, arr_size)) => {
             // example: [0, 1]
@@ -91,12 +95,16 @@ fn resolve_rec_type(
                 );
             }
 
+            // We don't care about the index recusively since they are already in order
             let ralph_values = vec_values
                 .into_iter()
-                .map(|v| resolve_rec_type(name, v.to_string(), types, Some(arr_type)))
+                .map(|v| {
+                    let (_, value) = resolve_rec_type(name, v.to_string(), types, Some(arr_type))?;
+                    Ok(value)
+                })
                 .collect::<Result<Vec<_>>>()?;
 
-            Ok(RalphValue::Array(ralph_values))
+            Ok((param_index, RalphValue::Array(ralph_values)))
         },
         _ => {
             let ralph_value = if type_name.to_owned() == TypeName::ByteVec && !is_hex_string(&value)
@@ -106,7 +114,7 @@ fn resolve_rec_type(
                 RalphValue::from_typename_and_value(type_name, &Value::String(value))?
             };
 
-            Ok(ralph_value)
+            Ok((param_index, ralph_value))
         },
     }
 }
@@ -132,11 +140,16 @@ pub fn args_to_fields_vec(
         );
     }
 
-    let result = ralph_vec_input
+    let mut unordered_params_vec = ralph_vec_input
         .into_iter()
-        .map(|(name, value)| Ok(resolve_rec_type(&name, value, types, None)?))
+        .map(|(name, value)| resolve_rec_type(&name, value, types, None))
         .collect::<Result<Vec<_>>>()?;
-    Ok(result)
+
+    unordered_params_vec.sort_by_key(|(pos, _)| *pos);
+    Ok(unordered_params_vec
+        .into_iter()
+        .map(|(_, val)| val)
+        .collect())
 }
 
 #[derive(Debug, Clone)]
