@@ -1,5 +1,5 @@
 use anyhow::{Context, Result, anyhow, bail};
-use serde_json::Value;
+use serde_json::{Value, value::RawValue};
 use std::collections::HashMap;
 
 use crate::contracts_funcs::compile_project::compile_project_deserialize::{
@@ -33,7 +33,7 @@ fn resolve_rec_type(
         a
     } else {
         let (a, _) = types.get(name).context(anyhow!(
-            "Type for field '{}' not found in provided types map: {:?}",
+            "Type for field '{}' not found in provided args types map: {:?}",
             name,
             types
         ))?;
@@ -41,32 +41,45 @@ fn resolve_rec_type(
     };
 
     match type_name {
-        TypeName::Structure((_, struct_content)) => {
+        TypeName::Structure((_, struct_types)) => {
             let rest = rest.context(format!(
                 "Structure field name cannot be empty for field '{}', type '{:?}'",
                 name, type_name
             ))?;
             let mut sub_parts = rest.splitn(2, '.');
-            let _ = sub_parts.next().context(format!(
+            let nested_struct_name = sub_parts.next().context(format!(
                 "Structure field name cannot be empty for field '{}', type '{:?}'",
                 name, type_name
             ))?;
 
             if let Some(remaining_dots) = sub_parts.next() {
                 // there are nested structure(s)
-                return resolve_rec_type(remaining_dots, value, struct_content, None);
+                if let (TypeName::Structure((_, nested_struct_types)), _) =
+                    struct_types.get(nested_struct_name).context(format!(
+                        "Unknown nested structure name in {name}: {nested_struct_name}"
+                    ))?
+                {
+                    return resolve_rec_type(remaining_dots, value, nested_struct_types, None);
+                } else {
+                    bail!(
+                        "Field '{}' in structure '{:?}' is not a structure",
+                        nested_struct_name,
+                        type_name
+                    );
+                }
             }
 
-            resolve_rec_type(rest, value, struct_content, None)
+            resolve_rec_type(rest, value, struct_types, None)
         },
         TypeName::Array((arr_type, arr_size)) => {
-            let vec_values: Vec<&str> = value
-                .trim_start_matches('[')
-                .trim_end_matches(']')
-                .split(',')
-                .map(|s| s.trim())
-                .filter(|s| !s.is_empty())
-                .collect();
+            // example: [0, 1]
+            // example: [[0,1], [0,2]]
+
+            // Using serde json to parse the array, only the outer array
+            let vec_values = serde_json::from_str::<Vec<Box<RawValue>>>(&value)?
+                .into_iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<String>>();
 
             if vec_values.len() != *arr_size {
                 bail!(
@@ -83,32 +96,6 @@ fn resolve_rec_type(
                 .collect::<Result<Vec<_>>>()?;
 
             Ok(RalphValue::Array(ralph_values))
-        },
-        TypeName::Tuple(tuple_types) => {
-            let vec_values: Vec<&str> = value
-                .trim_start_matches('(')
-                .trim_end_matches(')')
-                .split(',')
-                .map(|s| s.trim())
-                .filter(|s| !s.is_empty())
-                .collect();
-
-            if vec_values.len() != tuple_types.len() {
-                bail!(
-                    "Tuple size mismatch for field '{}': expected {}, found {}",
-                    name,
-                    tuple_types.len(),
-                    vec_values.len()
-                );
-            }
-
-            let ralph_values = vec_values
-                .into_iter()
-                .zip(tuple_types.iter())
-                .map(|(v, ty)| resolve_rec_type(name, v.to_string(), types, Some(ty)))
-                .collect::<Result<Vec<_>>>()?;
-
-            Ok(RalphValue::Tuple(ralph_values))
         },
         _ => {
             let ralph_value = if type_name.to_owned() == TypeName::ByteVec && !is_hex_string(&value)

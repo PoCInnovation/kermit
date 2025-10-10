@@ -40,14 +40,25 @@ contracts:
       init_structure:
         counter: 0
         secret_counter: 42
+      # init_structure_imm:
+      #   counter: 98
+      #   nested_struct:
+      #     val: 8
       init_vec: This is a string
       init_addr: 1DrDyTr9RpRsQnDnXo2YRiPzPW4ooHX5LLoqXrqfMrpQH
-      init_i256: 45
+      init_i256: -45
       init_u256: 454545
-      init_bool: false
+      init_bool: true
       init_array:
         - 0
         - 1
+      # init_nested_array:
+      #   -
+      #     - 0
+      #     - 1
+      #   -
+      #     - 2
+      #     - 3
     initialAsset:
       attoAlphAmount: "10"
       tokens: []

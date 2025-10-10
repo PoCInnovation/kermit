@@ -1,6 +1,10 @@
+struct TestSubStruture {
+    val: U256
+}
+
 struct TestStruture {
     counter: U256,
-    secret_counter: U256
+    nested_struct: TestSubStruture
 }
 
 struct TestStrutureMut {
@@ -37,5 +41,24 @@ Contract TestTypes(
         emit Debug(`init_array: 2 elems ${init_array[0]}, ${init_array[1]}`)
 
         init_structure.counter += 1
+    }
+
+    pub fn test_args(
+        arg_vec: ByteVec,
+        arg_addr: Address,
+        arg_i256: I256,
+        arg_u256: U256,
+        arg_bool: Bool,
+        arg_array: [[U256; 2]; 2],
+        arg_struct: TestStruture
+    ) -> () {
+        assert!(arg_vec == b`Coucou`, 1)
+        assert!(arg_addr == @1DrDyTr9RpRsQnDnXo2YRiPzPW4ooHX5LLoqXrqfMrpQH, 2)
+        assert!(arg_i256 == -898, 3)
+        assert!(arg_u256 == 78678576576, 4)
+        assert!(arg_bool == false, 5)
+        assert!(arg_array[0][1] == 1, 6)
+        assert!(arg_struct.counter == 98, 7)
+        assert!(arg_struct.nested_struct.val == 10000, 8)
     }
 }

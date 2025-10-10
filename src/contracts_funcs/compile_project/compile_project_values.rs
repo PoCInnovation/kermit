@@ -103,7 +103,7 @@ fn try_into_field(
         override_type
     } else {
         fields_types.get(initial_field_name).context(format!(
-            "Type for field '{}' not found in provided types map",
+            "Type for field '{}' not found in provided fields types map",
             initial_field_name
         ))?
     };
@@ -399,14 +399,12 @@ impl TypeName {
             "ByteVec" => Ok(Self::ByteVec),
             "Address" => Ok(Self::Address),
             s if s.starts_with("[") && s.ends_with(']') => {
-                // Example: [U256; 2]
+                // Examples: [U256; 2]
+                // Examples: [[U256; 2]; 2]
                 let inner = &s[1..s.len() - 1];
-                let (elem_type_str, elem_size) = if inner.contains(';') {
-                    let mut parts = inner.splitn(2, ';');
-                    let elem = parts.next().context("Missing first array elem")?.trim();
-                    let size_part = parts
-                        .next()
-                        .context("Missing second array elem")?
+                let (elem_type_str, elem_size) = if let Some((elem, size)) = inner.rsplit_once(';') {
+                    let elem = elem.trim();
+                    let size_part = size
                         .trim()
                         .parse::<usize>()
                         .context("Invalid array size in type annotation")?;

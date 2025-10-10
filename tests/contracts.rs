@@ -14,6 +14,8 @@ const CONTRACT_FILTERS: [(&str, &str); 2] = [
 
 // only return the result
 const CONTRACT_CALL_FILTERS: [(&str, &str); 1] = [(r#"(?s)^.*("returns":\s*\[[^\]]*\]).*$"#, "$1")];
+const CONTRACT_ASSERT_CALL_FILTER: [(&str, &str); 1] =
+    [(r#"(?s)(?m).*?^\s*("type":\s*"CallContract.*)$.*"#, "$1\n")];
 
 const TEST_CONFIG: &str = "./tests/contracts/test.config.yaml";
 
@@ -193,7 +195,7 @@ fn test_call_contract_debug_no_args() {
             "test",
         ],
         config,
-        vec![(r#"(?s)(?m).*?^\s*("type":\s*"CallContract.*)$.*"#, "$1\n")].into(),
+        CONTRACT_ASSERT_CALL_FILTER.to_vec().into(),
     );
 }
 
@@ -234,5 +236,48 @@ fn test_call_contract_debug_arg() {
         ],
         config,
         CONTRACT_CALL_FILTERS.to_vec().into(),
+    );
+}
+
+#[test]
+#[serial]
+fn test_call_contract_debug_all_args() {
+    let config = TEST_CONFIG.into();
+
+    let compile_path = perform_cmd_dev(
+        "call_debug_types_all_args",
+        &["contracts", "compile", "tests/contracts/all_types.ral"],
+        config,
+    );
+
+    let deploy_path = perform_cmd_dev(
+        "call_debug_types_all_args_deploy",
+        &["contracts", "deploy", "TestTypes", &compile_path],
+        config,
+    );
+
+    let contract_id = get_json_str_field_from_file(&deploy_path, "contractId");
+
+    perform_cmd_test_dev(
+        "call_debug_types_all_args",
+        &[
+            "contracts",
+            "call",
+            "TestTypes",
+            &contract_id,
+            &compile_path,
+            "test_args",
+            "--args",
+            "arg_vec=Coucou",
+            "arg_addr=1DrDyTr9RpRsQnDnXo2YRiPzPW4ooHX5LLoqXrqfMrpQH",
+            "arg_i256=-898",
+            "arg_u256=78678576576",
+            "arg_bool=false",
+            "arg_array=[[0,1], [2,3]]",
+            "arg_struct.counter=98",
+            "arg_struct.nested_struct.val=10000",
+        ],
+        config,
+        CONTRACT_ASSERT_CALL_FILTER.to_vec().into(),
     );
 }

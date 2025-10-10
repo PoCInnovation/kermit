@@ -1,7 +1,6 @@
 import "std/fungible_token_interface"
 
 // Defines a contract named `TokenFaucet`.
-// mdr
 // A contract is a collection of fields (its state) and functions.
 // Once deployed, a contract resides at a specific address on the Alephium blockchain.
 // Contract fields are permanently stored in contract storage.
