@@ -1,5 +1,6 @@
 use anyhow::{Context, Error, Result, bail};
 use i256::{I256, U256};
+use indexmap::IndexMap;
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de, ser};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -184,10 +185,10 @@ fn try_into_field(
         },
         HelperFieldType::Structure(helper_fields) => {
             if let TypeName::Structure((_struct_name, struct_fields)) = type_name {
-                let zipped_fields = helper_fields
+                let zipped_fields = struct_fields
                     .into_iter()
-                    .filter_map(|(k, v1)| struct_fields.get(&k).map(|v2| (k, (v1, v2))))
-                    .collect::<Vec<(String, (HelperFieldType, &(TypeName, bool)))>>();
+                    .filter_map(|(k, v1)| helper_fields.get(k).map(|v2| (k, (v1, v2.to_owned()))))
+                    .collect::<Vec<_>>();
 
                 if zipped_fields.is_empty() {
                     bail!(
@@ -199,7 +200,7 @@ fn try_into_field(
 
                 zipped_fields
                     .into_iter()
-                    .map(|(field_name, (value, type_name))| {
+                    .map(|(field_name, (type_name, value))| {
                         try_into_field(&field_name, value, struct_fields, Some(type_name))
                     })
                     .collect::<Result<Vec<_>>>()?
@@ -222,11 +223,18 @@ pub fn config_fields_to_vec(
     initial_fields: HashMap<String, HelperFieldType>,
     fields_types: &FieldsTypesMapMut,
 ) -> Result<FieldsVec> {
-    let values = initial_fields
+    let values = fields_types
         .into_iter()
-        .map(|(name, helper_field)| {
-            let val = try_into_field(&name, helper_field, fields_types, None)?;
-            Ok(val)
+        .map(|(name, _)| {
+            let helper_field = initial_fields
+                .get(name)
+                .context(format!(
+                    "Field '{}' not found in provided initial fields",
+                    name
+                ))?
+                .to_owned();
+
+            try_into_field(&name, helper_field, fields_types, None)
         })
         .collect::<Result<Vec<Vec<_>>>>()?;
     Ok(values.into_iter().flatten().collect())
@@ -375,7 +383,7 @@ pub enum TypeName {
     Address,
     Array((Box<TypeName>, usize)),
     Tuple(Vec<TypeName>),
-    Structure((String, HashMap<String, (TypeName, bool)>)),
+    Structure((String, FieldsTypesMapMut)),
     Other(String),
 }
 
@@ -402,7 +410,8 @@ impl TypeName {
                 // Examples: [U256; 2]
                 // Examples: [[U256; 2]; 2]
                 let inner = &s[1..s.len() - 1];
-                let (elem_type_str, elem_size) = if let Some((elem, size)) = inner.rsplit_once(';') {
+                let (elem_type_str, elem_size) = if let Some((elem, size)) = inner.rsplit_once(';')
+                {
                     let elem = elem.trim();
                     let size_part = size
                         .trim()
@@ -445,7 +454,7 @@ impl TypeName {
                             ),
                         ))
                     })
-                    .collect::<Result<HashMap<_, _>>>()?;
+                    .collect::<Result<IndexMap<_, _>>>()?;
                 Ok(Self::Structure((s.to_string(), fields)))
             },
             s => Ok(Self::Other(s.to_string())),

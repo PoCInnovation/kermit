@@ -1,4 +1,5 @@
 use anyhow::{Context, Result, anyhow, bail};
+use indexmap::IndexMap;
 use serde_json::{Value, value::RawValue};
 use std::collections::HashMap;
 
@@ -9,7 +10,7 @@ use crate::contracts_funcs::compile_project::compile_project_values::{RalphValue
 use crate::utils::crypto::is_hex_string;
 use crate::utils::fs::read_file;
 
-pub type FieldsTypesMapMut = HashMap<String, (TypeName, bool)>;
+pub type FieldsTypesMapMut = IndexMap<String, (TypeName, bool)>;
 pub type FieldsVec = Vec<(RalphValue, bool)>;
 
 #[allow(dead_code)]
@@ -186,7 +187,7 @@ impl CompiledContract {
                 let type_name = TypeName::from_name_and_structures(ty, &structs)?;
                 Ok((name.clone(), (type_name, *is_mutable)))
             })
-            .collect::<Result<HashMap<_, _>>>()?;
+            .collect::<Result<IndexMap<_, _>>>()?;
 
         let functions = contract
             .functions
@@ -296,7 +297,7 @@ impl TryFrom<RawCompileProject> for CompileProject {
                     name: raw_script.name,
                     bytecode_template: raw_script.bytecode_template,
                     bytecode_debug_patch: raw_script.bytecode_debug_patch,
-                    fields: HashMap::new(), // TODO
+                    fields: IndexMap::new(), // TODO
                 })
             })
             .collect::<Result<Vec<_>>>()?;
