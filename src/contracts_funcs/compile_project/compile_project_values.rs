@@ -1,10 +1,9 @@
-use anyhow::{Context, Error, Result, anyhow, bail};
+use anyhow::{Context, Error, Result, bail};
 use i256::{I256, U256};
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de, ser};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::convert::TryFrom;
-use std::hash::{Hash, Hasher};
 
 use crate::config::config_contracts::HelperFieldType;
 use crate::contracts_funcs::compile_project::compile_project::{
@@ -52,13 +51,9 @@ impl Serialize for RalphValue {
                 "Array",
                 serde_json::to_value(arr).map_err(ser::Error::custom)?,
             ),
-            RalphValue::Tuple(arr) => (
-                "Tuple",
-                serde_json::to_value(arr).map_err(ser::Error::custom)?,
-            ),
             _ => {
                 return Err(ser::Error::custom(
-                    "Unsupported RalphValue type (including Map and Structure)",
+                    "Unsupported RalphValue type (Structure, Tuple)",
                 ));
             },
         };
@@ -237,37 +232,6 @@ pub fn config_fields_to_vec(
     Ok(values.into_iter().flatten().collect())
 }
 
-impl Hash for RalphValue {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        // Hash the variant discriminant first so different variants
-        // with the same inner value don't collide
-        std::mem::discriminant(self).hash(state);
-        match self {
-            RalphValue::Bool(b) => b.hash(state),
-            RalphValue::U256(u) => u.hash(state),
-            RalphValue::I256(i) => i.hash(state),
-            RalphValue::ByteVec(bytes) => bytes.hash(state),
-            RalphValue::Address(addr) => addr.hash(state),
-            RalphValue::Structure(structure) => {
-                for (key, value) in structure {
-                    key.hash(state);
-                    value.hash(state);
-                }
-            },
-            RalphValue::Tuple(arr) => {
-                for value in arr {
-                    value.hash(state);
-                }
-            },
-            RalphValue::Array(arr) => {
-                for value in arr {
-                    value.hash(state);
-                }
-            },
-        }
-    }
-}
-
 impl TryFrom<&str> for RalphValue {
     type Error = anyhow::Error;
 
@@ -290,10 +254,10 @@ impl RalphValue {
                     match s {
                         "true" => Ok(Self::Bool(true)),
                         "false" => Ok(Self::Bool(false)),
-                        _ => Err(anyhow!("Expected 'true' or 'false' string for Bool")),
+                        _ => bail!("Expected 'true' or 'false' string for Bool"),
                     }
                 } else {
-                    Err(anyhow!("Expected bool value or 'true'/'false' string"))
+                    bail!("Expected bool value or 'true'/'false' string")
                 }
             },
             TypeName::U256 => {
@@ -324,7 +288,7 @@ impl RalphValue {
                 } else if let Some(s) = value.as_str() {
                     Self::try_into_hexified_str(s)
                 } else {
-                    Err(anyhow!("Expected ByteVec as array or string"))
+                    bail!("Expected ByteVec as array or string")
                 }
             },
             TypeName::Address => {
@@ -365,12 +329,13 @@ impl RalphValue {
             TypeName::Tuple(elems) => {
                 let arr = value.as_array().context("Expected Tuple as array")?;
                 if arr.len() != elems.len() {
-                    return Err(anyhow!(
+                    bail!(
                         "Tuple length mismatch: expected {}, got {}",
                         elems.len(),
                         arr.len()
-                    ));
+                    );
                 }
+
                 let values = arr
                     .iter()
                     .zip(elems.iter())
@@ -389,7 +354,7 @@ impl RalphValue {
                     return Ok(Self::ByteVec(decoded[1..].to_vec()));
                 }
 
-                Err(anyhow!("Unsupported type name or structure: {}", name))
+                bail!("Unsupported type name or structure: {}", name)
             },
         }
     }

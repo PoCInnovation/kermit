@@ -2,10 +2,10 @@ use std::process::Command;
 
 use insta::with_settings;
 use insta_cmd::{assert_cmd_snapshot, get_cargo_bin};
-use std::env;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
+use std::{env, fs};
 
 const BIN_NAME: &str = "kermit";
 const FILTERS: [(&str, &str); 1] = [(
@@ -37,9 +37,18 @@ pub fn perform_cmd_dev(name: &str, args: &[&str], config_name: Option<&str>) -> 
     // Write the command to the temporary file
     let mut file = File::create(&file_path).expect("Failed to create file");
     let output = Command::new(get_cargo_bin(BIN_NAME))
-        .args(args)
+        .args(new_args)
         .output()
         .expect("Failed to execute command");
+
+    if !output.status.success() {
+        panic!(
+            "Command execution failed with status: {}\nstderr: {}",
+            output.status,
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
     writeln!(file, "{}", String::from_utf8_lossy(&output.stdout)).expect("Failed to write to file");
 
     file_path.to_string_lossy().to_string()
@@ -66,4 +75,18 @@ pub fn perform_cmd_test_dev(
     }, {
         assert_cmd_snapshot!(name, Command::new(get_cargo_bin(BIN_NAME)).args(new_args));
     });
+}
+
+////////////////////////////////////
+
+pub fn get_json_str_field_from_file(path: &str, field_name: &str) -> String {
+    let data: serde_json::Value = {
+        let data = fs::read_to_string(&path).expect("Unable to read path file");
+        serde_json::from_str(&data).expect("Unable to parse path JSON")
+    };
+
+    data[field_name]
+        .as_str()
+        .expect(&format!("{field_name} not found in {path} JSON"))
+        .to_string()
 }

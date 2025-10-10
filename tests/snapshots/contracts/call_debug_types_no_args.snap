@@ -1,0 +1,21 @@
+---
+source: tests/utils.rs
+assertion_line: 76
+info:
+  program: kermit
+  args:
+    - "-n"
+    - dev
+    - "-c"
+    - "./tests/contracts/test.config.yaml"
+    - contracts
+    - call
+    - TestTypes
+    - 27qpaiWmens9tV8q3sUNgq5d3JV8qXdBC8UW3C4UmrS9d
+    - /tmp/call_debug_types_no_args
+    - test
+---
+"type": "CallContractSucceeded"
+}
+
+----- stderr -----

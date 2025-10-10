@@ -2,7 +2,7 @@ mod utils;
 
 use serial_test::serial;
 
-use crate::utils::{perform_cmd_dev, perform_cmd_test_dev};
+use crate::utils::{get_json_str_field_from_file, perform_cmd_dev, perform_cmd_test_dev};
 
 const CONTRACT_FILTERS: [(&str, &str); 2] = [
     (
@@ -11,6 +11,9 @@ const CONTRACT_FILTERS: [(&str, &str); 2] = [
     ),
     (r#""txId":\s*"[0-9a-f]+""#, r#""txId": <txId>"#),
 ];
+
+// only return the result
+const CONTRACT_CALL_FILTERS: [(&str, &str); 1] = [(r#"(?s)^.*("returns":\s*\[[^\]]*\]).*$"#, "$1")];
 
 const TEST_CONFIG: &str = "./tests/contracts/test.config.yaml";
 
@@ -151,5 +154,85 @@ fn test_deploy_contract_debug_types() {
         &["contracts", "deploy", "TestTypes", &path],
         config,
         CONTRACT_FILTERS.to_vec().into(),
+    );
+}
+
+///////////
+///
+/// Call Contract
+///
+///////////
+
+#[test]
+#[serial]
+fn test_call_contract_debug_no_args() {
+    let config = TEST_CONFIG.into();
+
+    let compile_path = perform_cmd_dev(
+        "call_debug_types_no_args",
+        &["contracts", "compile", "tests/contracts/all_types.ral"],
+        config,
+    );
+
+    let deploy_path = perform_cmd_dev(
+        "call_debug_types_no_args_deploy",
+        &["contracts", "deploy", "TestTypes", &compile_path],
+        config,
+    );
+
+    let contract_id = get_json_str_field_from_file(&deploy_path, "contractId");
+
+    perform_cmd_test_dev(
+        "call_debug_types_no_args",
+        &[
+            "contracts",
+            "call",
+            "TestTypes",
+            &contract_id,
+            &compile_path,
+            "test",
+        ],
+        config,
+        vec![(r#"(?s)(?m).*?^\s*("type":\s*"CallContract.*)$.*"#, "$1\n")].into(),
+    );
+}
+
+#[test]
+#[serial]
+fn test_call_contract_debug_arg() {
+    let config = TEST_CONFIG.into();
+
+    let compile_path = perform_cmd_dev(
+        "call_debug_types_arg",
+        &[
+            "contracts",
+            "compile",
+            "tests/contracts/test_dir/sub_contract.ral",
+        ],
+        config,
+    );
+
+    let deploy_path = perform_cmd_dev(
+        "call_debug_types_arg_deploy",
+        &["contracts", "deploy", "Sub", &compile_path],
+        config,
+    );
+
+    let contract_id = get_json_str_field_from_file(&deploy_path, "contractId");
+
+    perform_cmd_test_dev(
+        "call_debug_types_arg",
+        &[
+            "contracts",
+            "call",
+            "Sub",
+            &contract_id,
+            &compile_path,
+            "sub",
+            "--args",
+            "array=[2,1]",
+        ],
+        config,
+        CONTRACT_CALL_FILTERS.to_vec().into(),
     );
 }

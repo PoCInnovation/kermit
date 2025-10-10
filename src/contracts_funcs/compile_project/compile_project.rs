@@ -59,6 +59,57 @@ fn resolve_rec_type(
 
             resolve_rec_type(rest, value, struct_content, None)
         },
+        TypeName::Array((arr_type, arr_size)) => {
+            let vec_values: Vec<&str> = value
+                .trim_start_matches('[')
+                .trim_end_matches(']')
+                .split(',')
+                .map(|s| s.trim())
+                .filter(|s| !s.is_empty())
+                .collect();
+
+            if vec_values.len() != *arr_size {
+                bail!(
+                    "Array size mismatch for field '{}': expected {}, found {}",
+                    name,
+                    arr_size,
+                    vec_values.len()
+                );
+            }
+
+            let ralph_values = vec_values
+                .into_iter()
+                .map(|v| resolve_rec_type(name, v.to_string(), types, Some(arr_type)))
+                .collect::<Result<Vec<_>>>()?;
+
+            Ok(RalphValue::Array(ralph_values))
+        },
+        TypeName::Tuple(tuple_types) => {
+            let vec_values: Vec<&str> = value
+                .trim_start_matches('(')
+                .trim_end_matches(')')
+                .split(',')
+                .map(|s| s.trim())
+                .filter(|s| !s.is_empty())
+                .collect();
+
+            if vec_values.len() != tuple_types.len() {
+                bail!(
+                    "Tuple size mismatch for field '{}': expected {}, found {}",
+                    name,
+                    tuple_types.len(),
+                    vec_values.len()
+                );
+            }
+
+            let ralph_values = vec_values
+                .into_iter()
+                .zip(tuple_types.iter())
+                .map(|(v, ty)| resolve_rec_type(name, v.to_string(), types, Some(ty)))
+                .collect::<Result<Vec<_>>>()?;
+
+            Ok(RalphValue::Tuple(ralph_values))
+        },
         _ => {
             let ralph_value = if type_name.to_owned() == TypeName::ByteVec && !is_hex_string(&value)
             {
