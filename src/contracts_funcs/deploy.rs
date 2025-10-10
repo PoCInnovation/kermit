@@ -107,7 +107,7 @@ async fn build<T: DeserializeOwned>(
 
 async fn send_contract_tx(
     url: &str,
-    private_key: &Box<dyn PrivateKey>,
+    private_key: &dyn PrivateKey,
     address: &Address,
     bytecode: &str,
     issue_token_amount: u64,
@@ -161,7 +161,7 @@ pub async fn deploy_contract(
 
     Ok(send_contract_tx(
         url,
-        &account.private_key,
+        account.private_key.as_ref(),
         &account.address,
         &bytecode,
         network.settings.issue_token_amount.clone(),
