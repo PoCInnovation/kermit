@@ -6,6 +6,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
+use crate::account::address::Address;
 use crate::config::config_contracts::HelperFieldType;
 use crate::contracts_funcs::compile_project::compile_project::{
     FieldsTypesMapMut, FieldsVec, Struct,
@@ -226,7 +227,7 @@ pub fn config_fields_to_vec(
     let values = fields_types
         .into_iter()
         .map(|(name, _)| match name.as_str() {
-            "__stdInterfaceId" => Ok(vec![]), // Skip this field, it's automatically added
+            "__stdInterfaceId" => Ok(vec![]), // Skip this field, it's automatically added by compiler
             _ => {
                 let helper_field = initial_fields
                     .get(name)
@@ -248,8 +249,11 @@ impl TryFrom<&str> for RalphValue {
 
     fn try_from(s: &str) -> Result<Self> {
         if is_b58(s) {
-            return Ok(Self::Address(s[4..].to_string()));
+            let s = &s[4..]; // remove b58: prefix
+            let addr = Address::new_b58(s)?;
+            return Ok(Self::ByteVec(addr.bytes));
         }
+
         let hex_str = hex::encode(s.as_bytes());
         Self::try_into_hexified_str(&hex_str)
     }

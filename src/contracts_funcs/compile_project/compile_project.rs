@@ -107,10 +107,19 @@ fn resolve_rec_type(
             Ok((param_index, RalphValue::Array(ralph_values)))
         },
         _ => {
-            let ralph_value = if type_name.to_owned() == TypeName::ByteVec && !is_hex_string(&value)
+            let is_hex_string = is_hex_string(&value);
+            let ralph_value = if type_name.to_owned() == TypeName::ByteVec && !is_hex_string
             {
+                // Human readable  String
                 value.as_str().try_into()?
             } else {
+                // If it's still a string, but hexified, other types goes here
+                let value = if is_hex_string {
+                    value.strip_prefix("0x").unwrap_or(&value).to_string()
+                } else {
+                    value
+                };
+
                 RalphValue::from_typename_and_value(type_name, &Value::String(value))?
             };
 

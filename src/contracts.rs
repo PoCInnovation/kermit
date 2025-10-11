@@ -14,11 +14,11 @@ use crate::{
         call::call_contract,
         compile::compile,
         compile_project::{
-            compile_project::{load_compile_project, FieldsTypesMapMut, FieldsVec},
+            compile_project::{FieldsTypesMapMut, FieldsVec, load_compile_project},
             compile_project_values::config_fields_to_vec,
         },
         deploy::deploy_contract,
-        state::{code, state, parent, sub_contracts, sub_contracts_current_count},
+        state::{code, parent, state, sub_contracts, sub_contracts_current_count},
         test::test_contract,
     },
 };
@@ -175,7 +175,7 @@ pub enum ContractsSubcommands {
     },
     SubContractsCurrentCount {
         address: String,
-    }
+    },
 }
 
 fn get_contract_initial_fields(
@@ -362,19 +362,14 @@ impl ContractsSubcommands {
                 )
                 .await?
             },
-            Self::Code { code_hash } => {
-                code(url, &code_hash).await?
-            },
-            Self::Parent { address } => {
-                let address = Address::new(&address)?;
-                parent(url, &address).await?
-            },
-            Self::SubContracts { address, start, limit } => {
-                let address = Address::new(&address)?;
-                sub_contracts(url, &address, start, limit).await?
-            },
+            Self::Code { code_hash } => code(url, &code_hash).await?,
+            Self::Parent { address } => parent(url, &address).await?,
+            Self::SubContracts {
+                address,
+                start,
+                limit,
+            } => sub_contracts(url, &address, start, limit).await?,
             Self::SubContractsCurrentCount { address } => {
-                let address = Address::new(&address)?;
                 sub_contracts_current_count(url, &address).await?
             },
         };

@@ -1,0 +1,20 @@
+---
+source: tests/utils.rs
+assertion_line: 77
+info:
+  program: kermit
+  args:
+    - "-n"
+    - dev
+    - "-c"
+    - "./tests/contracts/test.config.yaml"
+    - contracts
+    - code
+    - 3461ebfaca02ad0a3f587a5b67a461c0cbd82d14261407b1d9277ed4ad129234
+---
+success: true
+exit_code: 0
+----- stdout -----
+"01011e01000202010dd321939f9e05160016015fa00016002a16012ba100a00002"
+
+----- stderr -----

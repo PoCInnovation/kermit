@@ -1,0 +1,41 @@
+---
+source: tests/utils.rs
+assertion_line: 77
+info:
+  program: kermit
+  args:
+    - "-n"
+    - dev
+    - "-c"
+    - "./tests/contracts/test.config.yaml"
+    - contracts
+    - state
+    - wNRFSjLge5TMdVMadZKsSXzJ1hcG325j1rAjzcXN4aes
+---
+success: true
+exit_code: 0
+----- stdout -----
+{
+  "address": <contractID>,
+  "asset": {
+    "attoAlphAmount": "100000000000000000",
+    "tokens": [
+      {
+        "amount": "100",
+        "id": <id>
+      }
+    ]
+  },
+  "bytecode": "01011e01000202010dd321939f9e05160016015fa00016002a16012ba100a00002",
+  "codeHash": "3461ebfaca02ad0a3f587a5b67a461c0cbd82d14261407b1d9277ed4ad129234",
+  "immFields": [],
+  "initialStateHash": "78eef6dd11e99a6f4311237efee71d26d24eab0ff90b133602d1c7f4a905735f",
+  "mutFields": [
+    {
+      "type": "U256",
+      "value": "0"
+    }
+  ]
+}
+
+----- stderr -----

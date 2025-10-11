@@ -83,3 +83,24 @@ contracts:
         asset:
           attoAlphAmount: "100000000000000000000"
           tokens: []
+  Bar:
+    initialFields:
+      value: 1024
+    initialAsset:
+      attoAlphAmount: "10"
+      tokens: []
+    inputAssets:
+      - address: 1DrDyTr9RpRsQnDnXo2YRiPzPW4ooHX5LLoqXrqfMrpQH
+        asset:
+          attoAlphAmount: "23400100000000000000000"
+          tokens: []
+  Foo:
+    initialFields: null
+    initialAsset:
+      attoAlphAmount: "100"
+      tokens: []
+    inputAssets:
+      - address: 1DrDyTr9RpRsQnDnXo2YRiPzPW4ooHX5LLoqXrqfMrpQH
+        asset:
+          attoAlphAmount: "300000000000000000"
+          tokens: []

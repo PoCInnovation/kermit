@@ -2,6 +2,7 @@ use std::process::Command;
 
 use insta::with_settings;
 use insta_cmd::{assert_cmd_snapshot, get_cargo_bin};
+use serde_json::Value;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
@@ -79,11 +80,14 @@ pub fn perform_cmd_test_dev(
 
 ////////////////////////////////////
 
+pub fn get_json(path: &str) -> Value
+{
+    let data = fs::read_to_string(&path).expect("Unable to read path file");
+    serde_json::from_str(&data).expect("Unable to parse path JSON")
+}
+
 pub fn get_json_str_field_from_file(path: &str, field_name: &str) -> String {
-    let data: serde_json::Value = {
-        let data = fs::read_to_string(&path).expect("Unable to read path file");
-        serde_json::from_str(&data).expect("Unable to parse path JSON")
-    };
+    let data = get_json(path); 
 
     data[field_name]
         .as_str()

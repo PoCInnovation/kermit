@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 
 use blake2::Blake2bVar;
 use blake2::digest::{Update, VariableOutput};
@@ -24,7 +24,7 @@ pub enum AddressType {
 pub struct Address {
     pub key: String,
     pub full_bytes: Vec<u8>,
-    pub bytes: Vec<u8>
+    pub bytes: Vec<u8>,
 }
 
 impl Serialize for Address {
@@ -56,15 +56,34 @@ impl Address {
             .finalize_variable(&mut hash_bytes)
             .context("Failed to finalize Blake2bVar")?;
         let hash_bytes = &hash_bytes[..32];
-    
+
         let mut address_bytes = Vec::with_capacity(1 + 32);
         address_bytes.push(AddressType::P2PKH as u8);
         address_bytes.extend_from_slice(hash_bytes);
-    
+
         Ok(Self {
             key: bs58::encode(&address_bytes).into_string(),
             full_bytes: address_bytes,
-            bytes: hash_bytes.into()
+            bytes: hash_bytes.into(),
+        })
+    }
+
+    pub fn new_b58(b58_str: &str) -> Result<Self> {
+        let address_bytes = bs58::decode(b58_str)
+            .into_vec()
+            .context("Invalid base58 string")?;
+        if address_bytes.len() < 33 {
+            bail!("Invalid address length");
+        }
+
+        let key = b58_str.to_string();
+        let full_bytes = address_bytes.clone();
+        let bytes = address_bytes[1..].to_vec();
+
+        Ok(Self {
+            key,
+            full_bytes,
+            bytes,
         })
     }
 
@@ -74,4 +93,3 @@ impl Address {
         hash % TOTAL_NUMBER_OF_GROUPS
     }
 }
-

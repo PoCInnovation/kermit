@@ -2,14 +2,19 @@ mod utils;
 
 use serial_test::serial;
 
-use crate::utils::{get_json_str_field_from_file, perform_cmd_dev, perform_cmd_test_dev};
+use crate::utils::{get_json, get_json_str_field_from_file, perform_cmd_dev, perform_cmd_test_dev};
 
-const CONTRACT_FILTERS: [(&str, &str); 2] = [
+const CONTRACT_FILTERS: [(&str, &str); 4] = [
     (
         r#""contractId":\s*"[A-Za-z0-9]+""#,
         r#""contractId": <contractID>"#,
     ),
+    (
+        r#""address":\s*"[A-Za-z0-9]+""#,
+        r#""address": <contractID>"#,
+    ),
     (r#""txId":\s*"[0-9a-f]+""#, r#""txId": <txId>"#),
+    (r#""id":\s*"[0-9a-f]+""#, r#""id": <id>"#),
 ];
 
 // only return the result
@@ -86,8 +91,6 @@ fn test_compile_no_import() {
         None,
     );
 }
-
-// todo: tests on the contract types
 
 ///////////
 ///
@@ -322,5 +325,83 @@ fn test_call_contract_debug_all_args_unordered() {
         ],
         config,
         CONTRACT_ASSERT_CALL_FILTER.to_vec().into(),
+    );
+}
+
+///////////
+///
+/// Contract Infos
+///
+///////////
+
+#[test]
+#[serial]
+fn test_state() {
+    let config = TEST_CONFIG.into();
+
+    let compile_path = perform_cmd_dev(
+        "state",
+        &[
+            "contracts",
+            "compile",
+            "tests/contracts/test_dir/sub_contract.ral",
+        ],
+        config,
+    );
+
+    let deploy_path = perform_cmd_dev(
+        "state_deploy",
+        &["contracts", "deploy", "Sub", &compile_path],
+        config,
+    );
+
+    let contract_id = get_json_str_field_from_file(&deploy_path, "contractId");
+
+    perform_cmd_test_dev(
+        "state",
+        &["contracts", "state", &contract_id],
+        config,
+        CONTRACT_FILTERS.to_vec().into(),
+    );
+}
+
+#[test]
+#[serial]
+fn test_code() {
+    let config = TEST_CONFIG.into();
+
+    let compile_path = perform_cmd_dev(
+        "code",
+        &[
+            "contracts",
+            "compile",
+            "tests/contracts/test_dir/sub_contract.ral",
+        ],
+        config,
+    );
+
+    let _deploy_path = perform_cmd_dev(
+        "code_deploy",
+        &["contracts", "deploy", "Sub", &compile_path],
+        config,
+    );
+
+    let data = get_json(&compile_path);
+
+    let code = data["contracts"]
+        .as_array()
+        .unwrap()
+        .get(0)
+        .unwrap()
+        .as_object()
+        .unwrap()["codeHash"]
+        .as_str()
+        .unwrap();
+
+    perform_cmd_test_dev(
+        "code",
+        &["contracts", "code", code],
+        config,
+        CONTRACT_FILTERS.to_vec().into(),
     );
 }
