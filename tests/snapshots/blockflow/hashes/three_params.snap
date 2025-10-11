@@ -1,0 +1,22 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - blockflow
+    - hashes
+    - "1"
+    - "1"
+    - "0"
+---
+success: true
+exit_code: 0
+----- stdout -----
+{
+  "headers": [
+    "d464261ba4c3b40d96ecd4f2e291c60b6ad1962b800cf2368dacdc7c53072ec5"
+  ]
+}
+
+----- stderr -----

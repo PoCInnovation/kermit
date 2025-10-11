@@ -1,0 +1,20 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - blockflow
+    - block-with-events
+---
+success: false
+exit_code: 2
+----- stdout -----
+
+----- stderr -----
+error: the following required arguments were not provided:
+  <BLOCK_HASH>
+
+Usage: kermit blockflow block-with-events <BLOCK_HASH>
+
+For more information, try '--help'.

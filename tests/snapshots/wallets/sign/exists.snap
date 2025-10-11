@@ -1,0 +1,19 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - wallets
+    - sign
+    - wallet
+    - bdaf9dc514ce7d34b6474b8ca10a3dfb93ba997cb9d5ff1ea724ebe2af48abe5
+---
+success: true
+exit_code: 0
+----- stdout -----
+{
+  "signature": "806a96f93c060562cfd49795e7ea6d6718abca5e01748e326d97b9ee1a8d83465056281cb6d12679e5711a74270684f7cf8c3e49ddb22919baf26963822d70e3"
+}
+
+----- stderr -----

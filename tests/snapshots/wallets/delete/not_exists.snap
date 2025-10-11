@@ -1,0 +1,17 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - wallets
+    - delete
+    - foo
+    - "1234"
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: foo not found

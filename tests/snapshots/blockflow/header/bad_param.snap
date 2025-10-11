@@ -1,0 +1,16 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - blockflow
+    - header
+    - foo
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: Invalid value for: path parameter block_hash (Invalid hex string: foo: foo)

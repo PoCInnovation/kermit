@@ -1,0 +1,18 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - transactions
+    - build
+    - 02ff46d897b529927bd1006cf75fb9e005d4f47181ec37db9dc82548218ff88106
+    - 17cBiTcWhung3WDLuc9ja5Y7BMus5Q7CD9wYBxS1r1P2R
+    - "100"
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: Tx output value is too small, avoid spreading dust

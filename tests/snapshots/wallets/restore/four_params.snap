@@ -1,0 +1,21 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - wallets
+    - restore
+    - wallet
+    - "1234"
+    - history smoke among improve cruise kidney brief jealous carbon office will gallery amateur kit motion ethics attack dignity example huge thought depth funny this
+    - "--is-miner"
+---
+success: true
+exit_code: 0
+----- stdout -----
+{
+  "walletName": "wallet"
+}
+
+----- stderr -----

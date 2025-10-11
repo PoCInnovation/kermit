@@ -1,0 +1,18 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - wallets
+    - transfer
+    - wallet
+    - 1DrDyTr9RpRsQnDnXo2YRiPzPW4ooHX5LLoqXrqfM
+    - "1000000000000000000"
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: Invalid value for: body (Invalid address 1DrDyTr9RpRsQnDnXo2YRiPzPW4ooHX5LLoqXrqfM at index 28: decoding failure)

@@ -1,6 +1,6 @@
 ---
-source: tests/utils.rs
-assertion_line: 13
+source: tests/common/perform_cmd.rs
+assertion_line: 38
 info:
   program: kermit
   args:
@@ -10,6 +10,14 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-[]
+[
+  {
+    "peer": "1.2.3.4",
+    "status": {
+      "type": "Banned",
+      "until": "<UNTIL>"
+    }
+  }
+]
 
 ----- stderr -----

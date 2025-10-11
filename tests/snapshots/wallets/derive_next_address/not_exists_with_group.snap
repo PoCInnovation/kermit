@@ -1,0 +1,18 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - wallets
+    - derive-next-address
+    - foo
+    - "--group"
+    - "2"
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: foo not found

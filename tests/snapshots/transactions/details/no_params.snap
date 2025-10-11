@@ -1,0 +1,20 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - transactions
+    - details
+---
+success: false
+exit_code: 2
+----- stdout -----
+
+----- stderr -----
+error: the following required arguments were not provided:
+  <TX_ID>
+
+Usage: kermit transactions details <TX_ID>
+
+For more information, try '--help'.

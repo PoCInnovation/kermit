@@ -1,0 +1,22 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - miners
+    - addresses
+---
+success: true
+exit_code: 0
+----- stdout -----
+{
+  "addresses": [
+    "1FsroWmeJPBhcPiUr37pWXdojRBe6jdey9uukEXk1TheA",
+    "1CQvSXsmM5BMFKguKDPpNUfw1idiut8UifLtT8748JdHc",
+    "193maApeJWrz9GFwWCfa982ccLARVE9Y1WgKSJaUs7UAx",
+    "16fZKYPCZJv2TP3FArA9FLUQceTS9U8xVnSjxFG9MBKyY"
+  ]
+}
+
+----- stderr -----

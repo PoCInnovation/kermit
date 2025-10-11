@@ -1,0 +1,22 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - wallets
+    - transfer
+    - wallet
+---
+success: false
+exit_code: 2
+----- stdout -----
+
+----- stderr -----
+error: the following required arguments were not provided:
+  <TO_ADDRESS>
+  <AMOUNT>
+
+Usage: kermit wallets transfer <WALLET_NAME> <TO_ADDRESS> <AMOUNT>
+
+For more information, try '--help'.

@@ -1,0 +1,17 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - transactions
+    - tx-id-from-outputref
+    - "1022114513"
+    - 5d892f71e43b262733eaa99188a14f017fe006188f76cc0cc6ff8a0eb1ebab47
+---
+success: true
+exit_code: 0
+----- stdout -----
+"482784abee65d18a09f457b8125f045580c12bfc462318b3f98337a8c77d2c66"
+
+----- stderr -----

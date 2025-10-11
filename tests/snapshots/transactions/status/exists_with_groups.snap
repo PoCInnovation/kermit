@@ -1,0 +1,27 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - transactions
+    - status
+    - 482784abee65d18a09f457b8125f045580c12bfc462318b3f98337a8c77d2c66
+    - "--from-group"
+    - "3"
+    - "--to-group"
+    - "3"
+---
+success: true
+exit_code: 0
+----- stdout -----
+{
+  "blockHash": "f344b3dd45f39d62cfd200cfa3312c080018102908787c5565b8c8af3647368f",
+  "chainConfirmations": 1,
+  "fromGroupConfirmations": 1,
+  "toGroupConfirmations": 1,
+  "txIndex": 0,
+  "type": "Confirmed"
+}
+
+----- stderr -----

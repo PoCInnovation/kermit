@@ -1,20 +1,45 @@
-use std::process::Command;
+mod common;
 
-use insta::with_settings;
-use insta_cmd::{assert_cmd_snapshot, get_cargo_bin};
+#[test]
+fn test_address_zero() {
+    perform_cmd_test!("address_zero", &["utils", "address-zero"]);
+}
 
-const BIN_NAME: &str = "kermit";
-const FILTERS: [(&str, &str); 1] = [(
-    r#""cliqueId":\s*"[0-9a-f]+""#,
-    r#""cliqueId": "<CLIQUE_ID>""#,
-)];
+#[test]
+fn test_hash_zero() {
+    perform_cmd_test!("hash_zero", &["utils", "hash-zero"]);
+}
 
-pub fn perform_cmd_test(name: &str, args: &[&str]) {
-    with_settings!({
-        prepend_module_to_snapshot => false,
-        snapshot_path => format!("snapshots/{}", module_path!().split("::").next().unwrap()),
-        filters => FILTERS,
-    }, {
-        assert_cmd_snapshot!(name, Command::new(get_cargo_bin(BIN_NAME)).args(args));
-    });
+mod convert {
+    use crate::perform_cmd_test;
+
+    #[test]
+    fn test_from_atto() {
+        perform_cmd_test!("from_atto", &["utils", "convert", "1", "atto"]);
+    }
+
+    #[test]
+    fn test_from_gatto() {
+        perform_cmd_test!("from_gatto", &["utils", "convert", "1", "gatto"]);
+    }
+
+    #[test]
+    fn test_from_alph() {
+        perform_cmd_test!("from_alph", &["utils", "convert", "1", "alph"]);
+    }
+
+    #[test]
+    fn test_missing_param() {
+        perform_cmd_test!("missing_param", &["utils", "convert", "100"]);
+    }
+
+    #[test]
+    fn test_no_params() {
+        perform_cmd_test!("no_params", &["utils", "convert"]);
+    }
+
+    #[test]
+    fn test_bad_param() {
+        perform_cmd_test!("bad_param", &["utils", "convert", "100", "foo"]);
+    }
 }

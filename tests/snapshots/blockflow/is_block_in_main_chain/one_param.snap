@@ -1,0 +1,16 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - blockflow
+    - is-block-in-main-chain
+    - f344b3dd45f39d62cfd200cfa3312c080018102908787c5565b8c8af3647368f
+---
+success: true
+exit_code: 0
+----- stdout -----
+true
+
+----- stderr -----

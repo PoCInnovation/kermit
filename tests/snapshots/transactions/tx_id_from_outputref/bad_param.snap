@@ -1,0 +1,19 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - transactions
+    - tx-id-from-outputref
+    - foo
+    - 91079afe4f5d56d09fab2fa60a9369dcf145eb982aece94bf81d00c537e03231
+---
+success: false
+exit_code: 2
+----- stdout -----
+
+----- stderr -----
+error: invalid value 'foo' for '<HINT>': invalid digit found in string
+
+For more information, try '--help'.
