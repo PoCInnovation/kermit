@@ -3,13 +3,13 @@ use anyhow::{Context, Result};
 use serde_json::{Value, json};
 
 use crate::{
+    common::post,
     config::config_contracts::{Asset, InputAsset},
     contracts_funcs::{
         compile_project::compile_project::{CompiledContract, FieldsVec, args_to_fields_vec},
         deploy_bytecode::{get_fields_bytecode, get_fields_vec},
         state::{ContractState, state},
     },
-    utils::post,
 };
 
 async fn get_contract_states(
@@ -60,6 +60,5 @@ pub async fn test_contract(
 
     Ok(post(url, "/contracts/test-contract", body)
         .await?
-        .context("Empty reply")?
-        .data)
+        .context("Empty reply")?)
 }

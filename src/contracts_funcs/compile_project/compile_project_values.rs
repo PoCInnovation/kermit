@@ -12,7 +12,7 @@ use crate::contracts_funcs::compile_project::compile_project::{
     FieldsTypesMapMut, FieldsVec, Struct,
 };
 use crate::contracts_funcs::compile_project::compile_project_deserialize::FieldValueHelper;
-use crate::utils::crypto::{is_b58, is_hex_string};
+use crate::common::crypto::{is_b58, is_hex_string};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RalphValue {

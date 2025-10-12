@@ -1,8 +1,8 @@
-mod utils;
+mod common;
 
 use serial_test::serial;
 
-use crate::utils::{get_json, get_json_str_field_from_file, perform_cmd_dev, perform_cmd_test_dev};
+use crate::common::{get_json, get_json_str_field_from_file, perform_cmd_dev, perform_cmd_test_dev};
 
 const CONTRACT_FILTERS: [(&str, &str); 4] = [
     (

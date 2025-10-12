@@ -2,11 +2,11 @@ use anyhow::Result;
 use clap::Parser;
 use serde_json::json;
 
-use crate::utils::{get, post, print_output};
+use crate::common::{get, post, print_output};
 
 /// CLI arguments for `kermit infos`.
 #[derive(Parser)]
-pub enum InfosSubcommands {
+pub(crate) enum InfosSubcommands {
     /// Get info about that node.
     #[command(visible_alias = "n")]
     Node,
@@ -61,7 +61,7 @@ pub enum InfosSubcommands {
 }
 
 impl InfosSubcommands {
-    pub async fn run(self, url: &str) -> Result<()> {
+    pub(crate) async fn run(self, url: &str) -> Result<()> {
         let output = match self {
             Self::Node => get(url, "/infos/node").await?,
             Self::Version => get(url, "/infos/version").await?,

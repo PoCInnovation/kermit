@@ -1,0 +1,16 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - miners
+    - update-addresses
+    - 1FsroWmeJPBhcPiUr37pWXdojRBe6jdey9uukEXk1TheA
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: Wrong number of addresses, expected 4, got 1

@@ -1,0 +1,21 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - wallets
+    - address-info
+---
+success: false
+exit_code: 2
+----- stdout -----
+
+----- stderr -----
+error: the following required arguments were not provided:
+  <WALLET_NAME>
+  <ADDRESS>
+
+Usage: kermit wallets address-info <WALLET_NAME> <ADDRESS>
+
+For more information, try '--help'.

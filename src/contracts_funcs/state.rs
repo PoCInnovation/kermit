@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::{
-    config::config_contracts::Asset,
-    contracts_funcs::compile_project::compile_project_values::RalphValue, utils::get,
+    common::get, config::config_contracts::Asset,
+    contracts_funcs::compile_project::compile_project_values::RalphValue,
 };
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -23,24 +23,21 @@ pub async fn state(url: &str, contract_id: &str) -> Result<Value> {
     let endpoint = format!("/contracts/{}/state", contract_id);
     Ok(get::<Value>(url, endpoint.as_str())
         .await?
-        .context("Empty reply")?
-        .data)
+        .context("Empty reply")?)
 }
 
 pub async fn code(url: &str, code_hash: &str) -> Result<Value> {
     let endpoint: String = format!("/contracts/{code_hash}/code");
     Ok(get::<Value>(url, endpoint.as_str())
         .await?
-        .context("Empty reply")?
-        .data)
+        .context("Empty reply")?)
 }
 
 pub async fn parent(url: &str, contract_id: &str) -> Result<Value> {
     let endpoint: String = format!("/contracts/{contract_id}/parent");
     Ok(get::<Value>(url, endpoint.as_str())
         .await?
-        .context("Empty reply")?
-        .data)
+        .context("Empty reply")?)
 }
 
 pub async fn sub_contracts(
@@ -57,14 +54,12 @@ pub async fn sub_contracts(
     };
     Ok(get::<Value>(url, endpoint.as_str())
         .await?
-        .context("Empty reply")?
-        .data)
+        .context("Empty reply")?)
 }
 
 pub async fn sub_contracts_current_count(url: &str, contract_id: &str) -> Result<Value> {
     let endpoint: String = format!("/contracts/{contract_id}/sub-contracts/current-count");
     Ok(get::<Value>(url, endpoint.as_str())
         .await?
-        .context("Empty reply")?
-        .data)
+        .context("Empty reply")?)
 }

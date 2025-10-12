@@ -1,0 +1,19 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - utils
+    - convert
+    - "1"
+    - atto
+---
+success: true
+exit_code: 0
+----- stdout -----
+atto:	1
+gatto:	0.000000001
+alph:	0.000000000000000001
+
+----- stderr -----

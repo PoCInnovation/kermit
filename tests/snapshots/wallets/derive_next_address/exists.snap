@@ -1,0 +1,21 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - wallets
+    - derive-next-address
+    - wallet
+---
+success: true
+exit_code: 0
+----- stdout -----
+{
+  "address": "15LmMkBiK2QXyWfsbMQB5gSmCXzuJsdwoCBhmrNwDfrQ9",
+  "group": 3,
+  "path": "m/44'/1234'/0'/0/1",
+  "publicKey": "0331d2937ced5de208b4d442406c8e61165545ee4d11ee6091d96653397f3b9987"
+}
+
+----- stderr -----

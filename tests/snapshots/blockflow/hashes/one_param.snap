@@ -1,0 +1,22 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - blockflow
+    - hashes
+    - "1"
+---
+success: false
+exit_code: 2
+----- stdout -----
+
+----- stderr -----
+error: the following required arguments were not provided:
+  <TO_GROUP>
+  <HEIGHT>
+
+Usage: kermit blockflow hashes <FROM_GROUP> <TO_GROUP> <HEIGHT>
+
+For more information, try '--help'.

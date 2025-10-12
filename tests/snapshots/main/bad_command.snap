@@ -1,17 +1,17 @@
 ---
-source: tests/utils.rs
-assertion_line: 13
+source: tests/common/perform_cmd.rs
+assertion_line: 38
 info:
   program: kermit
   args:
-    - invalid-command
+    - bad-command
 ---
 success: false
 exit_code: 2
 ----- stdout -----
 
 ----- stderr -----
-error: unrecognized subcommand 'invalid-command'
+error: unrecognized subcommand 'bad-command'
 
 Usage: kermit [OPTIONS] <COMMAND>
 

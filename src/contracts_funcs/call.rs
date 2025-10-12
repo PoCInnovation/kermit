@@ -1,11 +1,11 @@
-use anyhow::{Result, Context};
+use anyhow::{Context, Result};
 use serde_json::{Value, json};
 
 use crate::{
     account::address::Address,
+    common::post,
     config::config_contracts::InputAsset,
     contracts_funcs::compile_project::compile_project::{CompiledContract, args_to_fields_vec},
-    utils::post,
 };
 
 pub async fn call_contract(
@@ -35,6 +35,5 @@ pub async fn call_contract(
 
     Ok(post(url, "/contracts/call-contract", body)
         .await?
-        .context("Empty reply")?
-        .data)
+        .context("Empty reply")?)
 }

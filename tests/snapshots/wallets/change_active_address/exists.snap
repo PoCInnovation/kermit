@@ -1,0 +1,17 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - wallets
+    - change-active-address
+    - wallet
+    - 1F8hPMrEHKhKqpScWJjeJGiQSaBJE6VnqEBAHb5rVFfoP
+---
+success: true
+exit_code: 0
+----- stdout -----
+Success!
+
+----- stderr -----

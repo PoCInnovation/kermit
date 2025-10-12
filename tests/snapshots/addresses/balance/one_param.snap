@@ -1,0 +1,22 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - addresses
+    - balance
+    - 1DrDyTr9RpRsQnDnXo2YRiPzPW4ooHX5LLoqXrqfMrpQH
+---
+success: true
+exit_code: 0
+----- stdout -----
+{
+  "balance": "1000000000000000000000000",
+  "balanceHint": "1000000 ALPH",
+  "lockedBalance": "0",
+  "lockedBalanceHint": "0 ALPH",
+  "utxoNum": 1
+}
+
+----- stderr -----

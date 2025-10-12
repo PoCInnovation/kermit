@@ -3,12 +3,11 @@ use indexmap::IndexMap;
 use serde_json::{Value, value::RawValue};
 use std::collections::HashMap;
 
+use crate::common::{crypto::is_hex_string, fs::read_file};
 use crate::contracts_funcs::compile_project::compile_project_deserialize::{
     RawCompileProject, RawContract, RawFunction, StructDef,
 };
 use crate::contracts_funcs::compile_project::compile_project_values::{RalphValue, TypeName};
-use crate::utils::crypto::is_hex_string;
-use crate::utils::fs::read_file;
 
 pub type FieldsTypesMapMut = IndexMap<String, (TypeName, bool)>;
 pub type FieldsVec = Vec<(RalphValue, bool)>;
@@ -62,8 +61,9 @@ fn resolve_rec_type(
                         "Unknown nested structure name in {name}: {nested_struct_name}"
                     ))?
                 {
-                    let (sub_nested_index, value) = resolve_rec_type(remaining_dots, value, nested_struct_types, None)?;
-                    return Ok((param_index + sub_index + sub_nested_index, value))
+                    let (sub_nested_index, value) =
+                        resolve_rec_type(remaining_dots, value, nested_struct_types, None)?;
+                    return Ok((param_index + sub_index + sub_nested_index, value));
                 } else {
                     bail!(
                         "Field '{}' in structure '{:?}' is not a structure",
@@ -108,8 +108,7 @@ fn resolve_rec_type(
         },
         _ => {
             let is_hex_string = is_hex_string(&value);
-            let ralph_value = if type_name.to_owned() == TypeName::ByteVec && !is_hex_string
-            {
+            let ralph_value = if type_name.to_owned() == TypeName::ByteVec && !is_hex_string {
                 // Human readable  String
                 value.as_str().try_into()?
             } else {

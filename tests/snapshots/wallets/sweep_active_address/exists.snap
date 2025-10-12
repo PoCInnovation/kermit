@@ -1,0 +1,25 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - wallets
+    - sweep-active-address
+    - wallet
+    - 1DrDyTr9RpRsQnDnXo2YRiPzPW4ooHX5LLoqXrqfMrpQH
+---
+success: true
+exit_code: 0
+----- stdout -----
+{
+  "results": [
+    {
+      "fromGroup": 2,
+      "toGroup": 0,
+      "txId": "76777423c638363fffbace407eb80f74f7b4de6c0e9485fe57f47e8655688d20"
+    }
+  ]
+}
+
+----- stderr -----

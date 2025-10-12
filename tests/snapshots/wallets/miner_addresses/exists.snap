@@ -1,0 +1,45 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - wallets
+    - miner-addresses
+    - wallet
+---
+success: true
+exit_code: 0
+----- stdout -----
+[
+  {
+    "addresses": [
+      {
+        "address": "15DKFiZ1oaVWCDbvQBxv5tPGU9C2Zb62iSPKMYcXXFhjg",
+        "group": 0,
+        "path": "m/44'/1234'/0'/0/2",
+        "publicKey": "02c72862952c0f90802780a6fe56794a5cc0afd2ff266909389814da6e079f6e2c"
+      },
+      {
+        "address": "1Fx6yWbFSCSKgH3jRthQHKrGLs5A9tvJee84iGuX4civP",
+        "group": 1,
+        "path": "m/44'/1234'/0'/0/5",
+        "publicKey": "0355bb5ebabcb5ccd0bd13919073e78e1cc0a19e0cbb143153777b0a71007d1c65"
+      },
+      {
+        "address": "1F8hPMrEHKhKqpScWJjeJGiQSaBJE6VnqEBAHb5rVFfoP",
+        "group": 2,
+        "path": "m/44'/1234'/0'/0/0",
+        "publicKey": "038a6fed523a2c907cfb3ed08a8ddb0ed1ae081f8169f0683709892c47f9a70f16"
+      },
+      {
+        "address": "15LmMkBiK2QXyWfsbMQB5gSmCXzuJsdwoCBhmrNwDfrQ9",
+        "group": 3,
+        "path": "m/44'/1234'/0'/0/1",
+        "publicKey": "0331d2937ced5de208b4d442406c8e61165545ee4d11ee6091d96653397f3b9987"
+      }
+    ]
+  }
+]
+
+----- stderr -----

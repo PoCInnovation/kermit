@@ -2,9 +2,9 @@ use anyhow::{Result, bail};
 use serde_json::Value;
 
 use crate::{
+    common::fs::read_file,
     contracts::CompilerOptions,
     contracts_funcs::source_info::{CodeInfo, SourceInfo, SourceKind},
-    utils::fs::read_file,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};

@@ -1,0 +1,22 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - wallets
+    - restore
+---
+success: false
+exit_code: 2
+----- stdout -----
+
+----- stderr -----
+error: the following required arguments were not provided:
+  <WALLET_NAME>
+  <PASSWORD>
+  <MNEMONIC>
+
+Usage: kermit wallets restore <WALLET_NAME> <PASSWORD> <MNEMONIC>
+
+For more information, try '--help'.

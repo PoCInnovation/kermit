@@ -9,7 +9,7 @@ use crate::{
         address::Address,
         signature::{GLSecp256k1PrivateKey, PrivateKey},
     },
-    config::config::{Config, Network},
+    config::config::Config,
     contracts_funcs::{
         call::call_contract,
         compile::compile,
@@ -128,7 +128,11 @@ pub enum ContractsSubcommands {
         contract_name: String,
         compile_output_path: String,
         #[arg(long, env)]
-        private_key: Option<String>,
+        private_key: String,
+
+        /// "Amount of tokens to issue"
+        #[arg(long, default_value_t = 100)]
+        issue_token_amount: u64,
     },
     #[command(visible_alias = "s")]
     State {
@@ -154,7 +158,7 @@ pub enum ContractsSubcommands {
         #[arg(long = "args", value_parser = parse_key_val, num_args = 1..)]
         args: Vec<(String, String)>,
         #[arg(long, env)]
-        private_key: Option<String>,
+        private_key: String,
         #[arg(long = "interested-contracts", value_name = "CONTRACT_ADDRESS", num_args = 0.., help = "List of existing contracts to include in the test")]
         exiting_contracts: Vec<String>,
         #[arg(long, help = "Block hash to use for the call")]
@@ -195,40 +199,8 @@ fn get_contract_initial_fields(
     config_fields_to_vec(config_contract.initial_fields, contract_fields_types)
 }
 
-fn load_private_key(pk_path: &Option<String>, network: &Network) -> Result<Box<dyn PrivateKey>> {
-    let private_key = if let Some(path) = pk_path {
-        let private_key: Box<dyn PrivateKey> = Box::new(GLSecp256k1PrivateKey::new(&path)?);
-        Some(private_key)
-    } else {
-        None
-    };
-
-    let private_key = if let Some(private_key) = private_key {
-        private_key
-    } else {
-        let private_keys = network
-            .private_keys
-            .as_ref()
-            .context("No private keys found in devnet configuration")?;
-
-        let private_key = private_keys
-            .get(0)
-            .context("No private keys found in devnet configuration")?;
-
-        Box::new(GLSecp256k1PrivateKey::new(private_key)?)
-    };
-
-    Ok(private_key)
-}
-
 impl ContractsSubcommands {
-    pub async fn run(
-        self,
-        url: &str,
-        config: &Config,
-        network: &Network,
-        network_id: NetworkType,
-    ) -> Result<()> {
+    pub async fn run(self, url: &str, config: &Config, network_id: NetworkType) -> Result<()> {
         let value: Value = match self {
             Self::Compile {
                 file_path,
@@ -252,6 +224,7 @@ impl ContractsSubcommands {
                 contract_name,
                 compile_output_path,
                 private_key,
+                issue_token_amount,
             } => {
                 let compiled_project = load_compile_project(&compile_output_path)?;
 
@@ -265,15 +238,16 @@ impl ContractsSubcommands {
                             &contract.fields_types,
                         )?;
 
-                        let private_key = load_private_key(&private_key, network)?;
+                        let private_key: Box<dyn PrivateKey> =
+                            Box::new(GLSecp256k1PrivateKey::new(&private_key)?);
 
                         deploy_contract(
                             url,
                             private_key,
-                            network,
                             network_id,
                             &contract,
                             initial_fields,
+                            issue_token_amount,
                         )
                         .await?
                     },
@@ -346,7 +320,8 @@ impl ContractsSubcommands {
                     .context(format!("Contract '{}' not found in config", contract_name))?
                     .to_owned();
 
-                let private_key = load_private_key(&private_key, network)?;
+                let private_key: Box<dyn PrivateKey> =
+                    Box::new(GLSecp256k1PrivateKey::new(&private_key)?);
                 let address = Address::new(&private_key.get_public_key()?)?;
 
                 call_contract(

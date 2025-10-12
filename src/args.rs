@@ -1,37 +1,49 @@
 use clap::{Parser, Subcommand, ValueHint};
 
 use crate::{
-    address::AddressSubcommands,
-    contracts::{ContractsSubcommands, NetworkType},
-    events::EventsSubcommands,
-    infos::InfosSubcommands,
-    transactions::TransactionsSubcommands,
-    wallet::WalletsSubcommands,
+    addresses::AddressesSubcommands, blockflow::BlockflowSubcommands,
+    contracts::{ContractsSubcommands, NetworkType}, infos::InfosSubcommands, miners::MinersSubcommands,
+    transactions::TransactionsSubcommands, utils::UtilsSubcommands, wallets::WalletsSubcommands,
 };
 
 #[derive(Parser)]
 #[command(version)]
-pub struct Kermit {
-    #[clap(long, short, env, value_hint = ValueHint::Url, help = "Node address; use this only if you want to override the URL from the selected network type")]
-    pub url: Option<String>,
-
-    #[arg(long, short, help = "Path to the config YAML file", default_value_t=String::from("./alephium.config.yaml"))]
-    pub config_file_path: String,
-
-    #[arg(long, short, value_enum, default_value_t = NetworkType::Dev)]
-    pub network: NetworkType,
+pub(crate) struct Kermit {
+    #[clap(long, short, env, value_hint = ValueHint::Url,
+    default_value = "http://localhost:22973")]
+    pub url: String,
 
     #[clap(subcommand)]
     pub cmd: KermitSubcommand,
 }
 
 #[derive(Subcommand)]
-pub enum KermitSubcommand {
-    /// Event for contract, block and hash.
-    #[command(visible_alias = "e")]
-    Events {
+pub(crate) enum KermitSubcommand {
+    /// Address management utilities.
+    #[command(visible_alias = "a")]
+    Addresses {
         #[command(subcommand)]
-        command: EventsSubcommands,
+        command: AddressesSubcommands,
+    },
+
+    /// Blockflow data retrieval utilities.
+    #[command(visible_alias = "b")]
+    Blockflow {
+        #[command(subcommand)]
+        command: BlockflowSubcommands,
+    },
+
+    /// Contract management utilities.
+    #[command(visible_alias = "c")]
+    Contracts {
+        #[command(subcommand)]
+        command: ContractsSubcommands,
+
+        #[arg(long, short, help = "Path to the config YAML file", default_value_t=String::from("./alephium.config.yaml"))]
+        config_file_path: String,
+
+        #[arg(long, short, value_enum, default_value_t = NetworkType::Dev)]
+        network: NetworkType,
     },
 
     /// Infos about node and hashrate.
@@ -39,6 +51,20 @@ pub enum KermitSubcommand {
     Infos {
         #[command(subcommand)]
         command: InfosSubcommands,
+    },
+
+    /// Miners management utilities.
+    #[command(visible_alias = "m")]
+    Miners {
+        #[command(subcommand)]
+        command: MinersSubcommands,
+    },
+
+    /// Utilities (Address zero, Hash zero, Conversion atto).
+    #[command(visible_alias = "u")]
+    Utils {
+        #[command(subcommand)]
+        command: UtilsSubcommands,
     },
 
     /// Transactions management utilities
@@ -53,19 +79,5 @@ pub enum KermitSubcommand {
     Wallets {
         #[command(subcommand)]
         command: WalletsSubcommands,
-    },
-
-    /// Address management utilities.
-    #[command(visible_alias = "a")]
-    Address {
-        #[command(subcommand)]
-        command: AddressSubcommands,
-    },
-
-    /// Contract management utilities.
-    #[command(visible_alias = "c")]
-    Contracts {
-        #[command(subcommand)]
-        command: ContractsSubcommands,
     },
 }

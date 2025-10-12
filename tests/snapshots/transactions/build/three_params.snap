@@ -1,0 +1,26 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - transactions
+    - build
+    - 02ff46d897b529927bd1006cf75fb9e005d4f47181ec37db9dc82548218ff88106
+    - 17cBiTcWhung3WDLuc9ja5Y7BMus5Q7CD9wYBxS1r1P2R
+    - "1000000000000000000"
+---
+success: true
+exit_code: 0
+----- stdout -----
+{
+  "fromGroup": 1,
+  "gasAmount": 20000,
+  "gasPrice": "100000000000",
+  "toGroup": 3,
+  "txId": "ac3acfcb932a7c91b870ee7d8e012f06dd1b1986620fddc5e4d6ff72e3d6d265",
+  "type": "BuildSimpleTransferTxResult",
+  "unsignedTx": "00040080004e20c1174876e80001ccb4a237975e960d767ce9b550bc481fe3a883d142bc4454539223a135756a371f5f67720002ff46d897b529927bd1006cf75fb9e005d4f47181ec37db9dc82548218ff8810602c40de0b6b3a764000000622990ad7be0a3d163562c10fd7985ef40a3e41857e7a1583406a785efc9273a00000000000000000000c6d3c20de6fb3cb00f00000045c42a82aa01b2b7399c26ee6450d44f04e017aa3c44af5e6b451f32aa458b1c00000000000000000000"
+}
+
+----- stderr -----

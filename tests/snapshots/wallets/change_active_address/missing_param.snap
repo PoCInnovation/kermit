@@ -1,0 +1,21 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - wallets
+    - change-active-address
+    - wallet
+---
+success: false
+exit_code: 2
+----- stdout -----
+
+----- stderr -----
+error: the following required arguments were not provided:
+  <ADDRESS>
+
+Usage: kermit wallets change-active-address <WALLET_NAME> <ADDRESS>
+
+For more information, try '--help'.

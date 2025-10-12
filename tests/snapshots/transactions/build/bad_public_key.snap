@@ -1,0 +1,18 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - transactions
+    - build
+    - 15hLd3PdALjHe9RmFsjpRiMGYrCchZSjdyRufMjyfFSCB
+    - 17cBiTcWhung3WDLuc9ja5Y7BMus5Q7CD9wYBxS1r1P2R
+    - "1000000000000000000"
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: Invalid value for: body (Invalid hex string: 15hLd3PdALjHe9RmFsjpRiMGYrCchZSjdyRufMjyfFSCB at index 133: decoding failure)

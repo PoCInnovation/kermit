@@ -4,14 +4,13 @@ use serde_json::{Value, json};
 
 use crate::{
     account::{account::Account, address::Address, signature::PrivateKey},
-    config::config::Network,
+    common::{get, post},
     contracts::NetworkType,
     contracts_funcs::{
         compile_project::compile_project::{CompiledContract, FieldsVec},
         deploy_bytecode::build_bytecode_contract,
     },
     transactions::submit,
-    utils::{HttpResponse, get, post},
 };
 
 #[derive(Debug, Deserialize)]
@@ -89,7 +88,7 @@ async fn build<T: DeserializeOwned>(
     address: &str,
     bytecode: &str,
     issue_token_amount: u64,
-) -> Result<Option<HttpResponse<T>>> {
+) -> Result<Option<T>> {
     post(
         url,
         "/contracts/unsigned-tx/deploy-contract",
@@ -120,7 +119,7 @@ async fn send_contract_tx(
         unsigned_tx,
         gas_price: _gas_price,
     } = match build_result {
-        Ok(response) => response.context("Empty reply")?.data,
+        Ok(response) => response.context("Empty reply")?,
         Err(e) => {
             bail!("Error building contract transaction: {:?}", e);
         },
@@ -129,8 +128,7 @@ async fn send_contract_tx(
     let signature = private_key.sign(&tx_id)?;
     let mut tx_res = submit(url, &unsigned_tx, &signature)
         .await?
-        .context("Empty reply")?
-        .data;
+        .context("Empty reply")?;
 
     // represents the DeployedContract structure
     if let Some(obj) = tx_res.as_object_mut() {
@@ -144,16 +142,15 @@ async fn send_contract_tx(
 pub async fn deploy_contract(
     url: &str,
     private_key: Box<dyn PrivateKey>,
-    network: &Network,
     network_id: NetworkType,
     contract: &CompiledContract,
     init_fields: FieldsVec,
+    issue_token_amount: u64,
 ) -> Result<Value> {
     let account = Account::new(private_key)?;
     let chain_params = get::<ChainParams>(url, "/infos/chain-params")
         .await?
-        .context("Empty reply")?
-        .data;
+        .context("Empty reply")?;
 
     validate_chain_params(network_id as u8, &vec![account.group], chain_params).await?;
 
@@ -164,7 +161,7 @@ pub async fn deploy_contract(
         account.private_key.as_ref(),
         &account.address,
         &bytecode,
-        network.settings.issue_token_amount.clone(),
+        issue_token_amount,
     )
     .await?)
 }

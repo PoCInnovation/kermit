@@ -1,0 +1,22 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - transactions
+    - build
+    - 02ff46d897b529927bd1006cf75fb9e005d4f47181ec37db9dc82548218ff88106
+    - 17cBiTcWhung3WDLuc9ja5Y7BMus5Q7CD9wYBxS1r1P2R
+---
+success: false
+exit_code: 2
+----- stdout -----
+
+----- stderr -----
+error: the following required arguments were not provided:
+  <AMOUNT>
+
+Usage: kermit transactions build <PUBLIC_KEY> <TO_ADDR> <AMOUNT>
+
+For more information, try '--help'.

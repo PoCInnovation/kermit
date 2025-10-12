@@ -1,0 +1,21 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - wallets
+    - sweep-all-addresses
+    - wallet
+---
+success: false
+exit_code: 2
+----- stdout -----
+
+----- stderr -----
+error: the following required arguments were not provided:
+  <TO_ADDRESS>
+
+Usage: kermit wallets sweep-all-addresses <WALLET_NAME> <TO_ADDRESS>
+
+For more information, try '--help'.

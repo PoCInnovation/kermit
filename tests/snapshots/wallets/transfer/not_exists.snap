@@ -1,0 +1,18 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - wallets
+    - transfer
+    - foo
+    - 1DrDyTr9RpRsQnDnXo2YRiPzPW4ooHX5LLoqXrqfMrpQH
+    - "1000000000000000000"
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: foo not found

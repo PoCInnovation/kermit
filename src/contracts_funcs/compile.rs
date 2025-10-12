@@ -4,9 +4,9 @@ use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
 
 use crate::{
+    common::{fs::read_file, post},
     contracts::CompilerOptions,
     contracts_funcs::source_info::{SourceInfo, SourceKind},
-    utils::{fs::read_file, post},
 };
 use once_cell::sync::Lazy;
 use std::collections::{HashMap, HashSet};
@@ -264,6 +264,5 @@ pub async fn compile(
         }),
     )
     .await?
-    .context("Empty reply")?
-    .data)
+    .context("Empty reply")?)
 }

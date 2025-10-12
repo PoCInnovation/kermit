@@ -1,0 +1,79 @@
+use anyhow::Result;
+use bigdecimal::BigDecimal;
+use clap::{Parser, ValueEnum};
+
+const ADDRESS_ZERO: &str = "111111111111111111111111111111111";
+const HASH_ZERO: &str = "0000000000000000000000000000000000000000000000000000000000000000";
+
+/// CLI arguments for `kermit utils`.
+#[derive(Parser)]
+pub(crate) enum UtilsSubcommands {
+    /// Get the Alephium zero address.
+    #[command(visible_alias = "az")]
+    AddressZero,
+
+    /// Get the Alephium hash zero.
+    #[command(visible_alias = "hz")]
+    HashZero,
+
+    /// Convert amount between different Alephium units (atto, gatto, alph).
+    #[command(visible_alias = "c")]
+    Convert {
+        amount: BigDecimal,
+        unit: AlephiumUnit,
+    },
+}
+
+#[derive(Clone, ValueEnum)]
+#[clap(rename_all = "lowercase")]
+pub(crate) enum AlephiumUnit {
+    Alph,
+    Gatto,
+    Atto,
+}
+
+fn convert_amount(amount: BigDecimal, unit: AlephiumUnit) -> (BigDecimal, BigDecimal, BigDecimal) {
+    let atto_in_alph = BigDecimal::from(10u64.pow(18));
+    let atto_in_gatto = BigDecimal::from(10u64.pow(9));
+
+    match unit {
+        AlephiumUnit::Alph => {
+            let atto = &amount * atto_in_alph;
+            let gatto = &amount * atto_in_gatto;
+            (atto, gatto, amount)
+        },
+        AlephiumUnit::Gatto => {
+            let atto = &amount * &atto_in_gatto;
+            let alph = &amount / atto_in_gatto;
+            (atto, amount, alph)
+        },
+        AlephiumUnit::Atto => {
+            let gatto = &amount / atto_in_gatto;
+            let alph = &amount / atto_in_alph;
+            (amount, gatto, alph)
+        },
+    }
+}
+
+impl UtilsSubcommands {
+    pub(crate) async fn run(self) -> Result<()> {
+        let output = match self {
+            Self::AddressZero => ADDRESS_ZERO,
+            Self::HashZero => HASH_ZERO,
+            Self::Convert { amount, unit } => {
+                let (atto, gatto, eth) = convert_amount(amount, unit);
+
+                &format!(
+                    "atto:\t{}\ngatto:\t{}\nalph:\t{}",
+                    atto.to_plain_string(),
+                    gatto.to_plain_string(),
+                    eth.to_plain_string()
+                )
+            },
+        };
+
+        println!("{output}");
+
+        Ok(())
+    }
+}
