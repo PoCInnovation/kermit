@@ -1,0 +1,21 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - wallets
+    - create
+    - wallet
+    - "1234"
+    - "--is-miner"
+---
+success: true
+exit_code: 0
+----- stdout -----
+{
+  "mnemonic": "<MNEMONIC>",
+  "walletName": "wallet"
+}
+
+----- stderr -----

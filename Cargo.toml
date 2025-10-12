@@ -3,13 +3,45 @@ name = "kermit"
 version = "0.1.0"
 edition = "2021"
 
+[lints.rust]
+missing-debug-implementations = "warn"
+unused-must-use = "deny"
+unnameable-types = "warn"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+explicit-into-iter-loop = "warn"
+if-not-else = "warn"
+ignored-unit-patterns = "warn"
+inconsistent-struct-constructor = "warn"
+large-enum-variant = "allow"
+match-bool = "warn"
+missing-const-for-fn = "warn"
+missing-fields-in-debug = "warn"
+needless-for-each = "warn"
+needless-pass-by-value = "warn"
+needless-raw-string-hashes = "warn"
+non-std-lazy-statics = "warn"
+option-if-let-else = "warn"
+redundant-clone = "warn"
+redundant-closure-for-method-calls = "warn"
+ref-option = "warn"
+semicolon-if-nothing-returned = "warn"
+single-char-pattern = "warn"
+uninlined-format-args = "warn"
+unnecessary-semicolon = "warn"
+unnecessary-wraps = "warn"
+unused-self = "warn"
+use-self = "warn"
+
 [dependencies]
-anyhow = "1.0.99"
+anyhow = "1.0.100"
+bigdecimal = "0.4.8"
 clap = { version = "4", features = ["derive", "env"] }
 regex = "1.11.2"
 reqwest = { version = "0.12.23", features = ["json"] }
-serde = {version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.143"
+serde = {version = "1.0.226", features = ["derive"] }
+serde_json = "1.0.145"
 strum = { version = "0.26.3", features = ["derive"] }
 hex = "0.4.3"
 secp256k1 = "0.30.0"
@@ -18,3 +50,4 @@ tokio = { version = "1.47.1", features = ["full"] }
 [dev-dependencies]
 insta = { version = "1", features = ["filters"] }
 insta-cmd = "0.6.0"
+testcontainers = "0.25.0"

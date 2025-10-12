@@ -1,0 +1,65 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - blockflow
+    - block
+    - f344b3dd45f39d62cfd200cfa3312c080018102908787c5565b8c8af3647368f
+---
+success: true
+exit_code: 0
+----- stdout -----
+{
+  "chainFrom": 3,
+  "chainTo": 3,
+  "depStateHash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "deps": [
+    "0000000000000000000000000000000000000000000000000000000000000000",
+    "0000000000000000000000000000000000000000000000000000000000000000",
+    "0000000000000000000000000000000000000000000000000000000000000000",
+    "0000000000000000000000000000000000000000000000000000000000000000",
+    "0000000000000000000000000000000000000000000000000000000000000000",
+    "0000000000000000000000000000000000000000000000000000000000000000",
+    "0000000000000000000000000000000000000000000000000000000000000000"
+  ],
+  "ghostUncles": [],
+  "hash": "f344b3dd45f39d62cfd200cfa3312c080018102908787c5565b8c8af3647368f",
+  "height": 0,
+  "nonce": "000000000000000000000000000000000000000000000011",
+  "target": "20ffffff",
+  "timestamp": 1231006505000,
+  "transactions": [
+    {
+      "contractInputs": [],
+      "generatedOutputs": [],
+      "inputSignatures": [],
+      "scriptExecutionOk": true,
+      "scriptSignatures": [],
+      "unsigned": {
+        "fixedOutputs": [
+          {
+            "address": "17cBiTcWhung3WDLuc9ja5Y7BMus5Q7CD9wYBxS1r1P2R",
+            "attoAlphAmount": "1000000000000000000000000",
+            "hint": 1022114513,
+            "key": "5d892f71e43b262733eaa99188a14f017fe006188f76cc0cc6ff8a0eb1ebab47",
+            "lockTime": 1636379973000,
+            "message": "d55dedab77b982ade743516f96d9c4fe85f19cc85e64d02b81b67532ce72df48",
+            "tokens": []
+          }
+        ],
+        "gasAmount": 20000,
+        "gasPrice": "100000000000",
+        "inputs": [],
+        "networkId": 4,
+        "txId": "482784abee65d18a09f457b8125f045580c12bfc462318b3f98337a8c77d2c66",
+        "version": 0
+      }
+    }
+  ],
+  "txsHash": "f0467c2593e149510c08e9544544e8e66743500cbeef0cc27f315ff20f806a66",
+  "version": 0
+}
+
+----- stderr -----

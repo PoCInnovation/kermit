@@ -1,0 +1,17 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - transactions
+    - tx-id-from-outputref
+    - "1022114513"
+    - 5d892f71e43b262733eaa99188a14f017fe006188f76cc0cc6ff8a0eb1ebab46
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: Transaction id for output ref 5d892f71e43b262733eaa99188a14f017fe006188f76cc0cc6ff8a0eb1ebab46 not found

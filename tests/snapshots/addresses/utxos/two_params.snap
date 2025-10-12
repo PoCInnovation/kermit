@@ -1,0 +1,29 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - addresses
+    - utxos
+    - 1DrDyTr9RpRsQnDnXo2YRiPzPW4ooHX5LLoqXrqfMrpQH
+    - "--error-if-exceed-max-utxos"
+---
+success: true
+exit_code: 0
+----- stdout -----
+{
+  "utxos": [
+    {
+      "additionalData": "d55dedab77b982ade743516f96d9c4fe85f19cc85e64d02b81b67532ce72df48",
+      "amount": "1000000000000000000000000",
+      "lockTime": 1636379973000,
+      "ref": {
+        "hint": 933512263,
+        "key": "9fa782e8b88d4f95e28b3b2417e5bc30d33a5ae8486d4a8885b82b224259c1e6"
+      }
+    }
+  ]
+}
+
+----- stderr -----

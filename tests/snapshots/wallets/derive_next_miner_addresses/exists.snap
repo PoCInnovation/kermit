@@ -1,0 +1,41 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - wallets
+    - derive-next-miner-addresses
+    - wallet
+---
+success: true
+exit_code: 0
+----- stdout -----
+[
+  {
+    "address": "1CB4nJ4dfWei2NDrAQowhvwmrbinxtp3Z9vsWDBQ6xpTv",
+    "group": 0,
+    "path": "m/44'/1234'/0'/0/13",
+    "publicKey": "0322c22774fede76eca24874ecde20206ed48bf763365bcc571fecb37a3fd69161"
+  },
+  {
+    "address": "15g5MK4VsX9b5qasgzKGrHEsHzjq2K7cjdiPk69TJsGiS",
+    "group": 1,
+    "path": "m/44'/1234'/0'/0/6",
+    "publicKey": "02b4a131071c66f85f7138d66e7d1a18eaab3eca240abc13f6e473bf9ac16147e5"
+  },
+  {
+    "address": "18SXMRxnPzRowARbUosxLCgvFLjdNiJCJepKydXGrQjSL",
+    "group": 2,
+    "path": "m/44'/1234'/0'/0/3",
+    "publicKey": "034c9ecc1755b568215bc8dc49e374171f7f06dba7d424c2b99a86b21fdb0592d7"
+  },
+  {
+    "address": "179Hu6XcSBg6MmxKQoa74bFJZeScRvuYGTtHRbPaVAU9R",
+    "group": 3,
+    "path": "m/44'/1234'/0'/0/4",
+    "publicKey": "02c0deafe824a8d5d0993e7a7ef8f3cb783ba18207000fa486dfaa06621bbc612d"
+  }
+]
+
+----- stderr -----

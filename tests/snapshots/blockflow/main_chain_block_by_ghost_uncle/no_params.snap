@@ -1,0 +1,20 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - blockflow
+    - main-chain-block-by-ghost-uncle
+---
+success: false
+exit_code: 2
+----- stdout -----
+
+----- stderr -----
+error: the following required arguments were not provided:
+  <GHOST_UNCLE_HASH>
+
+Usage: kermit blockflow main-chain-block-by-ghost-uncle <GHOST_UNCLE_HASH>
+
+For more information, try '--help'.

@@ -1,12 +1,14 @@
-mod address;
+mod addresses;
 mod args;
+mod blockflow;
+mod common;
 mod contract_encoding;
 mod contracts;
-mod events;
 mod infos;
+mod miners;
 mod transactions;
 mod utils;
-mod wallet;
+mod wallets;
 
 use anyhow::Result;
 use args::{Kermit, KermitSubcommand};
@@ -24,11 +26,13 @@ async fn run() -> Result<()> {
     let kermit = Kermit::parse();
 
     match kermit.cmd {
-        KermitSubcommand::Address { command } => command.run(kermit.url).await?,
+        KermitSubcommand::Addresses { command } => command.run(kermit.url).await?,
+        KermitSubcommand::Blockflow { command } => command.run(&kermit.url).await?,
         KermitSubcommand::Contracts { command } => command.run(kermit.url).await?,
-        KermitSubcommand::Events { command } => command.run(&kermit.url).await?,
         KermitSubcommand::Infos { command } => command.run(&kermit.url).await?,
+        KermitSubcommand::Miners { command } => command.run(&kermit.url).await?,
         KermitSubcommand::Transactions { command } => command.run(&kermit.url).await?,
+        KermitSubcommand::Utils { command } => command.run().await?,
         KermitSubcommand::Wallets { command } => command.run(&kermit.url).await?,
     }
 

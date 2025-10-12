@@ -1,0 +1,16 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - blockflow
+    - blocks-with-events
+    - "100"
+---
+success: false
+exit_code: 1
+----- stdout -----
+
+----- stderr -----
+Error: Time span cannot be greater than Duration(1800000ms)

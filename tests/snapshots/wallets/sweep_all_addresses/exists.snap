@@ -1,0 +1,30 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - wallets
+    - sweep-all-addresses
+    - wallet
+    - 1DrDyTr9RpRsQnDnXo2YRiPzPW4ooHX5LLoqXrqfMrpQH
+---
+success: true
+exit_code: 0
+----- stdout -----
+{
+  "results": [
+    {
+      "fromGroup": 3,
+      "toGroup": 0,
+      "txId": "a30d68e42287be8d01424644c8199aac31552701b7f9764fdb529d3a4432e948"
+    },
+    {
+      "fromGroup": 2,
+      "toGroup": 0,
+      "txId": "76777423c638363fffbace407eb80f74f7b4de6c0e9485fe57f47e8655688d20"
+    }
+  ]
+}
+
+----- stderr -----

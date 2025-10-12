@@ -1,0 +1,18 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - transactions
+    - raw
+    - 482784abee65d18a09f457b8125f045580c12bfc462318b3f98337a8c77d2c66
+---
+success: true
+exit_code: 0
+----- stdout -----
+{
+  "value": "00040080004e20c1174876e8000001c6d3c21bcecceda100000000622990ad7be0a3d163562c10fd7985ef40a3e41857e7a1583406a785efc9273a0000017cffd8d588004020d55dedab77b982ade743516f96d9c4fe85f19cc85e64d02b81b67532ce72df480100000000"
+}
+
+----- stderr -----

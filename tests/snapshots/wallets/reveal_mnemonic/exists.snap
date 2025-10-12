@@ -1,0 +1,19 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - wallets
+    - reveal-mnemonic
+    - wallet
+    - "1234"
+---
+success: true
+exit_code: 0
+----- stdout -----
+{
+  "mnemonic": "history smoke among improve cruise kidney brief jealous carbon office will gallery amateur kit motion ethics attack dignity example huge thought depth funny this"
+}
+
+----- stderr -----

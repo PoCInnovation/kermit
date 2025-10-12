@@ -1,0 +1,20 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 38
+info:
+  program: kermit
+  args:
+    - wallets
+    - restore
+    - wallet
+    - "1234"
+    - vault alarm sad mass witness property virus style good flower rice alpha viable evidence run glare pretty scout evil judge enroll refuse another lava
+---
+success: true
+exit_code: 0
+----- stdout -----
+{
+  "walletName": "wallet"
+}
+
+----- stderr -----
