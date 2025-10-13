@@ -1,9 +1,9 @@
-use anyhow::{Context, Result, anyhow, bail};
+use anyhow::{Context, Result, bail};
 use regex::Regex;
 
 use crate::contracts_funcs::{
     compile_project::{
-        compile_project::{CompiledContract, FieldsMap, FieldsVec, InputFieldsMap},
+        compile_project::{CompiledContract, FieldsVec},
         compile_project_values::RalphValue,
     },
     contract_codec::encode_i32,
@@ -98,30 +98,6 @@ fn get_contract_prefix(contract_prefix_str: &str) -> Result<RalphValue> {
     Ok(RalphValue::ByteVec(
         [std_bytes, contract_prefix_bytes].concat(),
     ))
-}
-
-#[allow(dead_code)]
-pub fn get_fields(contract: &CompiledContract, init_fields: InputFieldsMap) -> Result<FieldsMap> {
-    let mut fields: FieldsMap = contract
-        .fields_types
-        .clone()
-        .into_iter()
-        .map(|(name, (_, is_mutable))| {
-            let value = init_fields
-                .get(&name)
-                .cloned()
-                .ok_or_else(|| anyhow!("Missing initial value for field '{}'", name))?;
-            Ok((name, (value, is_mutable)))
-        })
-        .collect::<Result<FieldsMap>>()?;
-
-    let contract_prefix = &contract.std_interface_id;
-    if let Some(contract_prefix_str) = contract_prefix {
-        let interface_value = get_contract_prefix(contract_prefix_str)?;
-        fields.insert("__stdInterfaceId".to_string(), (interface_value, false));
-    }
-
-    Ok(fields)
 }
 
 pub fn get_fields_vec(contract: &CompiledContract, init_fields: FieldsVec) -> Result<FieldsVec> {

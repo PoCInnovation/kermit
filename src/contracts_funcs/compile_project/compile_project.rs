@@ -12,13 +12,6 @@ use crate::contracts_funcs::compile_project::compile_project_values::{RalphValue
 pub type FieldsTypesMapMut = IndexMap<String, (TypeName, bool)>;
 pub type FieldsVec = Vec<(RalphValue, bool)>;
 
-#[allow(dead_code)]
-pub type FieldsTypesMap = HashMap<String, TypeName>;
-#[allow(dead_code)]
-pub type FieldsMap = HashMap<String, (RalphValue, bool)>;
-#[allow(dead_code)]
-pub type InputFieldsMap = HashMap<String, RalphValue>;
-
 // Return the position of the parameter for the call with the parsed value
 // TODO: new system with json like parsing of structures, since currently arrays of structure is impossible
 fn resolve_rec_type(

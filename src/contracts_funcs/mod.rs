@@ -7,6 +7,5 @@ pub mod call;
 pub mod compile;
 pub mod compile_project;
 pub mod deploy;
-pub mod project;
 pub mod state;
 pub mod test;
