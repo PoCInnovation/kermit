@@ -1,9 +1,14 @@
 use clap::{Parser, Subcommand, ValueHint};
 
 use crate::{
-    addresses::AddressesSubcommands, blockflow::BlockflowSubcommands,
-    contracts::{ContractsSubcommands, NetworkType}, infos::InfosSubcommands, miners::MinersSubcommands,
-    transactions::TransactionsSubcommands, utils::UtilsSubcommands, wallets::WalletsSubcommands,
+    addresses::AddressesSubcommands,
+    blockflow::BlockflowSubcommands,
+    contracts::{ContractsSubcommands, NetworkType},
+    infos::InfosSubcommands,
+    miners::MinersSubcommands,
+    transactions::TransactionsSubcommands,
+    utils::UtilsSubcommands,
+    wallets::WalletsSubcommands,
 };
 
 #[derive(Parser)]
@@ -39,9 +44,11 @@ pub(crate) enum KermitSubcommand {
         #[command(subcommand)]
         command: ContractsSubcommands,
 
-        #[arg(long, short, help = "Path to the config YAML file", default_value_t=String::from("./alephium.config.yaml"))]
+        /// Path to the config YAML file
+        #[arg(long, short, default_value_t=String::from("./alephium.config.yaml"))]
         config_file_path: String,
 
+        /// Network type may trigger a different behavior in contract operations. Choose accordingly
         #[arg(long, short, value_enum, default_value_t = NetworkType::Dev)]
         network: NetworkType,
     },

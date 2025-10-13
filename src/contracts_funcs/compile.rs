@@ -216,8 +216,7 @@ pub async fn compile(
     url: &str,
     compile_path: &str,
     compiler_options: CompilerOptions,
-    _skip_generate: bool,
-    _debug: bool,
+    _debug: bool, // TODO: handle debug and force compilation
     _force: bool,
 ) -> Result<Value> {
     let (source_file_paths, compile_path) = load_ral_files(compile_path)?;

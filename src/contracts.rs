@@ -39,55 +39,40 @@ pub enum NetworkType {
 #[derive(Debug, Clone, Args, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CompilerOptions {
-    #[arg(
-        long,
-        default_value_t = false,
-        help = "Ignore external caller warnings"
-    )]
+    /// Ignore warnings related to external caller checks.
+    #[arg(long, default_value_t = false)]
     pub ignore_check_external_caller_warnings: bool,
 
-    #[arg(
-        long,
-        default_value_t = false,
-        help = "Ignore unused constants warnings"
-    )]
+    /// Ignore warnings about unused constants in the code.
+    #[arg(long, default_value_t = false)]
     pub ignore_unused_constants_warnings: bool,
 
-    #[arg(long, default_value_t = false, help = "Ignore unused fields warnings")]
+    /// Ignore warnings about unused fields in the code.
+    #[arg(long, default_value_t = false)]
     pub ignore_unused_fields_warnings: bool,
 
-    #[arg(
-        long,
-        default_value_t = false,
-        help = "Ignore unused function return warnings"
-    )]
+    /// Ignore warnings about unused function return values.
+    #[arg(long, default_value_t = false)]
     pub ignore_unused_function_return_warnings: bool,
 
-    #[arg(
-        long,
-        default_value_t = false,
-        help = "Ignore unused private functions warnings"
-    )]
+    /// Ignore warnings about unused private functions in the code.
+    #[arg(long, default_value_t = false)]
     pub ignore_unused_private_functions_warnings: bool,
 
-    #[arg(
-        long,
-        default_value_t = false,
-        help = "Ignore unused variables warnings"
-    )]
+    /// Ignore warnings about unused variables in the code.
+    #[arg(long, default_value_t = false)]
     pub ignore_unused_variables_warnings: bool,
 
-    #[arg(
-        long,
-        default_value_t = false,
-        help = "Ignore update fields check warnings"
-    )]
+    /// Ignore warnings related to update fields checks.
+    #[arg(long, default_value_t = false)]
     pub ignore_update_fields_check_warnings: bool,
 
-    #[arg(long, default_value_t = false, help = "Skip abstract contract check")]
+    /// Skip checks for abstract contracts.
+    #[arg(long, default_value_t = false)]
     pub skip_abstract_contract_check: bool,
 
-    #[arg(long, default_value_t = false, help = "Skip tests")]
+    /// Skip running tests during the compilation process.
+    #[arg(long, default_value_t = false)]
     pub skip_tests: bool,
 }
 
@@ -104,21 +89,16 @@ pub enum ContractsSubcommands {
     #[command(visible_alias = "comp")]
     Compile {
         file_path: String,
+
         #[command(flatten)]
         compiler_options: CompilerOptions,
-        #[arg(
-            long,
-            help = "skip generate typescript code by contract artifacts",
-            default_value_t = false
-        )]
-        skip_generate: bool,
-        #[arg(
-            long,
-            help = "show detailed debug information such as error stack traces",
-            default_value_t = false
-        )]
+
+        /// Show detailed debug information such as error stack traces.
+        #[arg(long, default_value_t = false)]
         debug: bool,
-        #[arg(long, help = "enable force recompile", default_value_t = false)]
+
+        /// Enable force recompile.
+        #[arg(long, default_value_t = false)]
         force: bool,
     },
     #[command(visible_alias = "d")]
@@ -144,9 +124,12 @@ pub enum ContractsSubcommands {
         contract_id: String,
         compile_output_path: String,
         method_name: String,
+
         #[arg(long = "args", value_parser = parse_key_val, num_args = 1..)]
         args: Vec<(String, String)>,
-        #[arg(long = "existing-contracts", value_name = "CONTRACT_ID", num_args = 0.., help = "List of existing contracts to include in the test")]
+
+        /// List of existing contracts to include in the test
+        #[arg(long = "existing-contracts", value_name = "CONTRACT_ID", num_args = 0..)]
         exiting_contracts: Vec<String>,
     },
     #[command(visible_alias = "c")]
@@ -155,13 +138,19 @@ pub enum ContractsSubcommands {
         contract_id: String,
         compile_output_path: String, // It assumes the user has the source code
         method_name: String,
+
         #[arg(long = "args", value_parser = parse_key_val, num_args = 1..)]
         args: Vec<(String, String)>,
+
         #[arg(long, env)]
         private_key: String,
-        #[arg(long = "interested-contracts", value_name = "CONTRACT_ADDRESS", num_args = 0.., help = "List of existing contracts to include in the test")]
+
+        /// List of existing contracts to include in the test
+        #[arg(long = "interested-contracts", value_name = "CONTRACT_ADDRESS", num_args = 0..)]
         exiting_contracts: Vec<String>,
-        #[arg(long, help = "Block hash to use for the call")]
+
+        /// Block hash to use for the call
+        #[arg(long)]
         block_hash: Option<String>,
     },
     Code {
@@ -172,9 +161,13 @@ pub enum ContractsSubcommands {
     },
     SubContracts {
         address: String,
-        #[arg(long, default_value_t = 0, help = "Start index for pagination")]
+
+        /// Start index for pagination
+        #[arg(long, default_value_t = 0)]
         start: i32,
-        #[arg(long, help = "Number of results to return")]
+
+        /// Number of results to return
+        #[arg(long)]
         limit: Option<i32>,
     },
     SubContractsCurrentCount {
@@ -205,20 +198,9 @@ impl ContractsSubcommands {
             Self::Compile {
                 file_path,
                 compiler_options,
-                skip_generate,
                 debug,
                 force,
-            } => {
-                compile(
-                    url,
-                    &file_path,
-                    compiler_options,
-                    skip_generate,
-                    debug,
-                    force,
-                )
-                .await?
-            },
+            } => compile(url, &file_path, compiler_options, debug, force).await?,
             Self::Deploy {
                 compiled_type,
                 contract_name,
