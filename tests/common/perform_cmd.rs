@@ -77,28 +77,14 @@ macro_rules! perform_cmd_test {
     };
 }
 
-///////////////////////////
-
-const DEFAULT_FILTERS: [(&str, &str); 1] = [(
-    r#""cliqueId":\s*"[0-9a-f]+""#,
-    r#""cliqueId": "<CLIQUE_ID>""#,
-)];
-
-/* Run the command and write the outputed result (if success) inside a temporary file */
-pub fn perform_cmd_dev(name: &str, args: &[&str], config_name: Option<&str>) -> String {
-    let config_path = config_name.unwrap_or("./alephium.config.yaml");
-
-    let mut new_args = vec!["-n", "dev", "-c", config_path];
-    new_args.extend(args);
-
+pub fn perform_cmd_output(name: &str, args: &[&str], url: &str) -> String {
     let tmp_dir = env::temp_dir();
     let mut file_path = PathBuf::from(&tmp_dir);
     file_path.push(name);
 
     // Write the command to the temporary file
     let mut file = File::create(&file_path).expect("Failed to create file");
-    let output = Command::new(get_cargo_bin(BIN_NAME))
-        .args(new_args)
+    let output = build_cmd(Some(url), args)
         .output()
         .expect("Failed to execute command");
 
@@ -113,29 +99,6 @@ pub fn perform_cmd_dev(name: &str, args: &[&str], config_name: Option<&str>) -> 
     writeln!(file, "{}", String::from_utf8_lossy(&output.stdout)).expect("Failed to write to file");
 
     file_path.to_string_lossy().to_string()
-}
-
-/* These tests run in a Devnet environment from alephium-stack */
-pub fn perform_cmd_test_dev(
-    name: &str,
-    args: &[&str],
-    config_name: Option<&str>,
-    custom_filter: Option<Vec<(&str, &str)>>,
-) {
-    let config_path = config_name.unwrap_or("./alephium.config.yaml");
-
-    let mut new_args = vec!["-n", "dev", "-c", config_path];
-    new_args.extend(args);
-
-    let custom_filter = custom_filter.unwrap_or(DEFAULT_FILTERS.to_vec());
-
-    with_settings!({
-        prepend_module_to_snapshot => false,
-        snapshot_path => format!("snapshots/{}", module_path!().split("::").next().unwrap()),
-        filters => custom_filter,
-    }, {
-        assert_cmd_snapshot!(name, Command::new(get_cargo_bin(BIN_NAME)).args(new_args));
-    });
 }
 
 ////////////////////////////////////

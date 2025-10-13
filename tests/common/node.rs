@@ -46,7 +46,7 @@ impl Image for AlephiumNodeImage {
 }
 
 pub async fn setup_node() -> (ContainerAsync<AlephiumNodeImage>, String) {
-    let conf = format!("{}/devnet.conf", current_dir().unwrap().display());
+    let conf = format!("{}/tests/config/devnet.conf", current_dir().unwrap().display());
 
     let container = AlephiumNodeImage::new(&conf).start().await.unwrap();
 

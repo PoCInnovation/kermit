@@ -1,16 +1,17 @@
 ---
-source: tests/utils.rs
-assertion_line: 67
+source: tests/common/perform_cmd.rs
+assertion_line: 45
 info:
   program: kermit
   args:
+    - "--url=http://localhost:32928"
+    - contracts
     - "-n"
     - dev
     - "-c"
     - "./alephium.config.yaml"
-    - contracts
     - compile
-    - tests/contracts
+    - tests/contracts/test_dir
 ---
 success: true
 exit_code: 0
@@ -69,7 +70,7 @@ exit_code: 0
         }
       ],
       "name": "SubO",
-      "version": "v4.2.4",
+      "version": "v4.2.5",
       "warnings": []
     },
     {
@@ -124,7 +125,7 @@ exit_code: 0
         }
       ],
       "name": "Sub",
-      "version": "v4.2.4",
+      "version": "v4.2.5",
       "warnings": []
     },
     {
@@ -269,7 +270,7 @@ exit_code: 0
       ],
       "name": "TokenFaucet",
       "stdInterfaceId": "0001",
-      "version": "v4.2.4",
+      "version": "v4.2.5",
       "warnings": [
         "Found unused field in TokenFaucet: encoded_test_value"
       ]
