@@ -2,7 +2,10 @@ use anyhow::Result;
 use clap::Parser;
 use serde_json::json;
 
-use crate::common::{get, post, print_output};
+use crate::{
+    common::{get, post, print_output},
+    network::health::check_network,
+};
 
 /// CLI arguments for `kermit infos`.
 #[derive(Parser)]
@@ -62,6 +65,8 @@ pub(crate) enum InfosSubcommands {
 
 impl InfosSubcommands {
     pub(crate) async fn run(self, url: &str) -> Result<()> {
+        check_network(&url).await?;
+
         let output = match self {
             Self::Node => get(url, "/infos/node").await?,
             Self::Version => get(url, "/infos/version").await?,

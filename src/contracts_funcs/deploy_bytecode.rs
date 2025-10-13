@@ -28,17 +28,23 @@ fn get_debug_bytecode(bytecode: &str, bytecode_patch: &str) -> Result<String> {
 
         match diff_type {
             '=' => {
-                let length = usize::from_str_radix(&part[1..], 10)
-                    .context("Failed to parse length for '=' patch")?;
+                let length = usize::from_str_radix(
+                    &part.get(1..).context("Missing character in bytecode")?,
+                    10,
+                )
+                .context("Failed to parse length for '=' patch")?;
                 result.push_str(&bytecode[index..index + length]);
                 index += length;
             },
             '+' => {
-                result.push_str(&part[1..]);
+                result.push_str(&part.get(1..).context("Missing character in bytecode")?);
             },
             '-' => {
-                let length = usize::from_str_radix(&part[1..], 10)
-                    .context("Failed to parse length for '-' patch")?;
+                let length = usize::from_str_radix(
+                    &part.get(1..).context("Missing character in bytecode")?,
+                    10,
+                )
+                .context("Failed to parse length for '-' patch")?;
                 index += length;
             },
             _ => bail!("Unknown diff type: {}", diff_type),

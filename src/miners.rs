@@ -2,7 +2,10 @@ use anyhow::Result;
 use clap::Parser;
 use serde_json::{Value, json};
 
-use crate::common::{get, post, print_output, put};
+use crate::{
+    common::{get, post, print_output, put},
+    network::health::check_network,
+};
 
 /// CLI arguments for `kermit miners`.
 #[derive(Parser)]
@@ -26,6 +29,8 @@ pub(crate) enum MinersSubcommands {
 
 impl MinersSubcommands {
     pub(crate) async fn run(self, url: &str) -> Result<()> {
+        check_network(&url).await?;
+
         let output = match self {
             Self::CpuMining { action } => {
                 if !url.contains("localhost") && !url.contains("127.0.0.1") {

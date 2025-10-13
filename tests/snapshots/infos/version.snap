@@ -1,9 +1,10 @@
 ---
 source: tests/common/perform_cmd.rs
-assertion_line: 38
+assertion_line: 45
 info:
   program: kermit
   args:
+    - "--url=http://localhost:33788"
     - infos
     - version
 ---
@@ -11,7 +12,7 @@ success: true
 exit_code: 0
 ----- stdout -----
 {
-  "version": "v4.2.4"
+  "version": "v4.2.5"
 }
 
 ----- stderr -----

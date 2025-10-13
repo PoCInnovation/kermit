@@ -7,12 +7,12 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 
 use crate::account::address::Address;
+use crate::common::crypto::{is_b58, is_hex_string};
 use crate::config::config_contracts::HelperFieldType;
 use crate::contracts_funcs::compile_project::compile_project::{
     FieldsTypesMapMut, FieldsVec, Struct,
 };
 use crate::contracts_funcs::compile_project::compile_project_deserialize::FieldValueHelper;
-use crate::common::crypto::{is_b58, is_hex_string};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RalphValue {
@@ -249,7 +249,7 @@ impl TryFrom<&str> for RalphValue {
 
     fn try_from(s: &str) -> Result<Self> {
         if is_b58(s) {
-            let s = &s[4..]; // remove b58: prefix
+            let s = &s.get(4..).context("Invalid b58 str")?; // remove b58: prefix
             let addr = Address::new_b58(s)?;
             return Ok(Self::ByteVec(addr.bytes));
         }
@@ -366,7 +366,12 @@ impl RalphValue {
                         .into_vec()
                         .context("Failed to decode base58 address")?;
 
-                    return Ok(Self::ByteVec(decoded[1..].to_vec()));
+                    return Ok(Self::ByteVec(
+                        decoded
+                            .get(1..)
+                            .context("Invalid b58 typename str")?
+                            .to_vec(),
+                    ));
                 }
 
                 bail!("Unsupported type name or structure: {}", name)
@@ -416,7 +421,7 @@ impl TypeName {
             s if s.starts_with("[") && s.ends_with(']') => {
                 // Examples: [U256; 2]
                 // Examples: [[U256; 2]; 2]
-                let inner = &s[1..s.len() - 1];
+                let inner = &s.get(1..s.len() - 1).context("Invalid type array")?;
                 let (elem_type_str, elem_size) = if let Some((elem, size)) = inner.rsplit_once(';')
                 {
                     let elem = elem.trim();
@@ -435,7 +440,7 @@ impl TypeName {
             },
             s if s.starts_with("(") && s.ends_with(')') => {
                 // Example: (U256,ByteVec,Bool)
-                let inner = &s[1..s.len() - 1];
+                let inner = &s.get(1..s.len() - 1).context("Invalid type tuple")?;
                 let elems = inner
                     .split(',')
                     .map(|part| Self::from_name_and_structures(part, structures))

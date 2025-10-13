@@ -78,7 +78,7 @@ impl Address {
 
         let key = b58_str.to_string();
         let full_bytes = address_bytes.clone();
-        let bytes = address_bytes[1..].to_vec();
+        let bytes = address_bytes[1..].to_vec(); // The length > 1 was already checked
 
         Ok(Self {
             key,

@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::Parser;
 use serde_json::{Value, json};
 
-use crate::common::{delete, get, post, print_output, put};
+use crate::{common::{delete, get, post, print_output, put}, network::health::check_network};
 
 /// CLI arguments for `kermit wallets`.
 #[derive(Parser)]
@@ -130,6 +130,8 @@ impl WalletsSubcommands {
         if !url.contains("localhost") && !url.contains("127.0.0.1") {
             eprintln!("Warning: Wallets commands only work on devnet network.");
         }
+
+        check_network(&url).await?;
 
         let output = match self {
             Self::List => get(url, "/wallets").await?,

@@ -1,7 +1,10 @@
 use anyhow::Result;
 use clap::Parser;
 
-use crate::common::{get, print_output};
+use crate::{
+    common::{get, print_output},
+    network::health::check_network,
+};
 
 /// CLI arguments for `kermit blockflow`.
 #[derive(Parser)]
@@ -63,6 +66,8 @@ pub(crate) enum BlockflowSubcommands {
 
 impl BlockflowSubcommands {
     pub(crate) async fn run(self, url: &str) -> Result<()> {
+        check_network(&url).await?;
+
         let endpoint = match self {
             Self::Blocks { from_ts, to_ts } => {
                 let mut endpoint = format!("/blockflow/blocks?fromTs={from_ts}");

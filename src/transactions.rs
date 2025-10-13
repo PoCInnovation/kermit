@@ -6,6 +6,7 @@ use serde_json::{Value, json};
 use crate::{
     account::signature::{GLSecp256k1PrivateKey, PrivateKey},
     common::{get, post, print_output},
+    network::health::check_network,
 };
 
 /// CLI arguments for `kermit transactions`.
@@ -153,6 +154,8 @@ fn append_groups(endpoint: &mut String, from_group: Option<i64>, to_group: Optio
 
 impl TransactionsSubcommands {
     pub(crate) async fn run(self, url: &str) -> Result<()> {
+        check_network(&url).await?;
+
         let output = match self {
             Self::Build {
                 public_key,

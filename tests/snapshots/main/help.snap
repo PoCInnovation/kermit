@@ -1,6 +1,6 @@
 ---
 source: tests/common/perform_cmd.rs
-assertion_line: 38
+assertion_line: 45
 info:
   program: kermit
   args:
@@ -23,15 +23,8 @@ Commands:
   help          Print this message or the help of the given subcommand(s)
 
 Options:
-  -u, --url <URL>
-          Node address; use this only if you want to override the URL from the selected network type [env: URL=]
-  -c, --config-file-path <CONFIG_FILE_PATH>
-          Path to the config YAML file [default: ./alephium.config.yaml]
-  -n, --network <NETWORK>
-          [default: dev] [possible values: main, test, dev]
-  -h, --help
-          Print help
-  -V, --version
-          Print version
+  -u, --url <URL>  [env: URL=] [default: http://localhost:22973]
+  -h, --help       Print help
+  -V, --version    Print version
 
 ----- stderr -----

@@ -21,6 +21,7 @@ use crate::{
         state::{code, parent, state, sub_contracts, sub_contracts_current_count},
         test::test_contract,
     },
+    network::health::check_network,
 };
 
 #[derive(Clone, Debug, Display, ValueEnum)]
@@ -81,7 +82,11 @@ fn parse_key_val(s: &str) -> Result<(String, String), String> {
     if parts.len() != 2 {
         return Err(format!("Invalid KEY=VALUE: '{}'", s));
     }
-    Ok((parts[0].to_string(), parts[1].to_string()))
+    if let (Some(key), Some(value)) = (parts.get(0), parts.get(1)) {
+        Ok((key.to_string(), value.to_string()))
+    } else {
+        Err("Failed to parse key-value pair".to_string())
+    }
 }
 
 #[derive(Parser)]
@@ -194,6 +199,8 @@ fn get_contract_initial_fields(
 
 impl ContractsSubcommands {
     pub async fn run(self, url: &str, config: &Config, network_id: NetworkType) -> Result<()> {
+        check_network(&url).await?;
+
         let value: Value = match self {
             Self::Compile {
                 file_path,

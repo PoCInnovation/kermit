@@ -1,9 +1,10 @@
 ---
 source: tests/common/perform_cmd.rs
-assertion_line: 38
+assertion_line: 45
 info:
   program: kermit
   args:
+    - "--url=http://localhost:34493"
     - transactions
     - create
     - 02ff46d897b529927bd1006cf75fb9e005d4f47181ec37db9dc82548218ff88106
@@ -17,4 +18,4 @@ exit_code: 1
 ----- stdout -----
 
 ----- stderr -----
-Error: Invalid private key
+Error: Invalid private key format

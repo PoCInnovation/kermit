@@ -13,11 +13,11 @@ mod transactions;
 mod utils;
 mod wallets;
 
-use anyhow::{Result, bail};
+use anyhow::Result;
 use args::{Kermit, KermitSubcommand};
 use clap::Parser;
 
-use crate::{config::config::Config, network::health::is_network_alive};
+use crate::config::config::Config;
 
 #[tokio::main]
 async fn main() {
@@ -30,14 +30,6 @@ async fn main() {
 async fn run() -> Result<()> {
     let kermit = Kermit::parse();
 
-    if reqwest::Url::parse(&kermit.url).is_err() {
-        bail!("Invalid node URL: {}", kermit.url);
-    }
-
-    if !is_network_alive(&kermit.url).await? {
-        bail!("Network is not reachable: {}", kermit.url);
-    }
-
     match kermit.cmd {
         KermitSubcommand::Addresses { command } => command.run(kermit.url).await?,
         KermitSubcommand::Blockflow { command } => command.run(&kermit.url).await?,
@@ -48,9 +40,7 @@ async fn run() -> Result<()> {
         } => {
             let config = Config::new(&config_file_path)?;
 
-            command
-                .run(&kermit.url, &config, network)
-                .await?
+            command.run(&kermit.url, &config, network).await?
         },
         KermitSubcommand::Infos { command } => command.run(&kermit.url).await?,
         KermitSubcommand::Miners { command } => command.run(&kermit.url).await?,

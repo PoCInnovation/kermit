@@ -170,10 +170,13 @@ mod submit {
         );
     }
 
-    #[test]
-    fn test_bad_tx_id() {
+    #[tokio::test]
+    async fn test_bad_tx_id() {
+        let (_container, url) = setup_node().await;
+
         perform_cmd_test!(
             "bad_tx_id",
+            &url,
             &[
                 "transactions",
                 "submit",
@@ -206,10 +209,13 @@ mod submit {
         );
     }
 
-    #[test]
-    fn test_bad_private_key() {
+    #[tokio::test]
+    async fn test_bad_private_key() {
+        let (_container, url) = setup_node().await;
+
         perform_cmd_test!(
             "bad_private_key",
+            &url,
             &[
                 "transactions",
                 "submit",
