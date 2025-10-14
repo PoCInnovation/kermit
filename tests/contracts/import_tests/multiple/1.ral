@@ -1,0 +1,8 @@
+import "./dir/2.ral"
+import "./dir/subdir/4.ral"
+
+Contract DummyContract(value: U256) {
+  pub fn getValue() -> U256 {
+    return value
+  }
+}

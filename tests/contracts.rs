@@ -125,6 +125,42 @@ mod compile {
         )
         .await;
     }
+
+    #[tokio::test]
+    async fn test_compile_single_recurse_import() {
+        perform_cmd_test_contract(
+            "compile_single_recurse",
+            &["compile", "tests/contracts/import_tests/single/1.ral"],
+            None,
+            None,
+            None,
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn test_compile_multiple_recurse_import() {
+        perform_cmd_test_contract(
+            "compile_multiple_recurse",
+            &["compile", "tests/contracts/import_tests/multiple/1.ral"],
+            None,
+            None,
+            None,
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn test_compile_multiple_recurse_dir_import() {
+        perform_cmd_test_contract(
+            "compile_multiple_recurse_dir",
+            &["compile", "tests/contracts/import_tests/multiple"],
+            None,
+            None,
+            None,
+        )
+        .await;
+    }
 }
 
 ///////////

@@ -221,7 +221,7 @@ pub async fn compile(
 ) -> Result<Value> {
     let (source_file_paths, compile_path) = load_ral_files(compile_path)?;
     let mut all_source_infos = Vec::new();
-    let mut import_file_paths_cache = HashSet::new();
+    let mut import_file_paths_cache = HashSet::from([compile_path.clone()]);
 
     for path in &source_file_paths {
         let (source_infos, new_cache) =

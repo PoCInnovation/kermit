@@ -33,6 +33,8 @@ impl Config {
             let yaml = serde_yaml::to_string(&default_config)
                 .map_err(|e| anyhow!("Failed to serialize default config: {}", e))?;
 
+            println!("Contract config file not found at {}. Creating default config file at {} ...", config_path, path_str);
+
             write_file(path_str, &yaml)?;
 
             return Ok(default_config);

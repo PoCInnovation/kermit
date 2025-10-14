@@ -1,0 +1,173 @@
+---
+source: tests/common/perform_cmd.rs
+assertion_line: 45
+info:
+  program: kermit
+  args:
+    - "--url=http://localhost:35753"
+    - contracts
+    - "-n"
+    - dev
+    - "-c"
+    - "./alephium.config.yaml"
+    - compile
+    - tests/contracts/import_tests/multiple
+---
+success: true
+exit_code: 0
+----- stdout -----
+{
+  "contracts": [
+    {
+      "bytecode": "01010e010000000103d341030341ce0002",
+      "bytecodeDebugPatch": "",
+      "codeHash": "e5113b00fd43d77d622f4d04e53fd0f8376a85017c01cc46165c4781c3734565",
+      "codeHashDebug": "e5113b00fd43d77d622f4d04e53fd0f8376a85017c01cc46165c4781c3734565",
+      "constants": [],
+      "enums": [],
+      "events": [],
+      "fields": {
+        "isMutable": [
+          false
+        ],
+        "names": [
+          "value"
+        ],
+        "types": [
+          "U256"
+        ]
+      },
+      "functions": [
+        {
+          "isPublic": true,
+          "name": "getValue",
+          "paramIsMutable": [],
+          "paramNames": [],
+          "paramTypes": [],
+          "returnTypes": [
+            "U256"
+          ],
+          "useAssetsInContract": false,
+          "usePreapprovedAssets": false
+        }
+      ],
+      "name": "DummyContract3",
+      "version": "v4.2.5",
+      "warnings": []
+    },
+    {
+      "bytecode": "01010e010000000103d341030341ce0002",
+      "bytecodeDebugPatch": "",
+      "codeHash": "e5113b00fd43d77d622f4d04e53fd0f8376a85017c01cc46165c4781c3734565",
+      "codeHashDebug": "e5113b00fd43d77d622f4d04e53fd0f8376a85017c01cc46165c4781c3734565",
+      "constants": [],
+      "enums": [],
+      "events": [],
+      "fields": {
+        "isMutable": [
+          false
+        ],
+        "names": [
+          "value"
+        ],
+        "types": [
+          "U256"
+        ]
+      },
+      "functions": [
+        {
+          "isPublic": true,
+          "name": "getValue",
+          "paramIsMutable": [],
+          "paramNames": [],
+          "paramTypes": [],
+          "returnTypes": [
+            "U256"
+          ],
+          "useAssetsInContract": false,
+          "usePreapprovedAssets": false
+        }
+      ],
+      "name": "DummyContract2",
+      "version": "v4.2.5",
+      "warnings": []
+    },
+    {
+      "bytecode": "01010e010000000103d341030341ce0002",
+      "bytecodeDebugPatch": "",
+      "codeHash": "e5113b00fd43d77d622f4d04e53fd0f8376a85017c01cc46165c4781c3734565",
+      "codeHashDebug": "e5113b00fd43d77d622f4d04e53fd0f8376a85017c01cc46165c4781c3734565",
+      "constants": [],
+      "enums": [],
+      "events": [],
+      "fields": {
+        "isMutable": [
+          false
+        ],
+        "names": [
+          "value"
+        ],
+        "types": [
+          "U256"
+        ]
+      },
+      "functions": [
+        {
+          "isPublic": true,
+          "name": "getValue",
+          "paramIsMutable": [],
+          "paramNames": [],
+          "paramTypes": [],
+          "returnTypes": [
+            "U256"
+          ],
+          "useAssetsInContract": false,
+          "usePreapprovedAssets": false
+        }
+      ],
+      "name": "DummyContract",
+      "version": "v4.2.5",
+      "warnings": []
+    },
+    {
+      "bytecode": "01010e010000000103d341030341ce0002",
+      "bytecodeDebugPatch": "",
+      "codeHash": "e5113b00fd43d77d622f4d04e53fd0f8376a85017c01cc46165c4781c3734565",
+      "codeHashDebug": "e5113b00fd43d77d622f4d04e53fd0f8376a85017c01cc46165c4781c3734565",
+      "constants": [],
+      "enums": [],
+      "events": [],
+      "fields": {
+        "isMutable": [
+          false
+        ],
+        "names": [
+          "value"
+        ],
+        "types": [
+          "U256"
+        ]
+      },
+      "functions": [
+        {
+          "isPublic": true,
+          "name": "getValue",
+          "paramIsMutable": [],
+          "paramNames": [],
+          "paramTypes": [],
+          "returnTypes": [
+            "U256"
+          ],
+          "useAssetsInContract": false,
+          "usePreapprovedAssets": false
+        }
+      ],
+      "name": "DummyContract4",
+      "version": "v4.2.5",
+      "warnings": []
+    }
+  ],
+  "scripts": []
+}
+
+----- stderr -----
