@@ -52,7 +52,7 @@ impl GLSecp256k1PrivateKey {
         let private_key = SecretKey::from_slice(&hex::decode(key).context("Invalid hex key")?)
             .context("Failed to create secret key")?;
 
-        Ok(GLSecp256k1PrivateKey {
+        Ok(Self {
             key: private_key,
             hex_key: key.to_string(),
         })

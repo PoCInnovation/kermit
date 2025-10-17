@@ -335,7 +335,7 @@ impl Function {
                     structures,
                 )?;
 
-                Ok((name.clone(), (ty, is_mutable.clone())))
+                Ok((name.clone(), (ty, *is_mutable)))
             })
             .collect::<Result<FieldsTypesMapMut>>()?;
 

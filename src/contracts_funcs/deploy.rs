@@ -3,7 +3,7 @@ use serde::{Deserialize, de::DeserializeOwned};
 use serde_json::{Value, json};
 
 use crate::{
-    account::{account::Account, address::Address, signature::PrivateKey},
+    account::{account_struct::Account, address::Address, signature::PrivateKey},
     common::{get, post},
     contracts::NetworkType,
     contracts_funcs::{

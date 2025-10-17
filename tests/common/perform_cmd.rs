@@ -104,7 +104,7 @@ pub fn perform_cmd_output(name: &str, args: &[&str], url: &str) -> String {
 ////////////////////////////////////
 
 pub fn get_json(path: &str) -> Value {
-    let data = fs::read_to_string(&path).expect("Unable to read path file");
+    let data = fs::read_to_string(path).expect("Unable to read path file");
     serde_json::from_str(&data).expect("Unable to parse path JSON")
 }
 
@@ -113,6 +113,6 @@ pub fn get_json_str_field_from_file(path: &str, field_name: &str) -> String {
 
     data[field_name]
         .as_str()
-        .expect(&format!("{field_name} not found in {path} JSON"))
+        .unwrap_or_else(|| panic!("{field_name} not found in {path} JSON"))
         .to_string()
 }

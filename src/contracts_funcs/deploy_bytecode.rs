@@ -67,7 +67,7 @@ fn encode_fields_by_type(fields: &FieldsVec, is_mutable: bool) -> Result<Vec<u8>
                 let mut encoded: Vec<u8> = Vec::new();
                 for item in arr {
                     encoded.extend_from_slice(&encode_fields_by_type(
-                        &vec![((item.clone(), is_mutable))].into_iter().collect(),
+                        &vec![(item.clone(), is_mutable)].into_iter().collect(),
                         is_mutable,
                     )?);
                 }
@@ -78,7 +78,7 @@ fn encode_fields_by_type(fields: &FieldsVec, is_mutable: bool) -> Result<Vec<u8>
                 let mut encoded: Vec<u8> = Vec::new();
                 for (_field_name, field_value) in fields {
                     encoded.extend_from_slice(&encode_fields_by_type(
-                        &vec![((field_value.clone(), is_mutable))]
+                        &vec![(field_value.clone(), is_mutable)]
                             .into_iter()
                             .collect(),
                         is_mutable,
