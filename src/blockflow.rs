@@ -8,7 +8,7 @@ use crate::{
 
 /// CLI arguments for `kermit blockflow`.
 #[derive(Parser)]
-pub(crate) enum BlockflowSubcommands {
+pub enum BlockflowSubcommands {
     /// List blocks on the given time interval.
     #[command(visible_alias = "bs")]
     Blocks { from_ts: i64, to_ts: Option<i64> },
@@ -65,7 +65,7 @@ pub(crate) enum BlockflowSubcommands {
 }
 
 impl BlockflowSubcommands {
-    pub(crate) async fn run(self, url: &str) -> Result<()> {
+    pub async fn run(self, url: &str) -> Result<()> {
         check_network(&url).await?;
 
         let endpoint = match self {

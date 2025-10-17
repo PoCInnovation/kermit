@@ -1,20 +1,20 @@
 ---
-source: tests/utils.rs
-assertion_line: 67
+source: tests/common/perform_cmd.rs
+assertion_line: 45
 info:
   program: kermit
   args:
+    - contracts
     - "-n"
     - dev
     - "-c"
     - "./alephium.config.yaml"
-    - contracts
     - compile
-    - tests/fail_contracts/wrong_import.ral
+    - tests/contracts/fail/wrong_import.ral
 ---
 success: false
 exit_code: 1
 ----- stdout -----
 
 ----- stderr -----
-Error: File does not exist at path: tests/fail_contracts/inexistant.ral
+Error: File does not exist at path: tests/contracts/fail/inexistant.ral

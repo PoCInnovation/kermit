@@ -9,7 +9,7 @@ use crate::{
 
 /// CLI arguments for `kermit infos`.
 #[derive(Parser)]
-pub(crate) enum InfosSubcommands {
+pub enum InfosSubcommands {
     /// Get info about that node.
     #[command(visible_alias = "n")]
     Node,
@@ -64,7 +64,7 @@ pub(crate) enum InfosSubcommands {
 }
 
 impl InfosSubcommands {
-    pub(crate) async fn run(self, url: &str) -> Result<()> {
+    pub async fn run(self, url: &str) -> Result<()> {
         check_network(&url).await?;
 
         let output = match self {

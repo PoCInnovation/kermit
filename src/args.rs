@@ -13,7 +13,7 @@ use crate::{
 
 #[derive(Parser)]
 #[command(version)]
-pub(crate) struct Kermit {
+pub struct Kermit {
     #[clap(long, short, env, value_hint = ValueHint::Url,
     default_value = "http://localhost:22973")]
     pub url: String,
@@ -23,7 +23,7 @@ pub(crate) struct Kermit {
 }
 
 #[derive(Subcommand)]
-pub(crate) enum KermitSubcommand {
+pub enum KermitSubcommand {
     /// Address management utilities.
     #[command(visible_alias = "a")]
     Addresses {
@@ -45,7 +45,7 @@ pub(crate) enum KermitSubcommand {
         command: ContractsSubcommands,
 
         /// Path to the config YAML file
-        #[arg(long, short, default_value_t=String::from("./alephium.config.yaml"))]
+        #[arg(long, short, default_value = "./alephium.config.yaml")]
         config_file_path: String,
 
         /// Network type may trigger a different behavior in contract operations. Choose accordingly

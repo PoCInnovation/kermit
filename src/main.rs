@@ -39,7 +39,6 @@ async fn run() -> Result<()> {
             network,
         } => {
             let config = Config::new(&config_file_path)?;
-
             command.run(&kermit.url, &config, network).await?
         },
         KermitSubcommand::Infos { command } => command.run(&kermit.url).await?,

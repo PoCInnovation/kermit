@@ -8,7 +8,7 @@ use crate::{
 
 /// CLI arguments for `kermit addresses`.
 #[derive(Parser)]
-pub(crate) enum AddressesSubcommands {
+pub enum AddressesSubcommands {
     /// Get the balance of an address.
     #[command(visible_alias = "b")]
     Balance {
@@ -31,7 +31,7 @@ pub(crate) enum AddressesSubcommands {
 }
 
 impl AddressesSubcommands {
-    pub(crate) async fn run(self, url: String) -> Result<()> {
+    pub async fn run(self, url: String) -> Result<()> {
         check_network(&url).await?;
 
         let endpoint = match self {

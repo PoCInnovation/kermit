@@ -37,7 +37,7 @@ pub async fn get<T: DeserializeOwned>(url: &str, endpoint: &str) -> Result<Optio
 }
 
 /// Perform a POST request to the given URL
-pub(crate) async fn post<T: DeserializeOwned, U: Serialize>(
+pub async fn post<T: DeserializeOwned, U: Serialize>(
     url: &str,
     endpoint: &str,
     body: U,
@@ -72,7 +72,7 @@ pub(crate) async fn post<T: DeserializeOwned, U: Serialize>(
 }
 
 /// Perform a PUT request to the given URL
-pub(crate) async fn put<T: DeserializeOwned, U: Serialize>(
+pub async fn put<T: DeserializeOwned, U: Serialize>(
     url: &str,
     endpoint: &str,
     body: U,
@@ -107,7 +107,7 @@ pub(crate) async fn put<T: DeserializeOwned, U: Serialize>(
 }
 
 /// Perform a DELETE request to the given URL
-pub(crate) async fn delete<T: DeserializeOwned>(url: &str, endpoint: &str) -> Result<Option<T>> {
+pub async fn delete<T: DeserializeOwned>(url: &str, endpoint: &str) -> Result<Option<T>> {
     let client = Client::new();
 
     let url = format!("{url}{endpoint}");

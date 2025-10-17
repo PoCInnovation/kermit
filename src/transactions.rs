@@ -11,7 +11,7 @@ use crate::{
 
 /// CLI arguments for `kermit transactions`.
 #[derive(Parser)]
-pub(crate) enum TransactionsSubcommands {
+pub enum TransactionsSubcommands {
     /// Build a new transaction.
     #[command(visible_alias = "b")]
     Build {
@@ -153,7 +153,7 @@ fn append_groups(endpoint: &mut String, from_group: Option<i64>, to_group: Optio
 }
 
 impl TransactionsSubcommands {
-    pub(crate) async fn run(self, url: &str) -> Result<()> {
+    pub async fn run(self, url: &str) -> Result<()> {
         check_network(&url).await?;
 
         let output = match self {

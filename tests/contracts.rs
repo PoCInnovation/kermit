@@ -106,7 +106,7 @@ mod compile {
     async fn test_compile_invalid_import() {
         perform_cmd_test_contract(
             "compile_invalid_import",
-            &["compile", "tests/fail_contracts/wrong_import.ral"],
+            &["compile", "tests/contracts/fail/wrong_import.ral"],
             None,
             None,
             None,
@@ -118,7 +118,7 @@ mod compile {
     async fn test_compile_no_import() {
         perform_cmd_test_contract(
             "compile_no_import",
-            &["compile", "tests/fail_contracts/sub_contract_no_import.ral"],
+            &["compile", "tests/contracts/fail/sub_contract_no_import.ral"],
             None,
             None,
             None,

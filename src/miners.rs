@@ -9,7 +9,7 @@ use crate::{
 
 /// CLI arguments for `kermit miners`.
 #[derive(Parser)]
-pub(crate) enum MinersSubcommands {
+pub enum MinersSubcommands {
     /// Execute an action on CPU miner. !!! for test only !!!
     #[command(visible_alias = "cm")]
     CpuMining { action: String },
@@ -28,7 +28,7 @@ pub(crate) enum MinersSubcommands {
 }
 
 impl MinersSubcommands {
-    pub(crate) async fn run(self, url: &str) -> Result<()> {
+    pub async fn run(self, url: &str) -> Result<()> {
         check_network(&url).await?;
 
         let output = match self {
