@@ -4,8 +4,8 @@ use anyhow::{Context, Result, anyhow};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    config::config_contracts::ConfigContract,
     common::fs::{read_file, write_file},
+    config::config_contracts::ConfigContract,
 };
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -16,24 +16,25 @@ pub struct Config {
 
 impl Default for Config {
     fn default() -> Self {
-        Self {
-            contracts: None,
-        }
+        Self { contracts: None }
     }
 }
 
 impl Config {
-    pub fn new(config_path: &str) -> Result<Self> {
+    pub fn new(config_path: &str, create_if_not_exist: bool) -> Result<Self> {
         let path = Path::new(config_path);
         let path_str = path.to_str().context("Invalid config file path")?;
 
         // Create default "alephium.config.yaml" if it doesn't exist
-        if !path.exists() {
+        if create_if_not_exist && !path.exists() {
             let default_config = Config::default();
             let yaml = serde_yaml::to_string(&default_config)
                 .map_err(|e| anyhow!("Failed to serialize default config: {}", e))?;
 
-            println!("Contract config file not found at {}. Creating default config file at {} ...", config_path, path_str);
+            println!(
+                "Contract config file not found at {}. Creating default config file at {} ...",
+                config_path, path_str
+            );
 
             write_file(path_str, &yaml)?;
 

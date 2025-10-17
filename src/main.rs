@@ -17,8 +17,6 @@ use anyhow::Result;
 use args::{Kermit, KermitSubcommand};
 use clap::Parser;
 
-use crate::config::config::Config;
-
 #[tokio::main]
 async fn main() {
     if let Err(err) = run().await {
@@ -36,10 +34,17 @@ async fn run() -> Result<()> {
         KermitSubcommand::Contracts {
             command,
             config_file_path,
+            auto_create_config_file,
             network,
         } => {
-            let config = Config::new(&config_file_path)?;
-            command.run(&kermit.url, &config, network).await?;
+            command
+                .run(
+                    &kermit.url,
+                    &config_file_path,
+                    network,
+                    auto_create_config_file,
+                )
+                .await?;
         },
         KermitSubcommand::Infos { command } => command.run(&kermit.url).await?,
         KermitSubcommand::Miners { command } => command.run(&kermit.url).await?,

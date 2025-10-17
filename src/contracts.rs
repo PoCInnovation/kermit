@@ -198,7 +198,13 @@ fn get_contract_initial_fields(
 }
 
 impl ContractsSubcommands {
-    pub async fn run(self, url: &str, config: &Config, network_id: NetworkType) -> Result<()> {
+    pub async fn run(
+        self,
+        url: &str,
+        config_file_path: &str,
+        network_id: NetworkType,
+        auto_create_config_file: bool,
+    ) -> Result<()> {
         check_network(&url).await?;
 
         let value: Value = match self {
@@ -216,13 +222,14 @@ impl ContractsSubcommands {
                 issue_token_amount,
             } => {
                 let compiled_project = load_compile_project(&compile_output_path)?;
+                let config = Config::new(&config_file_path, auto_create_config_file)?;
 
                 match compiled_type {
                     CompiledType::Contract => {
                         let contract = compiled_project.get_contract_by_name(&contract_name)?;
 
                         let initial_fields = get_contract_initial_fields(
-                            config,
+                            &config,
                             &contract_name,
                             &contract.fields_types,
                         )?;
@@ -256,6 +263,7 @@ impl ContractsSubcommands {
             } => {
                 let compiled_project = load_compile_project(&compile_output_path)?;
                 let contract = compiled_project.get_contract_by_name(&contract_name)?;
+                let config = Config::new(&config_file_path, auto_create_config_file)?;
 
                 let contracts_map = config
                     .contracts
@@ -299,6 +307,7 @@ impl ContractsSubcommands {
             } => {
                 let compiled_project = load_compile_project(&compile_output_path)?;
                 let contract = compiled_project.get_contract_by_name(&contract_name)?;
+                let config = Config::new(&config_file_path, auto_create_config_file)?;
 
                 let contracts_map = config
                     .contracts
