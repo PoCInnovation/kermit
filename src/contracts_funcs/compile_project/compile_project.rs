@@ -59,9 +59,7 @@ fn resolve_rec_type(
                     return Ok((param_index + sub_index + sub_nested_index, value));
                 } else {
                     bail!(
-                        "Field '{}' in structure '{:?}' is not a structure",
-                        nested_struct_name,
-                        type_name
+                        "Field '{nested_struct_name}' in structure '{type_name:?}' is not a structure",
                     );
                 }
             }
@@ -92,7 +90,7 @@ fn resolve_rec_type(
             let ralph_values = vec_values
                 .into_iter()
                 .map(|v| {
-                    let (_, value) = resolve_rec_type(name, v.to_string(), types, Some(arr_type))?;
+                    let (_, value) = resolve_rec_type(name, v, types, Some(arr_type))?;
                     Ok(value)
                 })
                 .collect::<Result<Vec<_>>>()?;
@@ -101,7 +99,7 @@ fn resolve_rec_type(
         },
         _ => {
             let is_hex_string = is_hex_string(&value);
-            let ralph_value = if type_name.to_owned() == TypeName::ByteVec && !is_hex_string {
+            let ralph_value = if *type_name == TypeName::ByteVec && !is_hex_string {
                 // Human readable  String
                 value.as_str().try_into()?
             } else {
@@ -198,7 +196,7 @@ impl CompiledContract {
         let fields_types = fields_iter
             .map(|(name, (ty, is_mutable))| {
                 let ty = ty.as_str().context("Expected field type as string")?;
-                let type_name = TypeName::from_name_and_structures(ty, &structs)?;
+                let type_name = TypeName::from_name_and_structures(ty, structs)?;
                 Ok((name.clone(), (type_name, *is_mutable)))
             })
             .collect::<Result<IndexMap<_, _>>>()?;
@@ -206,7 +204,7 @@ impl CompiledContract {
         let functions = contract
             .functions
             .into_iter()
-            .map(|raw| Function::from_raw_and_structures(raw, &structs))
+            .map(|raw| Function::from_raw_and_structures(raw, structs))
             .collect::<Result<Vec<_>>>()?;
 
         Ok(Self {
@@ -257,8 +255,7 @@ impl CompileProject {
             .iter()
             .find(|c| c.name == contract_name)
             .context(format!(
-                "Contract '{}' not found in compiled project",
-                contract_name
+                "Contract '{contract_name}' not found in compiled project"
             ))
     }
 }
@@ -279,7 +276,7 @@ impl TryFrom<RawCompileProject> for CompileProject {
                     .map(|t| {
                         let t = t
                             .as_str()
-                            .context(format!("Struct field type is not a string: {:?}", t))?;
+                            .context(format!("Struct field type is not a string: {t:?}"))?;
 
                         Ok(t.to_string())
                     })
@@ -316,7 +313,7 @@ impl TryFrom<RawCompileProject> for CompileProject {
             })
             .collect::<Result<Vec<_>>>()?;
 
-        Ok(CompileProject { contracts, scripts })
+        Ok(Self { contracts, scripts })
     }
 }
 
@@ -333,8 +330,7 @@ impl Function {
             .map(|((v, is_mutable), name)| {
                 let ty = TypeName::from_name_and_structures(
                     v.as_str().context(format!(
-                        "Function parameter should be a correct type. Found {}",
-                        v
+                        "Function parameter should be a correct type. Found {v}"
                     ))?,
                     structures,
                 )?;
@@ -349,8 +345,7 @@ impl Function {
             .map(|x| {
                 TypeName::from_name_and_structures(
                     x.as_str().context(format!(
-                        "Function return type should be a correct type. Found {}",
-                        x
+                        "Function return type should be a correct type. Found {x}",
                     ))?,
                     structures,
                 )
@@ -369,12 +364,12 @@ impl Function {
 }
 
 pub fn load_compile_project(path: &str) -> Result<CompileProject> {
-    let compiled_project_result = serde_json::from_str::<RawCompileProject>(&read_file(&path)?);
+    let compiled_project_result = serde_json::from_str::<RawCompileProject>(&read_file(path)?);
 
     let compiled_project = match compiled_project_result {
         Ok(project) => project,
         Err(e) => {
-            bail!("Error parsing compile output: {}", e);
+            bail!("Error parsing compile output: {e}");
         },
     };
 

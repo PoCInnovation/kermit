@@ -20,24 +20,18 @@ pub struct ContractState {
 }
 
 pub async fn state(url: &str, contract_id: &str) -> Result<Value> {
-    let endpoint = format!("/contracts/{}/state", contract_id);
-    Ok(get::<Value>(url, endpoint.as_str())
-        .await?
-        .context("Empty reply")?)
+    let endpoint = format!("/contracts/{contract_id}/state");
+    get(url, &endpoint).await?.context("Empty reply")
 }
 
 pub async fn code(url: &str, code_hash: &str) -> Result<Value> {
-    let endpoint: String = format!("/contracts/{code_hash}/code");
-    Ok(get::<Value>(url, endpoint.as_str())
-        .await?
-        .context("Empty reply")?)
+    let endpoint = format!("/contracts/{code_hash}/code");
+    get(url, &endpoint).await?.context("Empty reply")
 }
 
 pub async fn parent(url: &str, contract_id: &str) -> Result<Value> {
-    let endpoint: String = format!("/contracts/{contract_id}/parent");
-    Ok(get::<Value>(url, endpoint.as_str())
-        .await?
-        .context("Empty reply")?)
+    let endpoint = format!("/contracts/{contract_id}/parent");
+    get(url, &endpoint).await?.context("Empty reply")
 }
 
 pub async fn sub_contracts(
@@ -46,20 +40,15 @@ pub async fn sub_contracts(
     start: i32,
     limit: Option<i32>,
 ) -> Result<Value> {
-    let endpoint: String = format!("/contracts/{contract_id}/sub-contracts?start={start}");
-    let endpoint = if let Some(limit) = limit {
-        format!("{endpoint}&limit={limit}")
-    } else {
-        endpoint
-    };
-    Ok(get::<Value>(url, endpoint.as_str())
-        .await?
-        .context("Empty reply")?)
+    let mut endpoint = format!("/contracts/{contract_id}/sub-contracts?start={start}");
+    if let Some(limit) = limit {
+        endpoint.push_str(&format!("&limit={limit}"));
+    }
+
+    get(url, &endpoint).await?.context("Empty reply")
 }
 
 pub async fn sub_contracts_current_count(url: &str, contract_id: &str) -> Result<Value> {
-    let endpoint: String = format!("/contracts/{contract_id}/sub-contracts/current-count");
-    Ok(get::<Value>(url, endpoint.as_str())
-        .await?
-        .context("Empty reply")?)
+    let endpoint = format!("/contracts/{contract_id}/sub-contracts/current-count");
+    get(url, &endpoint).await?.context("Empty reply")
 }

@@ -10,12 +10,12 @@ async fn is_network_alive(url: &str) -> Result<bool> {
 
 /* See if the network is available before continuing */
 pub async fn check_network(url: &str) -> Result<()> {
-    if reqwest::Url::parse(&url).is_err() {
-        bail!("Invalid node URL: {}", url);
+    if reqwest::Url::parse(url).is_err() {
+        bail!("Invalid node URL: {url}");
     }
 
-    if !is_network_alive(&url).await? {
-        bail!("Network is not reachable: {}", url);
+    if !is_network_alive(url).await? {
+        bail!("Network is not reachable: {url}");
     }
 
     Ok(())

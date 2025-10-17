@@ -127,7 +127,7 @@ pub fn encode_i256(value: I256) -> Vec<u8> {
         encode_i32(value.as_i32())
     } else {
         let bytes = BigIntCodec::encode(value);
-        let header = ((bytes.len() as u8 - 4 + MULTI_BYTE_PREFIX) & 0xff) as u8;
+        let header = (bytes.len() as u8 - 4 + MULTI_BYTE_PREFIX) & 0xff;
         [vec![header], bytes].concat()
     }
 }
@@ -142,7 +142,7 @@ pub fn encode_u256(value: U256) -> Vec<u8> {
         if !bytes.is_empty() && bytes[0] == 0 {
             bytes.remove(0);
         }
-        let header = ((bytes.len() as u8 - 4 + MULTI_BYTE_PREFIX) & 0xff) as u8;
+        let header = (bytes.len() as u8 - 4 + MULTI_BYTE_PREFIX) & 0xff;
         let mut result = Vec::with_capacity(1 + bytes.len());
         result.push(header);
         result.extend(bytes);

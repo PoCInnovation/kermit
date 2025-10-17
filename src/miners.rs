@@ -29,7 +29,7 @@ pub enum MinersSubcommands {
 
 impl MinersSubcommands {
     pub async fn run(self, url: &str) -> Result<()> {
-        check_network(&url).await?;
+        check_network(url).await?;
 
         let output = match self {
             Self::CpuMining { action } => {

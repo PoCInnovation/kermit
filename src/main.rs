@@ -31,7 +31,7 @@ async fn run() -> Result<()> {
     let kermit = Kermit::parse();
 
     match kermit.cmd {
-        KermitSubcommand::Addresses { command } => command.run(kermit.url).await?,
+        KermitSubcommand::Addresses { command } => command.run(&kermit.url).await?,
         KermitSubcommand::Blockflow { command } => command.run(&kermit.url).await?,
         KermitSubcommand::Contracts {
             command,
@@ -39,7 +39,7 @@ async fn run() -> Result<()> {
             network,
         } => {
             let config = Config::new(&config_file_path)?;
-            command.run(&kermit.url, &config, network).await?
+            command.run(&kermit.url, &config, network).await?;
         },
         KermitSubcommand::Infos { command } => command.run(&kermit.url).await?,
         KermitSubcommand::Miners { command } => command.run(&kermit.url).await?,

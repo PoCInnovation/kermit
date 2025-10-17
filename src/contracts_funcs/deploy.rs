@@ -47,7 +47,7 @@ async fn validate_chain_params(
 
     let mut seen = std::collections::HashSet::new();
     if groups.iter().any(|group| !seen.insert(group)) {
-        bail!("Found duplicated groups in: {:?}", groups);
+        bail!("Found duplicated groups in: {groups:?}");
     }
 
     if groups.len() > chain_params.groups as usize {
@@ -121,7 +121,7 @@ async fn send_contract_tx(
     } = match build_result {
         Ok(response) => response.context("Empty reply")?,
         Err(e) => {
-            bail!("Error building contract transaction: {:?}", e);
+            bail!("Error building contract transaction: {e:?}");
         },
     };
 
@@ -152,16 +152,16 @@ pub async fn deploy_contract(
         .await?
         .context("Empty reply")?;
 
-    validate_chain_params(network_id as u8, &vec![account.group], chain_params).await?;
+    validate_chain_params(network_id as u8, &[account.group], chain_params).await?;
 
-    let bytecode = build_bytecode_contract(&contract, init_fields, network_id == NetworkType::Dev)?;
+    let bytecode = build_bytecode_contract(contract, init_fields, network_id == NetworkType::Dev)?;
 
-    Ok(send_contract_tx(
+    send_contract_tx(
         url,
         account.private_key.as_ref(),
         &account.address,
         &bytecode,
         issue_token_amount,
     )
-    .await?)
+    .await
 }

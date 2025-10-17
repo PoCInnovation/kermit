@@ -18,10 +18,8 @@ async fn get_contract_states(
 ) -> Result<Vec<ContractState>> {
     let futures = existing_contracts.iter().map(|id| async move {
         let state = state(url, id).await?;
-        serde_json::from_value::<ContractState>(state).context(format!(
-            "Failed to deserialize state for contract ID: {}",
-            id
-        ))
+        serde_json::from_value::<ContractState>(state)
+            .context(format!("Failed to deserialize state for contract ID: {id}"))
     });
     try_join_all(futures).await
 }
@@ -58,7 +56,7 @@ pub async fn test_contract(
         "existingContracts": existing_contracts
     });
 
-    Ok(post(url, "/contracts/test-contract", body)
+    post(url, "/contracts/test-contract", body)
         .await?
-        .context("Empty reply")?)
+        .context("Empty reply")
 }

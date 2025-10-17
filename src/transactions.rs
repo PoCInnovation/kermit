@@ -154,7 +154,7 @@ fn append_groups(endpoint: &mut String, from_group: Option<i64>, to_group: Optio
 
 impl TransactionsSubcommands {
     pub async fn run(self, url: &str) -> Result<()> {
-        check_network(&url).await?;
+        check_network(url).await?;
 
         let output = match self {
             Self::Build {

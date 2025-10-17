@@ -65,7 +65,7 @@ pub enum InfosSubcommands {
 
 impl InfosSubcommands {
     pub async fn run(self, url: &str) -> Result<()> {
-        check_network(&url).await?;
+        check_network(url).await?;
 
         let output = match self {
             Self::Node => get(url, "/infos/node").await?,

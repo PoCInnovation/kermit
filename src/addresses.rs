@@ -31,8 +31,8 @@ pub enum AddressesSubcommands {
 }
 
 impl AddressesSubcommands {
-    pub async fn run(self, url: String) -> Result<()> {
-        check_network(&url).await?;
+    pub async fn run(self, url: &str) -> Result<()> {
+        check_network(url).await?;
 
         let endpoint = match self {
             Self::Balance { address, mem_pool } => {

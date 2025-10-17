@@ -27,7 +27,7 @@ pub enum UtilsSubcommands {
     },
 }
 
-#[derive(Clone, ValueEnum)]
+#[derive(Clone, Copy, ValueEnum)]
 #[clap(rename_all = "lowercase")]
 pub enum AlephiumUnit {
     Alph,

@@ -1260,7 +1260,6 @@ dependencies = [
  "indexmap 2.11.4",
  "insta",
  "insta-cmd",
- "once_cell",
  "regex",
  "reqwest",
  "secp256k1",

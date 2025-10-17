@@ -62,7 +62,7 @@ fn encode_fields_by_type(fields: &FieldsVec, is_mutable: bool) -> Result<Vec<u8>
             RalphValue::U256(n) => encode_vmbyte_u256(*n),
             RalphValue::I256(n) => encode_vmbyte_i256(*n),
             RalphValue::ByteVec(bytes) => encode_vmbyte_vec(bytes),
-            RalphValue::Address(addr) => encode_vmbyte_address(addr),
+            RalphValue::Address(addr) => encode_vmbyte_address(addr)?,
             RalphValue::Array(arr) => {
                 let mut encoded: Vec<u8> = Vec::new();
                 for item in arr {
@@ -71,7 +71,7 @@ fn encode_fields_by_type(fields: &FieldsVec, is_mutable: bool) -> Result<Vec<u8>
                         is_mutable,
                     )?);
                 }
-                Ok(encoded)
+                encoded
             },
             // Normally, if the structure is mutable, then at least one of the attributes is
             RalphValue::Structure(fields) => {
@@ -84,10 +84,10 @@ fn encode_fields_by_type(fields: &FieldsVec, is_mutable: bool) -> Result<Vec<u8>
                         is_mutable,
                     )?);
                 }
-                Ok(encoded)
+                encoded
             },
             _ => bail!("Unsupported value type for field '{:?}'", value),
-        }?;
+        };
         acc.extend_from_slice(&encoded_value);
         Ok(acc)
     })?;

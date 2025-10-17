@@ -134,7 +134,7 @@ impl WalletsSubcommands {
             eprintln!("Warning: Wallets commands only work on devnet network.");
         }
 
-        check_network(&url).await?;
+        check_network(url).await?;
 
         let output = match self {
             Self::List => get(url, "/wallets").await?,

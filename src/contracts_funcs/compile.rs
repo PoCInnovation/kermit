@@ -1,14 +1,16 @@
 use anyhow::{Context, Result, anyhow, bail};
 use regex::{Error, Regex, RegexBuilder};
 use serde_json::{Value, json};
-use std::path::{Path, PathBuf};
+use std::{
+    path::{Path, PathBuf},
+    sync::LazyLock,
+};
 
 use crate::{
     common::{fs::read_file, post},
     contracts::CompilerOptions,
     contracts_funcs::source_info::{SourceInfo, SourceKind},
 };
-use once_cell::sync::Lazy;
 use std::collections::{HashMap, HashSet};
 
 fn load_ral_files(compile_path: &str) -> Result<(Vec<String>, String)> {
@@ -37,40 +39,41 @@ fn load_ral_files(compile_path: &str) -> Result<(Vec<String>, String)> {
     Ok((ral_files_path, compile_path.to_string()))
 }
 
-static SOURCE_KIND_REGEX: Lazy<Result<HashMap<SourceKind, Regex>, Error>> = Lazy::new(|| {
-    let mut m = HashMap::new();
-    m.insert(
-        SourceKind::AbstractContract,
-        RegexBuilder::new(r"^Abstract Contract ([A-Z][a-zA-Z0-9]*)")
-            .multi_line(true)
-            .build()?,
-    );
-    m.insert(
-        SourceKind::Contract,
-        RegexBuilder::new(r"^Contract ([A-Z][a-zA-Z0-9]*)")
-            .multi_line(true)
-            .build()?,
-    );
-    m.insert(
-        SourceKind::Interface,
-        RegexBuilder::new(r"^Interface ([A-Z][a-zA-Z0-9]*)")
-            .multi_line(true)
-            .build()?,
-    );
-    m.insert(
-        SourceKind::Script,
-        RegexBuilder::new(r"^TxScript ([A-Z][a-zA-Z0-9]*)")
-            .multi_line(true)
-            .build()?,
-    );
-    m.insert(
-        SourceKind::Struct,
-        RegexBuilder::new(r"struct ([A-Z][a-zA-Z0-9]*)")
-            .multi_line(true)
-            .build()?,
-    );
-    Ok(m)
-});
+static SOURCE_KIND_REGEX: LazyLock<Result<HashMap<SourceKind, Regex>, Error>> =
+    LazyLock::new(|| {
+        let mut m = HashMap::new();
+        m.insert(
+            SourceKind::AbstractContract,
+            RegexBuilder::new(r"^Abstract Contract ([A-Z][a-zA-Z0-9]*)")
+                .multi_line(true)
+                .build()?,
+        );
+        m.insert(
+            SourceKind::Contract,
+            RegexBuilder::new(r"^Contract ([A-Z][a-zA-Z0-9]*)")
+                .multi_line(true)
+                .build()?,
+        );
+        m.insert(
+            SourceKind::Interface,
+            RegexBuilder::new(r"^Interface ([A-Z][a-zA-Z0-9]*)")
+                .multi_line(true)
+                .build()?,
+        );
+        m.insert(
+            SourceKind::Script,
+            RegexBuilder::new(r"^TxScript ([A-Z][a-zA-Z0-9]*)")
+                .multi_line(true)
+                .build()?,
+        );
+        m.insert(
+            SourceKind::Struct,
+            RegexBuilder::new(r"struct ([A-Z][a-zA-Z0-9]*)")
+                .multi_line(true)
+                .build()?,
+        );
+        Ok(m)
+    });
 
 fn get_source_info(
     source_code: String,
