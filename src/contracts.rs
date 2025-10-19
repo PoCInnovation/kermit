@@ -9,12 +9,12 @@ use crate::{
         address::Address,
         signature::{GLSecp256k1PrivateKey, PrivateKey},
     },
-    config::config::Config,
+    config::config_struct::Config,
     contracts_funcs::{
         call::call_contract,
         compile::compile,
         compile_project::{
-            compile_project::{FieldsTypesMapMut, FieldsVec, load_compile_project},
+            compile_project_structs::{FieldsTypesMapMut, FieldsVec, load_compile_project},
             compile_project_values::config_fields_to_vec,
         },
         deploy::deploy_contract,
@@ -80,9 +80,9 @@ pub struct CompilerOptions {
 fn parse_key_val(s: &str) -> Result<(String, String), String> {
     let parts: Vec<&str> = s.splitn(2, '=').collect();
     if parts.len() != 2 {
-        return Err(format!("Invalid KEY=VALUE: '{}'", s));
+        return Err(format!("Invalid KEY=VALUE: '{s}'"));
     }
-    if let (Some(key), Some(value)) = (parts.get(0), parts.get(1)) {
+    if let (Some(key), Some(value)) = (parts.first(), parts.get(1)) {
         Ok((key.to_string(), value.to_string()))
     } else {
         Err("Failed to parse key-value pair".to_string())
@@ -151,8 +151,8 @@ pub enum ContractsSubcommands {
         private_key: String,
 
         /// List of existing contracts to include in the test
-        #[arg(long = "interested-contracts", value_name = "CONTRACT_ADDRESS", num_args = 0..)]
-        exiting_contracts: Vec<String>,
+        #[arg(value_name = "CONTRACT_ADDRESS", num_args = 0..)]
+        interested_contracts: Vec<String>,
 
         /// Block hash to use for the call
         #[arg(long)]
@@ -191,10 +191,10 @@ fn get_contract_initial_fields(
         .context("No 'contracts' field in config")?;
     let config_contract = contracts_map
         .get(contract_name)
-        .context(format!("Contract '{}' not found in config", contract_name))?
+        .context(format!("Contract '{contract_name}' not found in config"))?
         .to_owned();
 
-    config_fields_to_vec(config_contract.initial_fields, contract_fields_types)
+    config_fields_to_vec(&config_contract.initial_fields, contract_fields_types)
 }
 
 impl ContractsSubcommands {
@@ -205,7 +205,7 @@ impl ContractsSubcommands {
         network_id: NetworkType,
         auto_create_config_file: bool,
     ) -> Result<()> {
-        check_network(&url).await?;
+        check_network(url).await?;
 
         let value: Value = match self {
             Self::Compile {
@@ -222,7 +222,7 @@ impl ContractsSubcommands {
                 issue_token_amount,
             } => {
                 let compiled_project = load_compile_project(&compile_output_path)?;
-                let config = Config::new(&config_file_path, auto_create_config_file)?;
+                let config = Config::new(config_file_path, auto_create_config_file)?;
 
                 match compiled_type {
                     CompiledType::Contract => {
@@ -241,7 +241,7 @@ impl ContractsSubcommands {
                             url,
                             private_key,
                             network_id,
-                            &contract,
+                            contract,
                             initial_fields,
                             issue_token_amount,
                         )
@@ -259,11 +259,11 @@ impl ContractsSubcommands {
                 contract_id,
                 compile_output_path,
                 args,
-                exiting_contracts,
+                exiting_contracts: existing_contracts,
             } => {
                 let compiled_project = load_compile_project(&compile_output_path)?;
                 let contract = compiled_project.get_contract_by_name(&contract_name)?;
-                let config = Config::new(&config_file_path, auto_create_config_file)?;
+                let config = Config::new(config_file_path, auto_create_config_file)?;
 
                 let contracts_map = config
                     .contracts
@@ -271,27 +271,20 @@ impl ContractsSubcommands {
                     .context("No 'contracts' field in config")?;
                 let config_contract = contracts_map
                     .get(&contract.name)
-                    .context(format!("Contract '{}' not found in config", contract_name))?
+                    .context(format!("Contract '{contract_name}' not found in config"))?
                     .to_owned();
 
                 let initial_fields =
-                    config_fields_to_vec(config_contract.initial_fields, &contract.fields_types)?;
-
-                let exiting_contracts = exiting_contracts
-                    .iter()
-                    .map(|id| id.as_str())
-                    .collect::<Vec<_>>();
+                    config_fields_to_vec(&config_contract.initial_fields, &contract.fields_types)?;
 
                 test_contract(
                     url,
                     &method_name,
-                    &contract_id,
-                    contract,
+                    (contract, &contract_id, existing_contracts),
                     initial_fields,
                     &config_contract.initial_asset,
                     &config_contract.input_assets,
                     args,
-                    exiting_contracts,
                 )
                 .await?
             },
@@ -302,12 +295,12 @@ impl ContractsSubcommands {
                 method_name,
                 args,
                 private_key,
-                exiting_contracts,
+                interested_contracts,
                 block_hash,
             } => {
                 let compiled_project = load_compile_project(&compile_output_path)?;
                 let contract = compiled_project.get_contract_by_name(&contract_name)?;
-                let config = Config::new(&config_file_path, auto_create_config_file)?;
+                let config = Config::new(config_file_path, auto_create_config_file)?;
 
                 let contracts_map = config
                     .contracts
@@ -315,7 +308,7 @@ impl ContractsSubcommands {
                     .context("No 'contracts' field in config")?;
                 let config_contract = contracts_map
                     .get(&contract.name)
-                    .context(format!("Contract '{}' not found in config", contract_name))?
+                    .context(format!("Contract '{contract_name}' not found in config"))?
                     .to_owned();
 
                 let private_key: Box<dyn PrivateKey> =
@@ -325,12 +318,10 @@ impl ContractsSubcommands {
                 call_contract(
                     url,
                     &method_name,
-                    &contract_id,
-                    contract,
+                    (contract, &contract_id, interested_contracts),
                     &address,
                     &config_contract.input_assets,
                     args,
-                    exiting_contracts,
                     block_hash,
                 )
                 .await?

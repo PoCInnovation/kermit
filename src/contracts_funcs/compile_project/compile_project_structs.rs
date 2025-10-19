@@ -28,9 +28,7 @@ fn resolve_rec_type(
         (typename, 0) // 0 magic value since the index is skipped
     } else {
         let (param_index, _, (typename, _)) = types.get_full(name).context(anyhow!(
-            "Type for field '{}' not found in provided args types map: {:?}",
-            name,
-            types
+            "Type for field '{name}' not found in provided args types map: {types:?}"
         ))?;
         (typename, param_index)
     };
@@ -38,13 +36,11 @@ fn resolve_rec_type(
     match type_name {
         TypeName::Structure((_, struct_types)) => {
             let rest = rest.context(format!(
-                "Structure field name cannot be empty for field '{}', type '{:?}'",
-                name, type_name
+                "Structure field name cannot be empty for field '{name}', type '{type_name:?}'"
             ))?;
             let mut sub_parts = rest.splitn(2, '.');
             let nested_struct_name = sub_parts.next().context(format!(
-                "Structure field name cannot be empty for field '{}', type '{:?}'",
-                name, type_name
+                "Structure field name cannot be empty for field '{name}', type '{type_name:?}'"
             ))?;
 
             if let Some(remaining_dots) = sub_parts.next() {

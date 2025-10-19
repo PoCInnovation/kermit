@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::path::{MAIN_SEPARATOR, Path};
+use std::path::{MAIN_SEPARATOR, MAIN_SEPARATOR_STR, Path};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum SourceKind {
     Contract,
     Script,
@@ -10,12 +10,6 @@ pub enum SourceKind {
     Interface,
     Struct,
     Constants,
-}
-
-impl Ord for SourceKind {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        (*self as u8).cmp(&(*other as u8))
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
@@ -78,8 +72,7 @@ impl SourceInfo {
                 .skip_while(|&&p| p == ".." || p == ".")
                 .cloned()
                 .collect();
-            let external_path =
-                Path::new(".external").join(filtered.join(&MAIN_SEPARATOR.to_string()));
+            let external_path = Path::new(".external").join(filtered.join(MAIN_SEPARATOR_STR));
             Path::new(artifact_root_dir).join(external_path)
         } else {
             Path::new(artifact_root_dir).join(&self.code_info.contract_relative_path)

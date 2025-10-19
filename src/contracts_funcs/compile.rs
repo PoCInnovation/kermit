@@ -76,17 +76,17 @@ static SOURCE_KIND_REGEX: LazyLock<Result<HashMap<SourceKind, Regex>, Error>> =
     });
 
 fn get_source_info(
-    source_code: String,
+    source_code: &str,
     contracts_relative_path: &str,
     is_imported: bool,
 ) -> Result<Vec<SourceInfo>> {
     let mut source_infos = Vec::new();
     let source_kind_regex = SOURCE_KIND_REGEX
         .as_ref()
-        .map_err(|e| anyhow!("Failed to compile regex: {}", e))?;
+        .map_err(|e| anyhow!("Failed to compile regex: {e}"))?;
 
     for (kind, regex) in source_kind_regex.iter() {
-        for cap in regex.captures_iter(&source_code) {
+        for cap in regex.captures_iter(source_code) {
             let name = cap
                 .get(1)
                 .map(|m| m.as_str().to_string())
@@ -96,7 +96,7 @@ fn get_source_info(
                 *kind,
                 name,
                 from_index,
-                source_code.clone(),
+                source_code.to_owned(),
                 contracts_relative_path.to_string(), // contract_relative_path, adjust as needed
                 is_imported,
             );
@@ -115,7 +115,7 @@ fn get_source_info(
             SourceKind::Constants,
             name,
             None,
-            source_code.clone(),
+            source_code.to_owned(),
             contracts_relative_path.to_string(),
             false,
         ));
@@ -140,6 +140,10 @@ fn get_import_path(cwd_path: &str, import_path: &str) -> Result<String> {
     ))
 }
 
+static REGEX_GET_IMPORT: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"^import\s+"[^"]+"$"#).unwrap());
+static REGEX_CHECK_IMPORT: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"^import ""#).unwrap());
+
 fn load_file(
     path: &str,
     contracts_relative_path: &str,
@@ -148,15 +152,13 @@ fn load_file(
 ) -> Result<(Vec<SourceInfo>, HashSet<String>)> {
     let file_content = read_file(path)?;
 
-    let re = Regex::new(r#"^import\s+"[^"]+"$"#).context("Failed to compile regex")?;
-
     let mut source_content = file_content.clone();
     let mut import_file_paths = vec![];
     let mut import_statements_range = vec![];
 
     let mut character_index: usize = 0;
     for line in file_content.lines() {
-        if let Some(mat) = re.find(line) {
+        if let Some(mat) = REGEX_GET_IMPORT.find(line) {
             let import_stmt = mat.as_str();
             let mut import_path = import_stmt[8..import_stmt.len() - 1].to_string();
             if !import_path.ends_with(".ral") {
@@ -179,7 +181,7 @@ fn load_file(
     }
 
     for (i, line) in source_content.lines().enumerate() {
-        if Regex::new(r#"^import ""#)?.find(line).is_some() {
+        if REGEX_CHECK_IMPORT.find(line).is_some() {
             bail!(
                 "Invalid import statements, source: {} (line {})",
                 path,
@@ -192,7 +194,7 @@ fn load_file(
     let mut imported_source_infos = Vec::new();
 
     for import_path in &import_file_paths {
-        let import_path = get_import_path(contracts_relative_path, &import_path)?;
+        let import_path = get_import_path(contracts_relative_path, import_path)?;
         if new_import_file_paths_cache.contains(&import_path) {
             continue;
         }
@@ -208,8 +210,7 @@ fn load_file(
         imported_source_infos.extend(imported_source_info);
     }
 
-    let mut source_infos =
-        get_source_info(source_content.clone(), contracts_relative_path, is_imported)?;
+    let mut source_infos = get_source_info(&source_content, contracts_relative_path, is_imported)?;
     source_infos.extend(imported_source_infos);
 
     Ok((source_infos, new_import_file_paths_cache))
@@ -257,7 +258,7 @@ pub async fn compile(
         .collect::<Vec<_>>()
         .join("\n");
 
-    Ok(post(
+    post(
         url,
         "/contracts/compile-project",
         json!({
@@ -266,5 +267,5 @@ pub async fn compile(
         }),
     )
     .await?
-    .context("Empty reply")?)
+    .context("Empty reply")
 }

@@ -39,9 +39,9 @@ pub fn encode_vmbyte_address(s: &str) -> Result<Vec<u8>> {
     Ok(encode_vmbyte(VmValType::Address, decoded))
 }
 
-pub fn encode_vmbyte_vec(hex_bytes: &Vec<u8>) -> Vec<u8> {
+pub fn encode_vmbyte_vec(hex_bytes: &[u8]) -> Vec<u8> {
     let size = encode_i32(hex_bytes.len() as i32);
 
-    let final_bytes = [size, hex_bytes.clone()].concat();
+    let final_bytes = [size, hex_bytes.to_vec()].concat();
     encode_vmbyte(VmValType::ByteVec, final_bytes)
 }

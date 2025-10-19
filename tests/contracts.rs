@@ -42,7 +42,7 @@ async fn perform_cmd_test_contract(
     let mut new_args = vec!["contracts", "-n", "dev", "-c", config_path];
     new_args.extend(args);
 
-    let custom_filter = custom_filter.unwrap_or_else(|| vec![]);
+    let custom_filter = custom_filter.unwrap_or_default();
 
     perform_cmd_test!(name, &url, &new_args, &custom_filter);
 }
@@ -56,12 +56,6 @@ pub fn perform_cmd_dev(name: &str, args: &[&str], config_name: Option<&str>, url
 
     perform_cmd_output(name, &new_args, url)
 }
-
-///////////
-///
-/// Compile
-///
-///////////
 
 mod compile {
     use crate::perform_cmd_test_contract;
@@ -163,12 +157,6 @@ mod compile {
     }
 }
 
-///////////
-///
-/// Deploy
-///
-///////////
-
 mod deploy {
     use crate::{
         CONTRACT_FILTERS, DEFAULT_PRIVATE_KEY, TEST_CONFIG, common::setup_node, perform_cmd_dev,
@@ -247,12 +235,6 @@ mod deploy {
         .await;
     }
 }
-
-///////////
-///
-/// Call Contract
-///
-///////////
 
 mod call {
     use crate::{
@@ -438,12 +420,6 @@ mod call {
     }
 }
 
-///////////
-///
-/// Contract Infos
-///
-///////////
-
 mod infos {
     use crate::{
         CONTRACT_FILTERS, DEFAULT_PRIVATE_KEY, TEST_CONFIG,
@@ -510,7 +486,7 @@ mod infos {
         let code = data["contracts"]
             .as_array()
             .unwrap()
-            .get(0)
+            .first()
             .unwrap()
             .as_object()
             .unwrap()["codeHash"]

@@ -52,7 +52,7 @@ impl AddressesSubcommands {
             },
         };
 
-        let output = get(&url, &endpoint).await?;
+        let output = get(url, &endpoint).await?;
         print_output(output)?;
 
         Ok(())

@@ -3,7 +3,7 @@ use regex::Regex;
 
 use crate::contracts_funcs::{
     compile_project::{
-        compile_project::{CompiledContract, FieldsVec},
+        compile_project_structs::{CompiledContract, FieldsVec},
         compile_project_values::RalphValue,
     },
     contract_codec::encode_i32,
@@ -28,26 +28,26 @@ fn get_debug_bytecode(bytecode: &str, bytecode_patch: &str) -> Result<String> {
 
         match diff_type {
             '=' => {
-                let length = usize::from_str_radix(
-                    &part.get(1..).context("Missing character in bytecode")?,
-                    10,
-                )
-                .context("Failed to parse length for '=' patch")?;
+                let length = part
+                    .get(1..)
+                    .context("Missing character in bytecode")?
+                    .parse::<usize>()
+                    .context("Failed to parse length for '=' patch")?;
                 result.push_str(&bytecode[index..index + length]);
                 index += length;
             },
             '+' => {
-                result.push_str(&part.get(1..).context("Missing character in bytecode")?);
+                result.push_str(part.get(1..).context("Missing character in bytecode")?);
             },
             '-' => {
-                let length = usize::from_str_radix(
-                    &part.get(1..).context("Missing character in bytecode")?,
-                    10,
-                )
-                .context("Failed to parse length for '-' patch")?;
+                let length = part
+                    .get(1..)
+                    .context("Missing character in bytecode")?
+                    .parse::<usize>()
+                    .context("Failed to parse length for '-' patch")?;
                 index += length;
             },
-            _ => bail!("Unknown diff type: {}", diff_type),
+            _ => bail!("Unknown diff type: {diff_type}"),
         }
     }
 
@@ -75,18 +75,20 @@ fn encode_fields_by_type(fields: &FieldsVec, is_mutable: bool) -> Result<Vec<u8>
             },
             // Normally, if the structure is mutable, then at least one of the attributes is
             RalphValue::Structure(fields) => {
-                let mut encoded: Vec<u8> = Vec::new();
-                for (_field_name, field_value) in fields {
-                    encoded.extend_from_slice(&encode_fields_by_type(
-                        &vec![(field_value.clone(), is_mutable)]
-                            .into_iter()
-                            .collect(),
-                        is_mutable,
-                    )?);
-                }
-                encoded
+                let parts: Vec<Vec<u8>> = fields
+                    .values()
+                    .map(|field_value| {
+                        encode_fields_by_type(
+                            &vec![(field_value.clone(), is_mutable)]
+                                .into_iter()
+                                .collect(),
+                            is_mutable,
+                        )
+                    })
+                    .collect::<Result<_, _>>()?;
+                parts.into_iter().flatten().collect()
             },
-            _ => bail!("Unsupported value type for field '{:?}'", value),
+            _ => bail!("Unsupported value type for field '{value:?}'"),
         };
         acc.extend_from_slice(&encoded_value);
         Ok(acc)

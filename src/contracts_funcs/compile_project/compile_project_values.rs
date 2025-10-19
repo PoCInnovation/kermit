@@ -9,10 +9,10 @@ use std::convert::TryFrom;
 use crate::account::address::Address;
 use crate::common::crypto::{is_b58, is_hex_string};
 use crate::config::config_contracts::HelperFieldType;
-use crate::contracts_funcs::compile_project::compile_project::{
+use crate::contracts_funcs::compile_project::compile_project_deserialize::FieldValueHelper;
+use crate::contracts_funcs::compile_project::compile_project_structs::{
     FieldsTypesMapMut, FieldsVec, Struct,
 };
-use crate::contracts_funcs::compile_project::compile_project_deserialize::FieldValueHelper;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RalphValue {
@@ -32,24 +32,24 @@ impl Serialize for RalphValue {
         S: Serializer,
     {
         let (type_name, value) = match self {
-            RalphValue::Bool(b) => ("Bool", serde_json::to_value(b).map_err(ser::Error::custom)?),
-            RalphValue::U256(u) => (
+            Self::Bool(b) => ("Bool", serde_json::to_value(b).map_err(ser::Error::custom)?),
+            Self::U256(u) => (
                 "U256",
-                serde_json::to_value(&u.to_string()).map_err(ser::Error::custom)?,
+                serde_json::to_value(u.to_string()).map_err(ser::Error::custom)?,
             ),
-            RalphValue::I256(i) => (
+            Self::I256(i) => (
                 "I256",
-                serde_json::to_value(&i.to_string()).map_err(ser::Error::custom)?,
+                serde_json::to_value(i.to_string()).map_err(ser::Error::custom)?,
             ),
-            RalphValue::ByteVec(bytes) => (
+            Self::ByteVec(bytes) => (
                 "ByteVec",
-                serde_json::to_value(&hex::encode(bytes)).map_err(ser::Error::custom)?,
+                serde_json::to_value(hex::encode(bytes)).map_err(ser::Error::custom)?,
             ),
-            RalphValue::Address(addr) => (
+            Self::Address(addr) => (
                 "Address",
                 serde_json::to_value(addr).map_err(ser::Error::custom)?,
             ),
-            RalphValue::Array(arr) => (
+            Self::Array(arr) => (
                 "Array",
                 serde_json::to_value(arr).map_err(ser::Error::custom)?,
             ),
@@ -91,7 +91,7 @@ impl<'de> Deserialize<'de> for RalphValue {
             .get("value")
             .ok_or_else(|| de::Error::custom("Missing 'value' field in RalphValue"))?;
 
-        RalphValue::from_typename_and_value(&type_name, value_field).map_err(de::Error::custom)
+        Self::from_typename_and_value(&type_name, value_field).map_err(de::Error::custom)
     }
 }
 
@@ -105,8 +105,7 @@ fn try_into_field(
         override_type
     } else {
         fields_types.get(initial_field_name).context(format!(
-            "Type for field '{}' not found in provided fields types map",
-            initial_field_name
+            "Type for field '{initial_field_name}' not found in provided fields types map"
         ))?
     };
 
@@ -130,16 +129,14 @@ fn try_into_field(
 
             vec![(
                 RalphValue::from_typename_and_value(type_name, &Value::String(s))?,
-                is_mutable.clone(),
+                *is_mutable,
             )]
         },
         HelperFieldType::Array(arr) => {
             if let TypeName::Array((elem_type, elem_size)) = type_name {
                 if arr.len() != *elem_size {
                     bail!(
-                        "Array length mismatch for field '{}': expected {}, got {}",
-                        initial_field_name,
-                        elem_size,
+                        "Array length mismatch for field '{initial_field_name}': expected {elem_size}, got {}",
                         arr.len()
                     )
                 }
@@ -151,7 +148,7 @@ fn try_into_field(
                             "",
                             v,
                             fields_types,
-                            Some(&(*elem_type.clone(), is_mutable.clone())),
+                            Some(&(*elem_type.clone(), *is_mutable)),
                         )
                     })
                     .collect::<Result<Vec<_>>>()?;
@@ -160,8 +157,7 @@ fn try_into_field(
             } else if let TypeName::Tuple(elem_types) = type_name {
                 if arr.len() != elem_types.len() {
                     bail!(
-                        "Tuple length mismatch for field '{}': expected {}, got {}",
-                        initial_field_name,
+                        "Tuple length mismatch for field '{initial_field_name}': expected {}, got {}",
                         elem_types.len(),
                         arr.len()
                     )
@@ -171,16 +167,14 @@ fn try_into_field(
                     .into_iter()
                     .zip(elem_types.iter())
                     .map(|(v, ty)| {
-                        try_into_field("", v, fields_types, Some(&(ty.clone(), is_mutable.clone())))
+                        try_into_field("", v, fields_types, Some(&(ty.clone(), *is_mutable)))
                     })
                     .collect::<Result<Vec<_>>>()?;
 
                 values.into_iter().flatten().collect()
             } else {
                 bail!(
-                    "Type mismatch: expected Array type for field '{}', got {:?}",
-                    initial_field_name,
-                    type_name
+                    "Type mismatch: expected Array type for field '{initial_field_name}', got {type_name:?}",
                 );
             }
         },
@@ -193,16 +187,14 @@ fn try_into_field(
 
                 if zipped_fields.is_empty() {
                     bail!(
-                        "No matching fields found in structure for '{}' in '{:?}'",
-                        initial_field_name,
-                        struct_fields
+                        "No matching fields found in structure for '{initial_field_name}' in '{struct_fields:?}'",
                     );
                 }
 
                 zipped_fields
                     .into_iter()
                     .map(|(field_name, (type_name, value))| {
-                        try_into_field(&field_name, value, struct_fields, Some(type_name))
+                        try_into_field(field_name, value, struct_fields, Some(type_name))
                     })
                     .collect::<Result<Vec<_>>>()?
                     .into_iter()
@@ -210,9 +202,7 @@ fn try_into_field(
                     .collect()
             } else {
                 bail!(
-                    "Type mismatch: expected Structure type for field '{}', got {:?}",
-                    initial_field_name,
-                    type_name
+                    "Type mismatch: expected Structure type for field '{initial_field_name}', got {type_name:?}"
                 );
             }
         },
@@ -221,7 +211,7 @@ fn try_into_field(
 }
 
 pub fn config_fields_to_vec(
-    initial_fields: HashMap<String, HelperFieldType>,
+    initial_fields: &HashMap<String, HelperFieldType>,
     fields_types: &FieldsTypesMapMut,
 ) -> Result<FieldsVec> {
     let values = fields_types
@@ -232,12 +222,11 @@ pub fn config_fields_to_vec(
                 let helper_field = initial_fields
                     .get(name)
                     .context(format!(
-                        "Field '{}' not found in provided initial fields",
-                        name
+                        "Field '{name}' not found in provided initial fields"
                     ))?
                     .to_owned();
 
-                try_into_field(&name, helper_field, fields_types, None)
+                try_into_field(name, helper_field, fields_types, None)
             },
         })
         .collect::<Result<Vec<Vec<_>>>>()?;
@@ -335,7 +324,7 @@ impl RalphValue {
                 for (field_name, (field_ty, _)) in fields {
                     let field_value = obj
                         .get(field_name)
-                        .with_context(|| format!("Missing field '{}' in structure", field_name))?;
+                        .context(format!("Missing field '{field_name}' in structure"))?;
                     let parsed_value = Self::from_typename_and_value(field_ty, field_value)?;
                     structure.insert(field_name.clone(), parsed_value);
                 }
@@ -374,7 +363,7 @@ impl RalphValue {
                     ));
                 }
 
-                bail!("Unsupported type name or structure: {}", name)
+                bail!("Unsupported type name or structure: {name}")
             },
         }
     }
@@ -418,7 +407,7 @@ impl TypeName {
             "I256" => Ok(Self::I256),
             "ByteVec" => Ok(Self::ByteVec),
             "Address" => Ok(Self::Address),
-            s if s.starts_with("[") && s.ends_with(']') => {
+            s if s.starts_with('[') && s.ends_with(']') => {
                 // Examples: [U256; 2]
                 // Examples: [[U256; 2]; 2]
                 let inner = &s.get(1..s.len() - 1).context("Invalid type array")?;
@@ -438,7 +427,7 @@ impl TypeName {
                     elem_size,
                 )))
             },
-            s if s.starts_with("(") && s.ends_with(')') => {
+            s if s.starts_with('(') && s.ends_with(')') => {
                 // Example: (U256,ByteVec,Bool)
                 let inner = &s.get(1..s.len() - 1).context("Invalid type tuple")?;
                 let elems = inner
@@ -450,7 +439,7 @@ impl TypeName {
             s if structures.contains_key(s) => {
                 let target_struct = structures
                     .get(s)
-                    .context(format!("Structure named '{}' isn't found", s))?;
+                    .context(format!("Structure named '{s}' isn't found"))?;
 
                 let fields = target_struct
                     .field_types
@@ -462,7 +451,7 @@ impl TypeName {
                             field_name.clone(),
                             (
                                 Self::from_name_and_structures(value_name, structures)?,
-                                is_mutable.clone(),
+                                *is_mutable,
                             ),
                         ))
                     })
@@ -495,7 +484,7 @@ impl<'de> Deserialize<'de> for FieldValue {
             .map_err(de::Error::custom)?;
         let value = RalphValue::from_typename_and_value(&type_name, &helper.value)
             .map_err(de::Error::custom)?;
-        Ok(FieldValue { type_name, value })
+        Ok(Self { type_name, value })
     }
 }
 
@@ -506,12 +495,11 @@ impl TryFrom<Value> for FieldValue {
         let type_name = value
             .as_str()
             .context(format!(
-                "Expected type name as string, found: {:?} in FieldValue",
-                value
+                "Expected type name as string, found: {value:?} in FieldValue",
             ))?
             .try_into()?;
         let value = RalphValue::from_typename_and_value(&type_name, &value)
             .context("Failed to convert Value to RalphValue")?;
-        Ok(FieldValue { type_name, value })
+        Ok(Self { type_name, value })
     }
 }

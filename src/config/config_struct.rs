@@ -8,16 +8,10 @@ use crate::{
     config::config_contracts::ConfigContract,
 };
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct Config {
     pub contracts: Option<HashMap<String, ConfigContract>>,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self { contracts: None }
-    }
 }
 
 impl Config {
@@ -27,13 +21,12 @@ impl Config {
 
         // Create default "alephium.config.yaml" if it doesn't exist
         if create_if_not_exist && !path.exists() {
-            let default_config = Config::default();
+            let default_config = Self::default();
             let yaml = serde_yaml::to_string(&default_config)
-                .map_err(|e| anyhow!("Failed to serialize default config: {}", e))?;
+                .map_err(|e| anyhow!("Failed to serialize default config: {e}"))?;
 
             println!(
-                "Contract config file not found at {}. Creating default config file at {} ...",
-                config_path, path_str
+                "Contract config file not found at {config_path}. Creating default config file at {path_str} ..."
             );
 
             write_file(path_str, &yaml)?;
@@ -44,12 +37,12 @@ impl Config {
         let config_content = read_file(path_str)?;
 
         let mut config = serde_yaml::from_str::<serde_yaml::Value>(&config_content)
-            .map_err(|e| anyhow!("Failed to parse config file: {} : {}", config_path, e))?;
+            .map_err(|e| anyhow!("Failed to parse config file: {config_path} : {e}"))?;
 
         config.apply_merge()?;
 
-        let config = serde_yaml::from_value::<Config>(config)
-            .map_err(|e| anyhow!("Failed to parse config file: {} : {}", config_path, e))?;
+        let config = serde_yaml::from_value::<Self>(config)
+            .map_err(|e| anyhow!("Failed to parse config file: {config_path} : {e}"))?;
 
         Ok(config)
     }

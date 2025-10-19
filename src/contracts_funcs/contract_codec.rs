@@ -23,15 +23,15 @@ pub fn encode_i32(value: i32) -> Vec<u8> {
 
 fn encode_positive_i32(value: i32) -> Vec<u8> {
     if value < ONE_BYTE_BOUND {
-        vec![(SINGLE_BYTE_PREFIX + value as u8) & 0xff]
+        vec![(SINGLE_BYTE_PREFIX + value as u8)]
     } else if value < TWO_BYTE_BOUND {
         vec![
-            (TWO_BYTE_PREFIX + ((value >> 8) as u8)) & 0xff,
+            (TWO_BYTE_PREFIX + ((value >> 8) as u8)),
             (value & 0xff) as u8,
         ]
     } else if value < FOUR_BYTE_BOUND {
         vec![
-            (FOUR_BYTE_PREFIX + ((value >> 24) as u8)) & 0xff,
+            (FOUR_BYTE_PREFIX + ((value >> 24) as u8)),
             ((value >> 16) & 0xff) as u8,
             ((value >> 8) & 0xff) as u8,
             (value & 0xff) as u8,
@@ -91,7 +91,7 @@ impl BigIntCodec {
         while abs_value > I256::from(0) {
             let byte = (abs_value & I256::from(0xff)).as_i32() as u8;
             bytes.push(byte);
-            abs_value = abs_value >> 8;
+            abs_value >>= 8;
         }
 
         if !is_negative && !bytes.is_empty() && (bytes[bytes.len() - 1] & 0x80) != 0 {
@@ -101,7 +101,7 @@ impl BigIntCodec {
         if is_negative {
             let mut carry = true;
             for b in &mut bytes {
-                *b = !*b & 0xff;
+                *b = !*b;
                 if carry {
                     if *b == 0xff {
                         *b = 0;
@@ -127,7 +127,7 @@ pub fn encode_i256(value: I256) -> Vec<u8> {
         encode_i32(value.as_i32())
     } else {
         let bytes = BigIntCodec::encode(value);
-        let header = (bytes.len() as u8 - 4 + MULTI_BYTE_PREFIX) & 0xff;
+        let header = bytes.len() as u8 - 4 + MULTI_BYTE_PREFIX;
         [vec![header], bytes].concat()
     }
 }
@@ -142,7 +142,7 @@ pub fn encode_u256(value: U256) -> Vec<u8> {
         if !bytes.is_empty() && bytes[0] == 0 {
             bytes.remove(0);
         }
-        let header = (bytes.len() as u8 - 4 + MULTI_BYTE_PREFIX) & 0xff;
+        let header = bytes.len() as u8 - 4 + MULTI_BYTE_PREFIX;
         let mut result = Vec::with_capacity(1 + bytes.len());
         result.push(header);
         result.extend(bytes);

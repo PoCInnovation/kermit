@@ -7,7 +7,7 @@ use crate::{
     common::{get, post},
     contracts::NetworkType,
     contracts_funcs::{
-        compile_project::compile_project::{CompiledContract, FieldsVec},
+        compile_project::compile_project_structs::{CompiledContract, FieldsVec},
         deploy_bytecode::build_bytecode_contract,
     },
     transactions::submit,
