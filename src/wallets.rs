@@ -2,10 +2,7 @@ use anyhow::Result;
 use clap::Parser;
 use serde_json::{Value, json};
 
-use crate::{
-    common::{delete, get, post, print_output, put},
-    network::health::check_network,
-};
+use crate::common::{check_network, delete, get, post, print_output, put};
 
 /// CLI arguments for `kermit wallets`.
 #[derive(Parser)]

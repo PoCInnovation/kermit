@@ -5,8 +5,7 @@ use serde_json::{Value, json};
 
 use crate::{
     account::signature::{GLSecp256k1PrivateKey, PrivateKey},
-    common::{get, post, print_output},
-    network::health::check_network,
+    common::{check_network, get, post, print_output},
 };
 
 /// CLI arguments for `kermit transactions`.

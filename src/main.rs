@@ -8,7 +8,6 @@ mod contracts;
 mod contracts_funcs;
 mod infos;
 mod miners;
-mod network;
 mod transactions;
 mod utils;
 mod wallets;

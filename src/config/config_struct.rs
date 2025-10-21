@@ -4,7 +4,7 @@ use anyhow::{Context, Result, anyhow};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    common::fs::{read_file, write_file},
+    common::{read_file, write_file},
     config::config_contracts::ConfigContract,
 };
 

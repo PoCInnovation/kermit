@@ -1,10 +1,7 @@
 use anyhow::Result;
 use clap::Parser;
 
-use crate::{
-    common::{get, print_output},
-    network::health::check_network,
-};
+use crate::common::{check_network, get, print_output};
 
 /// CLI arguments for `kermit blockflow`.
 #[derive(Parser)]

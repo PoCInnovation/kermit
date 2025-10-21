@@ -8,7 +8,7 @@ use serde_json::Value;
 
 use crate::{
     account::address::Address,
-    common::crypto::{is_b58, is_hex_string},
+    common::{is_b58, is_hex_string},
     config::config_contracts::HelperFieldType,
     contracts_funcs::compile_project::{
         compile_project_deserialize::FieldValueHelper,

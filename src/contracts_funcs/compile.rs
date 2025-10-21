@@ -9,7 +9,7 @@ use regex::{Error, Regex, RegexBuilder};
 use serde_json::{Value, json};
 
 use crate::{
-    common::{fs::read_file, post},
+    common::{post, read_file},
     contracts::CompilerOptions,
     contracts_funcs::source_info::{SourceInfo, SourceKind},
 };

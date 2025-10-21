@@ -6,7 +6,7 @@ use blake2::{
 use bs58;
 use serde::{Deserialize, Serialize, Serializer};
 
-use crate::common::crypto::{djb2, xor_byte};
+use crate::common::{djb2, xor_byte};
 
 const TOTAL_NUMBER_OF_GROUPS: u8 = 4;
 

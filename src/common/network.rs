@@ -1,7 +1,7 @@
 use anyhow::{Result, bail};
 use serde_json::Value;
 
-use crate::common::get;
+use crate::common::reqwest::get;
 
 async fn is_network_alive(url: &str) -> bool {
     get::<Value>(url, "/infos/version").await.is_ok()

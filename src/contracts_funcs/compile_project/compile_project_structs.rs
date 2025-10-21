@@ -5,7 +5,7 @@ use indexmap::IndexMap;
 use serde_json::{Value, value::RawValue};
 
 use crate::{
-    common::{crypto::is_hex_string, fs::read_file},
+    common::{is_hex_string, read_file},
     contracts_funcs::compile_project::{
         compile_project_deserialize::{RawCompileProject, RawContract, RawFunction, StructDef},
         compile_project_values::{RalphValue, TypeName},

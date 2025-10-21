@@ -9,6 +9,7 @@ use crate::{
         address::Address,
         signature::{GLSecp256k1PrivateKey, PrivateKey},
     },
+    common::check_network,
     config::config_struct::Config,
     contracts_funcs::{
         call::call_contract,
@@ -21,7 +22,6 @@ use crate::{
         state::{code, parent, state, sub_contracts, sub_contracts_current_count},
         test::test_contract,
     },
-    network::health::check_network,
 };
 
 #[derive(Clone, Debug, Display, ValueEnum)]

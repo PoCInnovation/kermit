@@ -2,10 +2,7 @@ use anyhow::Result;
 use clap::Parser;
 use serde_json::json;
 
-use crate::{
-    common::{get, post, print_output},
-    network::health::check_network,
-};
+use crate::common::{check_network, get, post, print_output};
 
 /// CLI arguments for `kermit infos`.
 #[derive(Parser)]
