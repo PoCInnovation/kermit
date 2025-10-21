@@ -1,0 +1,30 @@
+---
+source: tests/utils.rs
+assertion_line: 45
+info:
+  program: kermit
+  args:
+    - contracts
+    - "-n"
+    - dev
+    - "-c"
+    - "./tests/contracts/test.config.yaml"
+    - call
+    - TestTypes
+    - 27zY7WBMKuwDXdd2y5fLt6QhHyuXL9VGaeRCXE1yNwqm9
+    - /tmp/call_debug_types_all_args
+    - test_args
+    - "--args"
+    - arg_vec=Coucou
+    - arg_addr=1DrDyTr9RpRsQnDnXo2YRiPzPW4ooHX5LLoqXrqfMrpQH
+    - arg_i256=-898
+    - arg_u256=78678576576
+    - arg_bool=false
+    - "arg_array=[[0,1], [2,3]]"
+    - arg_struct.counter=98
+    - arg_struct.secret_counter=10000
+---
+"type": "CallContractSucceeded"
+}
+
+----- stderr -----

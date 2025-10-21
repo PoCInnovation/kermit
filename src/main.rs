@@ -1,9 +1,11 @@
+mod account;
 mod addresses;
 mod args;
 mod blockflow;
 mod common;
-mod contract_encoding;
+mod config;
 mod contracts;
+mod contracts_funcs;
 mod infos;
 mod miners;
 mod transactions;
@@ -26,9 +28,23 @@ async fn run() -> Result<()> {
     let kermit = Kermit::parse();
 
     match kermit.cmd {
-        KermitSubcommand::Addresses { command } => command.run(kermit.url).await?,
+        KermitSubcommand::Addresses { command } => command.run(&kermit.url).await?,
         KermitSubcommand::Blockflow { command } => command.run(&kermit.url).await?,
-        KermitSubcommand::Contracts { command } => command.run(kermit.url).await?,
+        KermitSubcommand::Contracts {
+            command,
+            config_file_path,
+            auto_create_config_file,
+            network,
+        } => {
+            command
+                .run(
+                    &kermit.url,
+                    &config_file_path,
+                    network,
+                    auto_create_config_file,
+                )
+                .await?;
+        },
         KermitSubcommand::Infos { command } => command.run(&kermit.url).await?,
         KermitSubcommand::Miners { command } => command.run(&kermit.url).await?,
         KermitSubcommand::Transactions { command } => command.run(&kermit.url).await?,

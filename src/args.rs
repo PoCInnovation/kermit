@@ -1,14 +1,19 @@
 use clap::{Parser, Subcommand, ValueHint};
 
 use crate::{
-    addresses::AddressesSubcommands, blockflow::BlockflowSubcommands,
-    contracts::ContractsSubcommands, infos::InfosSubcommands, miners::MinersSubcommands,
-    transactions::TransactionsSubcommands, utils::UtilsSubcommands, wallets::WalletsSubcommands,
+    addresses::AddressesSubcommands,
+    blockflow::BlockflowSubcommands,
+    contracts::{ContractsSubcommands, NetworkType},
+    infos::InfosSubcommands,
+    miners::MinersSubcommands,
+    transactions::TransactionsSubcommands,
+    utils::UtilsSubcommands,
+    wallets::WalletsSubcommands,
 };
 
 #[derive(Parser)]
 #[command(version)]
-pub(crate) struct Kermit {
+pub struct Kermit {
     #[clap(long, short, env, value_hint = ValueHint::Url,
     default_value = "http://localhost:22973")]
     pub url: String,
@@ -18,7 +23,7 @@ pub(crate) struct Kermit {
 }
 
 #[derive(Subcommand)]
-pub(crate) enum KermitSubcommand {
+pub enum KermitSubcommand {
     /// Address management utilities.
     #[command(visible_alias = "a")]
     Addresses {
@@ -38,6 +43,19 @@ pub(crate) enum KermitSubcommand {
     Contracts {
         #[command(subcommand)]
         command: ContractsSubcommands,
+
+        /// Path to the config YAML file
+        #[arg(long, short, default_value = "./alephium.config.yaml")]
+        config_file_path: String,
+
+        /// Create the config file for contracts automatically if not set
+        #[arg(long, default_value_t = false)]
+        auto_create_config_file: bool,
+
+        /// Network type may trigger a different behavior in contract
+        /// operations. Choose accordingly
+        #[arg(long, short, value_enum, default_value_t = NetworkType::Dev)]
+        network: NetworkType,
     },
 
     /// Infos about node and hashrate.

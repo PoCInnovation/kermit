@@ -1,6 +1,6 @@
 ---
 source: tests/common/perform_cmd.rs
-assertion_line: 38
+assertion_line: 45
 info:
   program: kermit
   args:
@@ -17,4 +17,4 @@ exit_code: 1
 ----- stdout -----
 
 ----- stderr -----
-Error: Invalid private key
+Error: Invalid private key format

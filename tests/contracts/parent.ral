@@ -1,0 +1,34 @@
+Contract Bar(value: U256) {
+  pub fn getValue() -> U256 {
+    return value
+  }
+}
+
+Contract Foo() {
+  event SubContractCreated(key: U256, contractId: ByteVec)
+
+  @using(preapprovedAssets = true, checkExternalCaller = false)
+  pub fn set(caller: Address, barTemplateId: ByteVec, key: U256, value: U256) -> () {
+    let path = toByteVec!(key)
+    let (encodedImmFields, encodedMutFields) = Bar.encodeFields!(value) // Contract `Bar` has only one field
+    // Create a sub contract from the given key and value.
+    // The sub contract id is `blake2b(blake2b(selfContractId!() ++ path))`.
+    // It will fail if the sub contract already exists.
+    let contractId = copyCreateSubContract!{caller -> ALPH: minimalContractDeposit!()}(
+      path,
+      barTemplateId,
+      encodedImmFields,
+      encodedMutFields
+    )
+
+    emit Debug(`the new subcontract is: ${contractId} !`)
+    emit SubContractCreated(key, contractId)
+  }
+
+  pub fn get(key: U256) -> U256 {
+    let path = toByteVec!(key)
+    // Get the sub contract id by the `subContractId!` built-in function
+    let contractId =  subContractId!(path)
+    return Bar(contractId).getValue()
+  }
+}

@@ -129,7 +129,7 @@ Here are some examples of how to use the Kermit CLI:
 4. Compile a contract:
 
     ```bash
-    kermit contracts compile tests/sub_contract.ral --contract-type project
+    kermit contracts compile tests/contracts/sub_contract.ral --contract-type project
     ```
 
 You can do again more with kermit. I let you check the `kermit --help`, to take a look on all possibilities

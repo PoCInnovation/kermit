@@ -1,14 +1,16 @@
-use anyhow::{Result, anyhow, bail};
+use anyhow::{Result, bail};
 use clap::Parser;
-use secp256k1::{Message, Secp256k1, SecretKey};
 use serde::{Deserialize, de::DeserializeOwned};
 use serde_json::{Value, json};
 
-use crate::common::{get, post, print_output};
+use crate::{
+    account::signature::{GLSecp256k1PrivateKey, PrivateKey},
+    common::{check_network, get, post, print_output},
+};
 
 /// CLI arguments for `kermit transactions`.
 #[derive(Parser)]
-pub(crate) enum TransactionsSubcommands {
+pub enum TransactionsSubcommands {
     /// Build a new transaction.
     #[command(visible_alias = "b")]
     Build {
@@ -60,7 +62,8 @@ pub(crate) enum TransactionsSubcommands {
         to_group: Option<i64>,
     },
 
-    /// Get transaction with enriched input information when node indexes are enabled.
+    /// Get transaction with enriched input information when node indexes are
+    /// enabled.
     #[command(visible_alias = "rd")]
     RichDetails {
         tx_id: String,
@@ -122,33 +125,13 @@ async fn build<T: DeserializeOwned>(
     .await
 }
 
-fn sign(tx_id: &str, private_key: &str) -> Result<String> {
-    let secp = Secp256k1::new();
-    let private_key_bytes = hex::decode(private_key).map_err(|_| anyhow!("Invalid private key"))?;
-    let secret_key =
-        SecretKey::from_slice(&private_key_bytes).map_err(|_| anyhow!("Invalid private key"))?;
-
-    let tx_id_bytes = hex::decode(tx_id)?;
-    let message = Message::from_digest(
-        tx_id_bytes
-            .try_into()
-            .map_err(|_| anyhow!("Invalid transaction id"))?,
-    );
-
-    let signature = secp.sign_ecdsa(&message, &secret_key);
-    let serialized = signature.serialize_compact();
-    let signature = hex::encode(serialized);
-
-    Ok(signature)
-}
-
-async fn submit(url: &str, unsigned_tx: &str, signature: &str) -> Result<Option<Value>> {
+pub async fn submit(url: &str, unsigned_tx: &str, signature: &str) -> Result<Option<Value>> {
     post(
         url,
         "/transactions/submit",
         json!({
             "unsignedTx": unsigned_tx,
-            "signature": signature,
+            "signature": signature
         }),
     )
     .await
@@ -170,7 +153,9 @@ fn append_groups(endpoint: &mut String, from_group: Option<i64>, to_group: Optio
 }
 
 impl TransactionsSubcommands {
-    pub(crate) async fn run(self, url: &str) -> Result<()> {
+    pub async fn run(self, url: &str) -> Result<()> {
+        check_network(url).await?;
+
         let output = match self {
             Self::Build {
                 public_key,
@@ -182,22 +167,24 @@ impl TransactionsSubcommands {
                 unsigned_tx,
                 private_key,
             } => {
-                let signature = sign(&tx_id, &private_key)?;
+                let private_key = GLSecp256k1PrivateKey::new(&private_key)?;
+                let signature = private_key.sign(&tx_id)?;
                 submit(url, &unsigned_tx, &signature).await?
             },
             Self::Create {
-                public_key,
                 to_addr,
                 amount,
                 private_key,
+                public_key,
             } => {
+                let private_key = GLSecp256k1PrivateKey::new(&private_key)?;
                 let Some(BuildTransactionResponse { tx_id, unsigned_tx }) =
                     build(url, public_key, to_addr, amount).await?
                 else {
                     bail!("Failed to build transaction");
                 };
 
-                let signature = sign(&tx_id, &private_key)?;
+                let signature = private_key.sign(&tx_id)?;
                 submit(url, &unsigned_tx, &signature).await?
             },
             Self::Decode { unsigned_tx } => {

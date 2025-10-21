@@ -1,5 +1,5 @@
 import "std/nft_interface.ral"
-import "import/jor.ral"
+import "../import/jor.ral"
 
 Contract Sub(mut result : U256) {
     event Sub(x: U256, y: U256)

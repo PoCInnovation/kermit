@@ -2,11 +2,11 @@ use anyhow::Result;
 use clap::Parser;
 use serde_json::{Value, json};
 
-use crate::common::{delete, get, post, print_output, put};
+use crate::common::{check_network, delete, get, post, print_output, put};
 
 /// CLI arguments for `kermit wallets`.
 #[derive(Parser)]
-pub(crate) enum WalletsSubcommands {
+pub enum WalletsSubcommands {
     /// List available wallets.
     #[command(visible_alias = "l")]
     List,
@@ -126,10 +126,12 @@ pub(crate) enum WalletsSubcommands {
 }
 
 impl WalletsSubcommands {
-    pub(crate) async fn run(self, url: &str) -> Result<()> {
+    pub async fn run(self, url: &str) -> Result<()> {
         if !url.contains("localhost") && !url.contains("127.0.0.1") {
             eprintln!("Warning: Wallets commands only work on devnet network.");
         }
+
+        check_network(url).await?;
 
         let output = match self {
             Self::List => get(url, "/wallets").await?,

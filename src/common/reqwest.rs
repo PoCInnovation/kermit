@@ -8,9 +8,8 @@ struct Error {
 }
 
 /// Perform a GET request to the given URL
-pub(crate) async fn get<T: DeserializeOwned>(url: &str, endpoint: &str) -> Result<Option<T>> {
+pub async fn get<T: DeserializeOwned>(url: &str, endpoint: &str) -> Result<Option<T>> {
     let client = Client::new();
-
     let url = format!("{url}{endpoint}");
 
     let res = client
@@ -28,7 +27,8 @@ pub(crate) async fn get<T: DeserializeOwned>(url: &str, endpoint: &str) -> Resul
     }
 
     let data = if res.content_length() > Some(0) {
-        Some(res.json().await?)
+        let data = res.json().await?;
+        Some(data)
     } else {
         None
     };
@@ -37,7 +37,7 @@ pub(crate) async fn get<T: DeserializeOwned>(url: &str, endpoint: &str) -> Resul
 }
 
 /// Perform a POST request to the given URL
-pub(crate) async fn post<T: DeserializeOwned, U: Serialize>(
+pub async fn post<T: DeserializeOwned, U: Serialize>(
     url: &str,
     endpoint: &str,
     body: U,
@@ -62,7 +62,8 @@ pub(crate) async fn post<T: DeserializeOwned, U: Serialize>(
     }
 
     let data = if res.content_length() > Some(0) {
-        Some(res.json().await?)
+        let data = res.json().await?;
+        Some(data)
     } else {
         None
     };
@@ -71,7 +72,7 @@ pub(crate) async fn post<T: DeserializeOwned, U: Serialize>(
 }
 
 /// Perform a PUT request to the given URL
-pub(crate) async fn put<T: DeserializeOwned, U: Serialize>(
+pub async fn put<T: DeserializeOwned, U: Serialize>(
     url: &str,
     endpoint: &str,
     body: U,
@@ -96,7 +97,8 @@ pub(crate) async fn put<T: DeserializeOwned, U: Serialize>(
     }
 
     let data = if res.content_length() > Some(0) {
-        Some(res.json().await?)
+        let data = res.json().await?;
+        Some(data)
     } else {
         None
     };
@@ -105,7 +107,7 @@ pub(crate) async fn put<T: DeserializeOwned, U: Serialize>(
 }
 
 /// Perform a DELETE request to the given URL
-pub(crate) async fn delete<T: DeserializeOwned>(url: &str, endpoint: &str) -> Result<Option<T>> {
+pub async fn delete<T: DeserializeOwned>(url: &str, endpoint: &str) -> Result<Option<T>> {
     let client = Client::new();
 
     let url = format!("{url}{endpoint}");
@@ -125,7 +127,8 @@ pub(crate) async fn delete<T: DeserializeOwned>(url: &str, endpoint: &str) -> Re
     }
 
     let data = if res.content_length() > Some(0) {
-        Some(res.json().await?)
+        let data = res.json().await?;
+        Some(data)
     } else {
         None
     };

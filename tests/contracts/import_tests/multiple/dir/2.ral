@@ -1,0 +1,7 @@
+import "./3"
+
+Contract DummyContract2(value: U256) {
+  pub fn getValue() -> U256 {
+    return value
+  }
+}

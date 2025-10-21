@@ -1,6 +1,6 @@
 ---
 source: tests/common/perform_cmd.rs
-assertion_line: 38
+assertion_line: 45
 info:
   program: kermit
   args:
@@ -12,8 +12,8 @@ exit_code: 0
 ----- stdout -----
 {
   "buildInfo": {
-    "commit": "c5f05274997464fdef3dc3bdc9a81d67a6225927",
-    "releaseVersion": "4.2.4"
+    "commit": "74c472b8e1c52374a7a0c067ac6b7d6ed560bf4c",
+    "releaseVersion": "4.2.5"
   },
   "externalAddress": null,
   "upnp": true

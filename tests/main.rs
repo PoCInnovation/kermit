@@ -17,3 +17,11 @@ fn test_bad_url() {
         &["--url", "http://invalid-url", "infos", "version"]
     );
 }
+
+#[test]
+fn test_bad_url_base() {
+    perform_cmd_test!(
+        "bad_url_base",
+        &["--url", "invalid-url", "infos", "version"]
+    );
+}

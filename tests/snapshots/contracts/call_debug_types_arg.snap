@@ -1,0 +1,25 @@
+---
+source: tests/utils.rs
+assertion_line: 45
+info:
+  program: kermit
+  args:
+    - contracts
+    - "-n"
+    - dev
+    - "-c"
+    - "./tests/contracts/test.config.yaml"
+    - call
+    - Sub
+    - x73p5j2XfhbsMhPJqyWKe3RAoHCFEwswa8CjQbQ8o9kb
+    - /tmp/call_debug_types_arg
+    - sub
+    - "--args"
+    - "array=[2,1]"
+---
+"returns": [
+    {
+      "type": "U256",
+      "value": "1"
+    }
+  ]

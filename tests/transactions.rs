@@ -147,14 +147,17 @@ mod submit {
             &url,
             "/transactions/build",
             json!({
-                "fromPublicKey": "02ff46d897b529927bd1006cf75fb9e005d4f47181ec37db9dc82548218ff88106",
+                "fromPublicKey": "02ff46d897b529927bd1006cf75fb9e005d4f47181ec37db9dc8254\
+                8218ff88106",
                 "destinations": vec![json!({
                     "address": "17cBiTcWhung3WDLuc9ja5Y7BMus5Q7CD9wYBxS1r1P2R",
                     "attoAlphAmount": "1000000000000000000",
                 })]
             }),
         )
-        .await.unwrap().unwrap();
+        .await
+        .unwrap()
+        .unwrap();
 
         perform_cmd_test!(
             "three_params",
@@ -170,15 +173,22 @@ mod submit {
         );
     }
 
-    #[test]
-    fn test_bad_tx_id() {
+    #[tokio::test]
+    async fn test_bad_tx_id() {
+        let (_container, url) = setup_node().await;
+
         perform_cmd_test!(
             "bad_tx_id",
+            &url,
             &[
                 "transactions",
                 "submit",
                 "a46f5fb14ae87d3d776d5a76823b238e0ddad43d8e6f6f8f40299ba0ec85",
-                "00040080004e20c1174876e80001ccb4a237975e960d767ce9b550bc481fe3a883d142bc4454539223a135756a371f5f67720002ff46d897b529927bd1006cf75fb9e005d4f47181ec37db9dc82548218ff8810602c40de0b6b3a764000000622990ad7be0a3d163562c10fd7985ef40a3e41857e7a1583406a785efc9273a00000000000000000000c6d3c20de6fb3cb00f00000045c42a82aa01b2b7399c26ee6450d44f04e017aa3c44af5e6b451f32aa458b1c00000000000000000000",
+                "00040080004e20c1174876e80001ccb4a237975e960d767ce9b550bc481fe3a883d142bc445453922\
+                3a135756a371f5f67720002ff46d897b529927bd1006cf75fb9e005d4f47181ec37db9dc82548218ff\
+                8810602c40de0b6b3a764000000622990ad7be0a3d163562c10fd7985ef40a3e41857e7a1583406a78\
+                5efc9273a00000000000000000000c6d3c20de6fb3cb00f00000045c42a82aa01b2b7399c26ee6450d\
+                44f04e017aa3c44af5e6b451f32aa458b1c00000000000000000000",
                 "--private-key",
                 "609abeb3455aef1b832da331d168e13dd8f565f6c053e6f00cbd15e50e0d6b76"
             ]
@@ -206,10 +216,13 @@ mod submit {
         );
     }
 
-    #[test]
-    fn test_bad_private_key() {
+    #[tokio::test]
+    async fn test_bad_private_key() {
+        let (_container, url) = setup_node().await;
+
         perform_cmd_test!(
             "bad_private_key",
+            &url,
             &[
                 "transactions",
                 "submit",

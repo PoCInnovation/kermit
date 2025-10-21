@@ -1,11 +1,11 @@
 use anyhow::Result;
 use clap::Parser;
 
-use crate::common::{get, print_output};
+use crate::common::{check_network, get, print_output};
 
 /// CLI arguments for `kermit addresses`.
 #[derive(Parser)]
-pub(crate) enum AddressesSubcommands {
+pub enum AddressesSubcommands {
     /// Get the balance of an address.
     #[command(visible_alias = "b")]
     Balance {
@@ -28,7 +28,9 @@ pub(crate) enum AddressesSubcommands {
 }
 
 impl AddressesSubcommands {
-    pub(crate) async fn run(self, url: String) -> Result<()> {
+    pub async fn run(self, url: &str) -> Result<()> {
+        check_network(url).await?;
+
         let endpoint = match self {
             Self::Balance { address, mem_pool } => {
                 format!("/addresses/{address}/balance?mempool={mem_pool}")
@@ -47,7 +49,7 @@ impl AddressesSubcommands {
             },
         };
 
-        let output = get(&url, &endpoint).await?;
+        let output = get(url, &endpoint).await?;
         print_output(output)?;
 
         Ok(())

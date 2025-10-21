@@ -1,0 +1,79 @@
+struct TestSubStruture {
+    val: U256
+}
+
+struct TestStruture {
+    counter: U256,
+    nested_struct: TestSubStruture
+}
+
+struct TestStrutureMut {
+    mut counter: U256,
+    secret_counter: U256
+}
+
+enum TestEnum {
+  FIRST_ENUM = 0
+  SECOND_ENUM = 1
+}
+
+Contract TestTypes(
+    init_tuple: (U256, ByteVec, Bool),
+    init_structure_imm: TestStruture,
+    mut init_structure: TestStrutureMut,
+    init_vec: ByteVec,
+    init_addr: Address, 
+    init_i256: I256,
+    init_u256: U256,
+    init_bool: Bool,
+    init_array: [U256; 2],
+    init_nested_array: [[U256; 2]; 2]
+    ) {
+
+    @using(checkExternalCaller = false, updateFields = true)
+    pub fn test() -> TestStrutureMut {
+        assert!(init_structure.secret_counter == 42, 1)
+     
+        emit Debug(`mut init_struct: ${init_structure.counter}`)
+
+        let (first, second, third) = init_tuple
+        assert!(first == 45, 3)
+        assert!(second == b`Coucou`, 4)
+        assert!(third == false, 5)
+
+        assert!(init_vec == b`This is a string`, 6)
+        assert!(init_addr == @1DrDyTr9RpRsQnDnXo2YRiPzPW4ooHX5LLoqXrqfMrpQH, 7)
+        assert!(init_i256 == -45, 8)
+        assert!(init_u256 == 454545, 9)
+        assert!(init_bool == true, 10)
+        assert!(init_array[0] == 0, 11)
+        assert!(init_array[1] == 1, 12)
+
+        assert!(init_nested_array[1][0] == 2, 13)
+
+        assert!(init_structure_imm.counter == 98, 14)
+        assert!(init_structure_imm.nested_struct.val == 8, 15)
+
+        init_structure.counter += 1
+        return init_structure
+    }
+
+    pub fn test_args(
+        arg_vec: ByteVec,
+        arg_addr: Address,
+        arg_i256: I256,
+        arg_u256: U256,
+        arg_bool: Bool,
+        arg_array: [[U256; 2]; 2],
+        arg_struct: TestStruture
+    ) -> () {
+        assert!(arg_vec == b`Coucou`, 1)
+        assert!(arg_addr == @1DrDyTr9RpRsQnDnXo2YRiPzPW4ooHX5LLoqXrqfMrpQH, 2)
+        assert!(arg_i256 == -898, 3)
+        assert!(arg_u256 == 78678576576, 4)
+        assert!(arg_bool == false, 5)
+        assert!(arg_array[0][1] == 1, 6)
+        assert!(arg_struct.counter == 98, 7)
+        assert!(arg_struct.nested_struct.val == 10000, 8)
+    }
+}

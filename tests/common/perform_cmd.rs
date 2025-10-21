@@ -1,8 +1,15 @@
-use std::process::Command;
+use std::{
+    env,
+    fs::{self, File},
+    io::Write,
+    path::PathBuf,
+    process::Command,
+};
 
 use anyhow::Result;
 use insta::with_settings;
 use insta_cmd::{assert_cmd_snapshot, get_cargo_bin};
+use serde_json::Value;
 
 const BIN_NAME: &str = "kermit";
 
@@ -68,4 +75,44 @@ macro_rules! perform_cmd_test {
             $filters,
         );
     };
+}
+
+pub fn perform_cmd_output(name: &str, args: &[&str], url: &str) -> String {
+    let tmp_dir = env::temp_dir();
+    let mut file_path = PathBuf::from(&tmp_dir);
+    file_path.push(name);
+
+    // Write the command to the temporary file
+    let mut file = File::create(&file_path).expect("Failed to create file");
+    let output = build_cmd(Some(url), args)
+        .output()
+        .expect("Failed to execute command");
+
+    if !output.status.success() {
+        panic!(
+            "Command execution failed with status: {}\nstderr: {}",
+            output.status,
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    writeln!(file, "{}", String::from_utf8_lossy(&output.stdout)).expect("Failed to write to file");
+
+    file_path.to_string_lossy().to_string()
+}
+
+////////////////////////////////////
+
+pub fn get_json(path: &str) -> Value {
+    let data = fs::read_to_string(path).expect("Unable to read path file");
+    serde_json::from_str(&data).expect("Unable to parse path JSON")
+}
+
+pub fn get_json_str_field_from_file(path: &str, field_name: &str) -> String {
+    let data = get_json(path);
+
+    data[field_name]
+        .as_str()
+        .unwrap_or_else(|| panic!("{field_name} not found in {path} JSON"))
+        .to_string()
 }
