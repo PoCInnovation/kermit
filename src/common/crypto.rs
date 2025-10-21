@@ -16,7 +16,7 @@ pub const fn xor_byte(int_value: i32) -> u8 {
 
 pub fn is_hex_string(input: &str) -> bool {
     input.starts_with("0x")
-        && (input.len() - 2) % 2 == 0
+        && (input.len() - 2).is_multiple_of(2)
         && input[2..].chars().all(|c| c.is_ascii_hexdigit())
 }
 

@@ -1,6 +1,7 @@
+use std::path::{MAIN_SEPARATOR, MAIN_SEPARATOR_STR, Path};
+
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::path::{MAIN_SEPARATOR, MAIN_SEPARATOR_STR, Path};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum SourceKind {

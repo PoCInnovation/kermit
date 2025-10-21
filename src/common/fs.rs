@@ -1,6 +1,9 @@
+use std::{
+    fs,
+    io::{ErrorKind, Write},
+};
+
 use anyhow::{Context, Result};
-use std::fs;
-use std::io::{ErrorKind, Write};
 
 pub fn read_file(path: &str) -> Result<String> {
     fs::read_to_string(path).context(match fs::metadata(path) {

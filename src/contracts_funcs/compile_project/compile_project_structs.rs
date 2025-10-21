@@ -1,19 +1,23 @@
+use std::collections::HashMap;
+
 use anyhow::{Context, Result, anyhow, bail};
 use indexmap::IndexMap;
 use serde_json::{Value, value::RawValue};
-use std::collections::HashMap;
 
-use crate::common::{crypto::is_hex_string, fs::read_file};
-use crate::contracts_funcs::compile_project::compile_project_deserialize::{
-    RawCompileProject, RawContract, RawFunction, StructDef,
+use crate::{
+    common::{crypto::is_hex_string, fs::read_file},
+    contracts_funcs::compile_project::{
+        compile_project_deserialize::{RawCompileProject, RawContract, RawFunction, StructDef},
+        compile_project_values::{RalphValue, TypeName},
+    },
 };
-use crate::contracts_funcs::compile_project::compile_project_values::{RalphValue, TypeName};
 
 pub type FieldsTypesMapMut = IndexMap<String, (TypeName, bool)>;
 pub type FieldsVec = Vec<(RalphValue, bool)>;
 
 // Return the position of the parameter for the call with the parsed value
-// TODO: new system with json like parsing of structures, since currently arrays of structure is impossible
+// TODO: new system with json like parsing of structures, since currently arrays
+// of structure is impossible
 fn resolve_rec_type(
     name: &str,
     value: String,
@@ -55,7 +59,8 @@ fn resolve_rec_type(
                     return Ok((param_index + sub_index + sub_nested_index, value));
                 } else {
                     bail!(
-                        "Field '{nested_struct_name}' in structure '{type_name:?}' is not a structure",
+                        "Field '{nested_struct_name}' in structure '{type_name:?}' is not a\
+                        structure",
                     );
                 }
             }

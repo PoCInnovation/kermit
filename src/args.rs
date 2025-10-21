@@ -52,7 +52,8 @@ pub enum KermitSubcommand {
         #[arg(long, default_value_t = false)]
         auto_create_config_file: bool,
 
-        /// Network type may trigger a different behavior in contract operations. Choose accordingly
+        /// Network type may trigger a different behavior in contract
+        /// operations. Choose accordingly
         #[arg(long, short, value_enum, default_value_t = NetworkType::Dev)]
         network: NetworkType,
     },

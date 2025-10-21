@@ -47,7 +47,8 @@ async fn perform_cmd_test_contract(
     perform_cmd_test!(name, &url, &new_args, &custom_filter);
 }
 
-/* Run the command and write the outputed result (if success) inside a temporary file */
+// Run the command and write the outputed result (if success) inside a temporary
+// file
 pub fn perform_cmd_dev(name: &str, args: &[&str], config_name: Option<&str>, url: &str) -> String {
     let config_path = config_name.unwrap_or("./alephium.config.yaml");
 

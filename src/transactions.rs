@@ -63,7 +63,8 @@ pub enum TransactionsSubcommands {
         to_group: Option<i64>,
     },
 
-    /// Get transaction with enriched input information when node indexes are enabled.
+    /// Get transaction with enriched input information when node indexes are
+    /// enabled.
     #[command(visible_alias = "rd")]
     RichDetails {
         tx_id: String,

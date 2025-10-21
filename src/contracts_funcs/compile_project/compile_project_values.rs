@@ -1,17 +1,19 @@
+use std::{collections::HashMap, convert::TryFrom};
+
 use anyhow::{Context, Error, Result, bail};
 use i256::{I256, U256};
 use indexmap::IndexMap;
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de, ser};
 use serde_json::Value;
-use std::collections::HashMap;
-use std::convert::TryFrom;
 
-use crate::account::address::Address;
-use crate::common::crypto::{is_b58, is_hex_string};
-use crate::config::config_contracts::HelperFieldType;
-use crate::contracts_funcs::compile_project::compile_project_deserialize::FieldValueHelper;
-use crate::contracts_funcs::compile_project::compile_project_structs::{
-    FieldsTypesMapMut, FieldsVec, Struct,
+use crate::{
+    account::address::Address,
+    common::crypto::{is_b58, is_hex_string},
+    config::config_contracts::HelperFieldType,
+    contracts_funcs::compile_project::{
+        compile_project_deserialize::FieldValueHelper,
+        compile_project_structs::{FieldsTypesMapMut, FieldsVec, Struct},
+    },
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -112,9 +114,12 @@ fn try_into_field(
     let value = match initial_field {
         HelperFieldType::String(s) => {
             // Bool, Numbers and String will be parsed using the default RalphValue parser
-            // However, we need to make an exception for ByteVec which may be human readable strings.
-            // This is because the blockchain automatically encodes strings in hex, and since we use the default parser, we need to convert it before calling the function
-            // So we need to check if the input is a hex string (which always begin with 0x) to seperate the true hex strings inputs from human readable ones
+            // However, we need to make an exception for ByteVec which may be human readable
+            // strings. This is because the blockchain automatically encodes
+            // strings in hex, and since we use the default parser, we need to convert it
+            // before calling the function So we need to check if the input is a
+            // hex string (which always begin with 0x) to seperate the true hex strings
+            // inputs from human readable ones
             let s = if *type_name == TypeName::ByteVec {
                 if is_hex_string(&s) {
                     s.strip_prefix("0x")
@@ -136,7 +141,8 @@ fn try_into_field(
             if let TypeName::Array((elem_type, elem_size)) = type_name {
                 if arr.len() != *elem_size {
                     bail!(
-                        "Array length mismatch for field '{initial_field_name}': expected {elem_size}, got {}",
+                        "Array length mismatch for field '{initial_field_name}': expected\
+                        {elem_size}, got {}",
                         arr.len()
                     )
                 }
@@ -157,7 +163,8 @@ fn try_into_field(
             } else if let TypeName::Tuple(elem_types) = type_name {
                 if arr.len() != elem_types.len() {
                     bail!(
-                        "Tuple length mismatch for field '{initial_field_name}': expected {}, got {}",
+                        "Tuple length mismatch for field '{initial_field_name}': expected {},\
+                        got {}",
                         elem_types.len(),
                         arr.len()
                     )
@@ -174,7 +181,8 @@ fn try_into_field(
                 values.into_iter().flatten().collect()
             } else {
                 bail!(
-                    "Type mismatch: expected Array type for field '{initial_field_name}', got {type_name:?}",
+                    "Type mismatch: expected Array type for field '{initial_field_name}',\
+                    got {type_name:?}",
                 );
             }
         },
@@ -187,7 +195,8 @@ fn try_into_field(
 
                 if zipped_fields.is_empty() {
                     bail!(
-                        "No matching fields found in structure for '{initial_field_name}' in '{struct_fields:?}'",
+                        "No matching fields found in structure for '{initial_field_name}' in\
+                        '{struct_fields:?}'",
                     );
                 }
 
@@ -202,7 +211,8 @@ fn try_into_field(
                     .collect()
             } else {
                 bail!(
-                    "Type mismatch: expected Structure type for field '{initial_field_name}', got {type_name:?}"
+                    "Type mismatch: expected Structure type for field '{initial_field_name}',\
+                    got {type_name:?}"
                 );
             }
         },
@@ -217,7 +227,8 @@ pub fn config_fields_to_vec(
     let values = fields_types
         .into_iter()
         .map(|(name, _)| match name.as_str() {
-            "__stdInterfaceId" => Ok(vec![]), // Skip this field, it's automatically added by compiler
+            "__stdInterfaceId" => Ok(vec![]), // Skip this field, it's automatically added by
+            // compiler
             _ => {
                 let helper_field = initial_fields
                     .get(name)
@@ -470,7 +481,8 @@ pub struct FieldValue {
     pub value: RalphValue,
 }
 
-// This method of deserializing must be used when you know there will be no structures
+// This method of deserializing must be used when you know there will be no
+// structures
 impl<'de> Deserialize<'de> for FieldValue {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where

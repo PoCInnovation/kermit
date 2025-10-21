@@ -1,11 +1,12 @@
 use anyhow::{Context, Result, bail};
-
-use blake2::Blake2bVar;
-use blake2::digest::{Update, VariableOutput};
+use blake2::{
+    Blake2bVar,
+    digest::{Update, VariableOutput},
+};
 use bs58;
+use serde::{Deserialize, Serialize, Serializer};
 
 use crate::common::crypto::{djb2, xor_byte};
-use serde::{Deserialize, Serialize, Serializer};
 
 const TOTAL_NUMBER_OF_GROUPS: u8 = 4;
 

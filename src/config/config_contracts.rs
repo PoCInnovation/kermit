@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 
-use serde::de::{self, Error};
-use serde::{Deserialize, Deserializer, Serialize};
-
+use serde::{
+    Deserialize, Deserializer, Serialize,
+    de::{self, Error},
+};
 use serde_yaml::Value;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

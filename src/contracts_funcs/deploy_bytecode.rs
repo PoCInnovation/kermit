@@ -145,7 +145,7 @@ pub fn build_bytecode_contract(
     };
 
     let fields = get_fields_vec(contract, init_fields)?;
-    let (fields_bytecode, _, _) = get_fields_bytecode(fields)?;
+    let (fields_bytecode, ..) = get_fields_bytecode(fields)?;
 
     Ok(main_bytecode + &fields_bytecode)
 }

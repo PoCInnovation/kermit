@@ -1,17 +1,18 @@
-use anyhow::{Context, Result, anyhow, bail};
-use regex::{Error, Regex, RegexBuilder};
-use serde_json::{Value, json};
 use std::{
+    collections::{HashMap, HashSet},
     path::{Path, PathBuf},
     sync::LazyLock,
 };
+
+use anyhow::{Context, Result, anyhow, bail};
+use regex::{Error, Regex, RegexBuilder};
+use serde_json::{Value, json};
 
 use crate::{
     common::{fs::read_file, post},
     contracts::CompilerOptions,
     contracts_funcs::source_info::{SourceInfo, SourceKind},
 };
-use std::collections::{HashMap, HashSet};
 
 fn load_ral_files(compile_path: &str) -> Result<(Vec<String>, String)> {
     let path = Path::new(compile_path);

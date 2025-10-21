@@ -1,6 +1,7 @@
 use std::{
     env,
     fs::{self, File},
+    io::Write,
     path::PathBuf,
     process::Command,
 };
@@ -9,7 +10,6 @@ use anyhow::Result;
 use insta::with_settings;
 use insta_cmd::{assert_cmd_snapshot, get_cargo_bin};
 use serde_json::Value;
-use std::io::Write;
 
 const BIN_NAME: &str = "kermit";
 
