@@ -4,7 +4,6 @@ assertion_line: 45
 info:
   program: kermit
   args:
-    - "--url=http://localhost:35428"
     - transactions
     - submit
     - a46f5fb14ae87d3d776d5a76823b238e0ddad43d8e6f6f8f40299ba0ec85

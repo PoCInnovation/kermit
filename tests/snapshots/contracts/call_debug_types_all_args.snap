@@ -1,14 +1,14 @@
 ---
 source: tests/utils.rs
-assertion_line: 76
+assertion_line: 45
 info:
   program: kermit
   args:
+    - contracts
     - "-n"
     - dev
     - "-c"
     - "./tests/contracts/test.config.yaml"
-    - contracts
     - call
     - TestTypes
     - 27zY7WBMKuwDXdd2y5fLt6QhHyuXL9VGaeRCXE1yNwqm9

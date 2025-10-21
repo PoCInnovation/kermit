@@ -1,14 +1,14 @@
 ---
 source: tests/utils.rs
-assertion_line: 67
+assertion_line: 45
 info:
   program: kermit
   args:
+    - contracts
     - "-n"
     - dev
     - "-c"
     - tests/contracts/test.config.yaml
-    - contracts
     - deploy
     - TokenFaucet
     - /tmp/deploy_sub_contract_debug

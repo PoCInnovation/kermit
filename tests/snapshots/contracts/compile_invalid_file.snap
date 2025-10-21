@@ -1,12 +1,12 @@
 ---
 source: tests/utils.rs
-assertion_line: 31
+assertion_line: 45
 info:
   program: kermit
   args:
+    - contracts
     - "-n"
     - dev
-    - contracts
     - compile
     - tests/contracts/impossible.ral
 ---

@@ -4,7 +4,6 @@ assertion_line: 45
 info:
   program: kermit
   args:
-    - "--url=http://localhost:32928"
     - contracts
     - "-n"
     - dev
