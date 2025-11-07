@@ -53,16 +53,15 @@ async fn run() -> Result<()> {
         KermitSubcommand::GenerateAutocompletion { shell } => {
             let mut app = Kermit::command();
             let bin_name = app.get_name().to_string();
-            let shell = match shell {
-                Some(s) => s,
-                None => {
+            let shell = shell.map_or_else(
+                || {
                     let detected_shell = std::env::var("SHELL")
                         .ok()
                         .and_then(|p| {
                             std::path::Path::new(&p)
                                 .file_name()
                                 .and_then(|os| os.to_str())
-                                .map(|s| s.to_lowercase())
+                                .map(str::to_lowercase)
                         })
                         .or_else(|| {
                             // If SHELL is not set (like on Windows), try to detect the shell by other env vars
@@ -82,7 +81,9 @@ async fn run() -> Result<()> {
                         _ => clap_complete::Shell::Bash,
                     }
                 },
-            };
+                |s| s,
+            );
+
             clap_complete::generate(shell, &mut app, bin_name, &mut std::io::stdout());
         },
     }
