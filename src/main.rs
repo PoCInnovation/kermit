@@ -14,7 +14,7 @@ mod wallets;
 
 use anyhow::Result;
 use args::{Kermit, KermitSubcommand};
-use clap::Parser;
+use clap::{CommandFactory, Parser};
 
 #[tokio::main]
 async fn main() {
@@ -50,6 +50,41 @@ async fn run() -> Result<()> {
         KermitSubcommand::Transactions { command } => command.run(&kermit.url).await?,
         KermitSubcommand::Utils { command } => command.run().await?,
         KermitSubcommand::Wallets { command } => command.run(&kermit.url).await?,
+        KermitSubcommand::GenerateAutocompletion { shell } => {
+            let mut app = Kermit::command();
+            let bin_name = app.get_name().to_string();
+            let shell = match shell {
+                Some(s) => s,
+                None => {
+                    let detected_shell = std::env::var("SHELL")
+                        .ok()
+                        .and_then(|p| {
+                            std::path::Path::new(&p)
+                                .file_name()
+                                .and_then(|os| os.to_str())
+                                .map(|s| s.to_lowercase())
+                        })
+                        .or_else(|| {
+                            // If SHELL is not set (like on Windows), try to detect the shell by other env vars
+                            if std::env::var_os("PSModulePath").is_some() {
+                                Some("pwsh".to_string())
+                            } else {
+                                None
+                            }
+                        });
+
+                    match detected_shell.as_deref() {
+                        Some("bash") => clap_complete::Shell::Bash,
+                        Some("zsh") => clap_complete::Shell::Zsh,
+                        Some("fish") => clap_complete::Shell::Fish,
+                        Some("elvish") => clap_complete::Shell::Elvish,
+                        Some("pwsh") | Some("powershell") => clap_complete::Shell::PowerShell,
+                        _ => clap_complete::Shell::Bash,
+                    }
+                },
+            };
+            clap_complete::generate(shell, &mut app, bin_name, &mut std::io::stdout());
+        },
     }
 
     Ok(())

@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand, ValueHint};
+use clap_complete::Shell;
 
 use crate::{
     addresses::AddressesSubcommands,
@@ -91,5 +92,14 @@ pub enum KermitSubcommand {
     Wallets {
         #[command(subcommand)]
         command: WalletsSubcommands,
+    },
+
+    /// Generate shell autocompletion script for your current shell
+    #[command(visible_alias = "gen-autocpl")]
+    GenerateAutocompletion {
+        /// Shell to generate completion for. If omitted, the program should try to
+        /// detect the current shell at runtime (using env vars).
+        #[arg(value_enum)]
+        shell: Option<Shell>,
     },
 }
