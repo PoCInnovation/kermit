@@ -11,6 +11,7 @@ mod miners;
 mod transactions;
 mod utils;
 mod wallets;
+mod docs;
 
 use anyhow::Result;
 use args::{Kermit, KermitSubcommand};
@@ -85,6 +86,9 @@ async fn run() -> Result<()> {
             );
 
             clap_complete::generate(shell, &mut app, bin_name, &mut std::io::stdout());
+        },
+        KermitSubcommand::GenerateDocs { command } => {
+            command.run().await?;
         },
     }
 

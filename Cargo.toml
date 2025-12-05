@@ -55,6 +55,7 @@ sha2 = "0.10.9"
 strum = { version = "0.27.2", features = ["derive"] }
 tokio = { version = "1.48.0", features = ["full"] }
 walkdir = "2.5.0"
+clap-markdown = "0.1.5"
 
 [dev-dependencies]
 insta = { version = "1", features = ["filters"] }

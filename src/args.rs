@@ -5,6 +5,7 @@ use crate::{
     addresses::AddressesSubcommands,
     blockflow::BlockflowSubcommands,
     contracts::{ContractsSubcommands, NetworkType},
+    docs::GenerateDocsSubcommands,
     infos::InfosSubcommands,
     miners::MinersSubcommands,
     transactions::TransactionsSubcommands,
@@ -101,5 +102,12 @@ pub enum KermitSubcommand {
         /// detect the current shell at runtime (using env vars).
         #[arg(value_enum)]
         shell: Option<Shell>,
+    },
+
+    /// Generate markdown documentation for the CLI.
+    #[command(visible_alias = "gen-docs")]
+    GenerateDocs {
+        #[command(flatten)]
+        command: GenerateDocsSubcommands,
     },
 }
