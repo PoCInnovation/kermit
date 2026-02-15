@@ -1,6 +1,7 @@
 mod account;
 mod addresses;
 mod args;
+mod autocomplete;
 mod blockflow;
 mod common;
 mod config;
@@ -14,7 +15,7 @@ mod wallets;
 
 use anyhow::Result;
 use args::{Kermit, KermitSubcommand};
-use clap::Parser;
+use clap::{CommandFactory, Parser};
 
 #[tokio::main]
 async fn main() {
@@ -50,6 +51,9 @@ async fn run() -> Result<()> {
         KermitSubcommand::Transactions { command } => command.run(&kermit.url).await?,
         KermitSubcommand::Utils { command } => command.run().await?,
         KermitSubcommand::Wallets { command } => command.run(&kermit.url).await?,
+        KermitSubcommand::GenerateAutocompletion { shell } => {
+            autocomplete::generate_autocomplete(&mut Kermit::command(), shell);
+        },
     }
 
     Ok(())

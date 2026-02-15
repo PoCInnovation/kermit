@@ -40,6 +40,7 @@ bigdecimal = "0.4.8"
 blake2 = "0.10.6"
 bs58 = "0.5.1"
 clap = { version = "4", features = ["derive", "env"] }
+clap_complete = "4"
 futures = { version = "0.3.31", default-features = false }
 hex = "0.4.3"
 i256 = "0.2.3"
