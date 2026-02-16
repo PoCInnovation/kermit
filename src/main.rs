@@ -1,6 +1,7 @@
 mod account;
 mod addresses;
 mod args;
+mod autocomplete;
 mod blockflow;
 mod common;
 mod config;
@@ -52,40 +53,7 @@ async fn run() -> Result<()> {
         KermitSubcommand::Utils { command } => command.run().await?,
         KermitSubcommand::Wallets { command } => command.run(&kermit.url).await?,
         KermitSubcommand::GenerateAutocompletion { shell } => {
-            let mut app = Kermit::command();
-            let bin_name = app.get_name().to_string();
-            let shell = shell.map_or_else(
-                || {
-                    let detected_shell = std::env::var("SHELL")
-                        .ok()
-                        .and_then(|p| {
-                            std::path::Path::new(&p)
-                                .file_name()
-                                .and_then(|os| os.to_str())
-                                .map(str::to_lowercase)
-                        })
-                        .or_else(|| {
-                            // If SHELL is not set (like on Windows), try to detect the shell by other env vars
-                            if std::env::var_os("PSModulePath").is_some() {
-                                Some("pwsh".to_string())
-                            } else {
-                                None
-                            }
-                        });
-
-                    match detected_shell.as_deref() {
-                        Some("bash") => clap_complete::Shell::Bash,
-                        Some("zsh") => clap_complete::Shell::Zsh,
-                        Some("fish") => clap_complete::Shell::Fish,
-                        Some("elvish") => clap_complete::Shell::Elvish,
-                        Some("pwsh") | Some("powershell") => clap_complete::Shell::PowerShell,
-                        _ => clap_complete::Shell::Bash,
-                    }
-                },
-                |s| s,
-            );
-
-            clap_complete::generate(shell, &mut app, bin_name, &mut std::io::stdout());
+            autocomplete::generate_autocomplete(&mut Kermit::command(), shell);
         },
         KermitSubcommand::GenerateDocs { command } => {
             command.run().await?;
